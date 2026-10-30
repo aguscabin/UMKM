@@ -861,7 +861,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                     FORUM UMKM KUAT KECAMATAN TANGERANG
                   </h1>
                   <p className="text-[11px] text-slate-600">
-                    Sekretariat: Gedung Kantor Kecamatan Tangerang, Jl. Daan Mogot No. 5, Kota Tangerang. Telp: (021) 5523456 / WA 0812-8923-4111
+                    Sekretariat: Gedung Kantor Kecamatan Tangerang, Jl. Daan Mogot No. 5, Kota Tangerang. Telp: (021) 5523456 / WA 085880942565
                   </p>
                 </div>
               </div>

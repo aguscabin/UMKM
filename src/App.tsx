@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { dbService, INITIAL_MEMBERS } from './services/db';
+import { dbService } from './services/db';
 import { Member, Transaction, ForumEvent, Article, ActivityLog } from './types';
 import { Navbar } from './components/public/Navbar';
 import { Footer } from './components/public/Footer';
@@ -35,20 +35,20 @@ function MainApp() {
   const [selectedEvent, setSelectedEvent] = useState<ForumEvent | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
-  // Data Store with safe immediate initial state (prevents empty screen flash on mobile)
+  // Data Store (empty default, real members synced from Firestore/cache)
   const [members, setMembers] = useState<Member[]>(() => {
     if (typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('umkm_mgmt_members');
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) return parsed;
         }
       } catch (e) {
         // ignore
       }
     }
-    return INITIAL_MEMBERS;
+    return [];
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [events, setEvents] = useState<ForumEvent[]>([]);
@@ -70,9 +70,7 @@ function MainApp() {
         dbService.getArticles(),
         dbService.getLogs(),
       ]);
-      if (m && m.length > 0) {
-        setMembers(m);
-      }
+      setMembers(m || []);
       setTransactions(t);
       setEvents(e);
       setArticles(a);
@@ -87,14 +85,15 @@ function MainApp() {
   useEffect(() => {
     loadAllData();
 
-    // Listen for cross-component member updates
+    // Realtime Firestore synchronization: instant sync across HP/mobile and desktop
+    const unsubscribeMembers = dbService.subscribeMembers((realtimeMembers) => {
+      setMembers(realtimeMembers);
+    });
+
+    // Listen for cross-component member updates in same window
     const handleMembersUpdated = (e: any) => {
-      if (e.detail && Array.isArray(e.detail) && e.detail.length > 0) {
+      if (e.detail && Array.isArray(e.detail)) {
         setMembers(e.detail);
-      } else {
-        dbService.getMembers().then((res) => {
-          if (res && res.length > 0) setMembers(res);
-        }).catch(() => {});
       }
     };
 
@@ -110,6 +109,7 @@ function MainApp() {
     }
 
     return () => {
+      unsubscribeMembers();
       window.removeEventListener('umkm_members_updated', handleMembersUpdated);
     };
   }, []);

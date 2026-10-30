@@ -183,7 +183,7 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
                 FORUM UMKM KUAT KECAMATAN TANGERANG
               </h1>
               <p className="text-xs text-slate-600 max-w-xl mx-auto">
-                Sekretariat: Gedung Kantor Kecamatan Tangerang, Jl. Daan Mogot No. 5, Kota Tangerang. Telp/WA: 0812-8923-4111 | Email: umkmkectangerang@gmail.com
+                Sekretariat: Gedung Kantor Kecamatan Tangerang, Jl. Daan Mogot No. 5, Kota Tangerang. Telp/WA: 085880942565 | Email: umkmkectangerang@gmail.com
               </p>
             </div>
           </div>

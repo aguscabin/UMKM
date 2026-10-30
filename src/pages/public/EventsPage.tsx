@@ -248,7 +248,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                 </a>
               ) : (
                 <a
-                  href="https://wa.me/6281289234111?text=Halo%20Admin%20saya%20ingin%20mendaftar%20kegiatan%20ini"
+                  href="https://wa.me/6285880942565?text=Halo%20Admin%20saya%20ingin%20mendaftar%20kegiatan%20ini"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-colors"

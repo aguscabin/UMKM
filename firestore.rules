@@ -94,15 +94,15 @@ service cloud.firestore {
       allow create, update, delete: if isFinanceAdmin();
     }
 
-    // EVENTS COLLECTION
+    // EVENTS COLLECTION (Publik & Agenda Kegiatan)
     match /events/{eventId} {
-      allow get, list: if resource.data.status in ['terbit', 'selesai'] || isAdminStaff();
+      allow read: if true;
       allow create, update, delete: if isAdminStaff();
     }
 
-    // ARTICLES COLLECTION (Kabar Berita)
+    // ARTICLES COLLECTION (Publik & Kabar Berita)
     match /articles/{articleId} {
-      allow get, list: if resource.data.status == 'terbit' || isAdminStaff();
+      allow read: if true;
       allow create, update, delete: if isAdminStaff();
     }
 

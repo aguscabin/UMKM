@@ -475,9 +475,12 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                   </div>
 
                   {/* Secretariat Note */}
-                  <div className="text-center pb-1">
+                  <div className="text-center pb-1 space-y-0.5">
                     <p className="text-[8.5px] text-slate-500 italic">
                       Sekretariat: Kantor Kecamatan Tangerang, Kota Tangerang
+                    </p>
+                    <p className="text-[8.5px] font-semibold text-slate-600 tracking-wider">
+                      www.umkmkectangerang.netlify.app
                     </p>
                   </div>
                 </div>

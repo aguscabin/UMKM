@@ -9,151 +9,13 @@ import {
   query,
   orderBy,
   where,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Member, Transaction, ForumEvent, Article, ActivityLog, UserProfile, OrgStructureMember, OrgVisionMission, OrgContactInfo } from '../types';
 
-// Initial realistic seed data for Forum UMKM KUAT Kecamatan Tangerang
-export const INITIAL_MEMBERS: Member[] = [
-  {
-    id: 'mem-001',
-    memberNumber: 'KUAT-TNG-2025-001',
-    fullName: 'Ahmad Fauzi',
-    nik: '3671011508890001',
-    phone: '081289234111',
-    email: 'kopicisadane@gmail.com',
-    address: 'Jl. Kali Pasir No. 12, RT 02/03',
-    kelurahan: 'Babakan',
-    status: 'aktif',
-    joinDate: '2025-01-15',
-    businessName: 'Kopi Benteng Cisadane',
-    category: 'Kuliner',
-    topProduct: 'Kopi Robusta & Arabika Sangrai Khas Tangerang',
-    businessAddress: 'Jl. Kali Pasir No. 12, Kel. Babakan, Kec. Tangerang',
-    businessPhone: '081289234111',
-    memberPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    productPhoto: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
-    legalities: 'NIB, Sertifikat Halal',
-    isPublicDirectory: true,
-    createdAt: '2025-01-15T08:00:00Z',
-    updatedAt: '2025-01-15T08:00:00Z',
-  },
-  {
-    id: 'mem-002',
-    memberNumber: 'KUAT-TNG-2025-002',
-    fullName: 'Siti Rahmawati',
-    nik: '3671015609920003',
-    phone: '081398765432',
-    email: 'batikbenteng@gmail.com',
-    address: 'Jl. Ki Asnawi No. 45',
-    kelurahan: 'Sukasari',
-    status: 'aktif',
-    joinDate: '2025-01-20',
-    businessName: 'Batik Benteng Warisan',
-    category: 'Fashion',
-    topProduct: 'Kain Batik Motif Pintu Air Cisadane & Jam Benteng',
-    businessAddress: 'Jl. Ki Asnawi No. 45, Kel. Sukasari, Kec. Tangerang',
-    businessPhone: '081398765432',
-    memberPhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-    productPhoto: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80',
-    legalities: 'NIB, Hak Cipta Merek',
-    isPublicDirectory: true,
-    createdAt: '2025-01-20T08:00:00Z',
-    updatedAt: '2025-01-20T08:00:00Z',
-  },
-  {
-    id: 'mem-003',
-    memberNumber: 'KUAT-TNG-2025-003',
-    fullName: 'H. Suryadi Pratama',
-    nik: '3671012304850002',
-    phone: '081287654321',
-    email: 'dodolny.lauw@gmail.com',
-    address: 'Jl. Daan Mogot KM 1',
-    kelurahan: 'Sukarasa',
-    status: 'aktif',
-    joinDate: '2025-02-01',
-    businessName: 'Dodol Legit Khas Tangerang',
-    category: 'Kuliner',
-    topProduct: 'Dodol Wijen & Jenang Tradisional Asli',
-    businessAddress: 'Jl. Daan Mogot KM 1, Kel. Sukarasa, Kec. Tangerang',
-    businessPhone: '081287654321',
-    memberPhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80',
-    productPhoto: 'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?auto=format&fit=crop&w=600&q=80',
-    legalities: 'NIB, P-IRT, Sertifikat Halal',
-    isPublicDirectory: true,
-    createdAt: '2025-02-01T08:00:00Z',
-    updatedAt: '2025-02-01T08:00:00Z',
-  },
-  {
-    id: 'mem-004',
-    memberNumber: 'KUAT-TNG-2025-004',
-    fullName: 'Dewi Lestari',
-    nik: '3671016811900004',
-    phone: '081512345678',
-    email: 'sambaljuara@gmail.com',
-    address: 'Jl. Veteran No. 18',
-    kelurahan: 'Tanah Tinggi',
-    status: 'aktif',
-    joinDate: '2025-02-10',
-    businessName: 'Dapur Sambal Roa & Cumi',
-    category: 'Kuliner',
-    topProduct: 'Sambal Roa Asap & Cumi Balado Kemasan Botol',
-    businessAddress: 'Jl. Veteran No. 18, Kel. Tanah Tinggi, Kec. Tangerang',
-    businessPhone: '081512345678',
-    memberPhoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-    productPhoto: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
-    legalities: 'NIB, Sertifikat Halal',
-    isPublicDirectory: true,
-    createdAt: '2025-02-10T08:00:00Z',
-    updatedAt: '2025-02-10T08:00:00Z',
-  },
-  {
-    id: 'mem-005',
-    memberNumber: 'KUAT-TNG-2025-005',
-    fullName: 'Bambang Irawan',
-    nik: '3671011202880005',
-    phone: '081299887766',
-    email: 'keripiksukaasih@gmail.com',
-    address: 'Jl. Perintis Kemerdekaan No. 8',
-    kelurahan: 'Sukaasih',
-    status: 'aktif',
-    joinDate: '2025-02-15',
-    businessName: 'Keripik Tempe Renyah Sukaasih',
-    category: 'Kuliner',
-    topProduct: 'Keripik Tempe Aneka Rasa (Original & Daun Jeruk)',
-    businessAddress: 'Jl. Perintis Kemerdekaan No. 8, Kel. Sukaasih, Kec. Tangerang',
-    businessPhone: '081299887766',
-    memberPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-    productPhoto: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=600&q=80',
-    legalities: 'NIB, P-IRT, Sertifikat Halal',
-    isPublicDirectory: true,
-    createdAt: '2025-02-15T08:00:00Z',
-    updatedAt: '2025-02-15T08:00:00Z',
-  },
-  {
-    id: 'mem-006',
-    memberNumber: 'KUAT-TNG-2025-006',
-    fullName: 'Maya Anggraini',
-    nik: '3671014506940006',
-    phone: '081311223344',
-    email: 'kriyaanyaman@gmail.com',
-    address: 'Jl. Jenderal Sudirman No. 22',
-    kelurahan: 'Buaran Indah',
-    status: 'aktif',
-    joinDate: '2025-02-20',
-    businessName: 'Anyaman Bambu & Rotan Etnik',
-    category: 'Kriya',
-    topProduct: 'Tas Anyaman & Perlengkapan Rumah Ramah Lingkungan',
-    businessAddress: 'Jl. Jenderal Sudirman No. 22, Kel. Buaran Indah, Kec. Tangerang',
-    businessPhone: '081311223344',
-    memberPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    productPhoto: 'https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=600&q=80',
-    legalities: 'NIB, P-IRT',
-    isPublicDirectory: true,
-    createdAt: '2025-02-20T08:00:00Z',
-    updatedAt: '2025-02-20T08:00:00Z',
-  },
-];
+// Initial realistic seed data for Forum UMKM KUAT Kecamatan Tangerang - empty by default (no dummy data)
+export const INITIAL_MEMBERS: Member[] = [];
 
 export const INITIAL_TRANSACTIONS: Transaction[] = [];
 
@@ -184,7 +46,7 @@ export const INITIAL_EVENTS: ForumEvent[] = [
     posterUrl: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80',
     status: 'terbit',
     targetAudience: 'Pelaku UMKM Kuliner se-Kecamatan Tangerang yang belum ber-NIB/Halal',
-    registrationUrl: 'https://wa.me/6281289234111?text=Daftar%20Workshop%20NIB%20Halal',
+    registrationUrl: 'https://wa.me/6285880942565?text=Daftar%20Workshop%20NIB%20Halal',
     createdAt: '2026-02-10T09:30:00Z',
     updatedAt: '2026-02-20T10:00:00Z',
   },
@@ -359,7 +221,7 @@ export const INITIAL_CONTACT_INFO: OrgContactInfo = {
   subTitle: 'Pemerintah Kota Tangerang, Provinsi Banten',
   address: 'Gedung Kantor Kecamatan Tangerang (Lantai Dasar & Pojok UMKM), Jl. Daan Mogot No. 5, Kelurahan Sukarasa, Kec. Tangerang, Kota Tangerang, Banten 15111',
   phone: '(021) 5523456',
-  whatsapp: '0812-8923-4111',
+  whatsapp: '085880942565',
   email: 'umkmkectangerang@gmail.com',
   operatingHours: 'Senin – Jumat: 08.00 – 16.00 WIB',
   googleMapsUrl: 'https://maps.google.com/?q=Kantor+Kecamatan+Tangerang',
@@ -421,16 +283,15 @@ export const INITIAL_USERS: UserProfile[] = [
 // Helper to load or persist items with local cache fallbacks
 const LOCAL_STORAGE_PREFIX = 'umkm_mgmt_';
 
-// Safe initialization: ensure cached members exist so mobile never starts empty
-if (typeof window !== 'undefined') {
-  try {
-    const rawMembers = localStorage.getItem(LOCAL_STORAGE_PREFIX + 'members');
-    if (!rawMembers || rawMembers === '[]' || rawMembers === 'null') {
-      localStorage.setItem(LOCAL_STORAGE_PREFIX + 'members', JSON.stringify(INITIAL_MEMBERS));
+// Helper to remove any undefined values before writing to Firestore
+function cleanFirestoreData<T extends Record<string, any>>(obj: T): T {
+  const cleaned: any = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      cleaned[key] = val;
     }
-  } catch (e) {
-    // ignore
   }
+  return cleaned;
 }
 
 function getLocalData<T>(key: string, defaultValue: T): T {
@@ -458,7 +319,7 @@ export const dbService = {
     try {
       const memSnap = await Promise.race([
         getDocs(collection(db, 'members')),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
       ]);
       if (memSnap?.docs) {
         for (const d of memSnap.docs) {
@@ -472,7 +333,7 @@ export const dbService = {
     try {
       const trxSnap = await Promise.race([
         getDocs(collection(db, 'transactions')),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
       ]);
       if (trxSnap?.docs) {
         for (const d of trxSnap.docs) {
@@ -487,51 +348,61 @@ export const dbService = {
     setLocalData('transactions', []);
   },
 
+  // Realtime subscription: ensures mobile phones (HP) and computers instantly sync without refresh
+  subscribeMembers(callback: (members: Member[]) => void): () => void {
+    try {
+      const q = collection(db, 'members');
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const list: Member[] = [];
+          snapshot.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<Member, 'id'>) }));
+          list.sort((a, b) => (a.memberNumber || '').localeCompare(b.memberNumber || ''));
+          setLocalData('members', list);
+          callback(list);
+        },
+        (err) => {
+          console.warn('Realtime members listener warning:', err);
+        }
+      );
+      return unsubscribe;
+    } catch (e) {
+      console.warn('Subscribe members error:', e);
+      return () => {};
+    }
+  },
+
   // MEMBERS
   async getMembers(): Promise<Member[]> {
     try {
       const snapshot = await Promise.race([
         getDocs(collection(db, 'members')),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
       ]);
-      if (snapshot && !snapshot.empty) {
+      if (snapshot) {
         const list: Member[] = [];
         snapshot.forEach((d: any) => list.push({ id: d.id, ...(d.data() as Omit<Member, 'id'>) }));
         list.sort((a, b) => (a.memberNumber || '').localeCompare(b.memberNumber || ''));
         setLocalData('members', list);
         return list;
-      } else if (snapshot && snapshot.empty) {
-        // If Firestore collection is empty, seed verified UMKM binaan so all mobile and desktop devices see the data
-        try {
-          for (const m of INITIAL_MEMBERS) {
-            setDoc(doc(db, 'members', m.id), m).catch(() => {});
-          }
-        } catch (e) {
-          console.warn('Auto-seed Firestore error:', e);
-        }
-        setLocalData('members', INITIAL_MEMBERS);
-        return INITIAL_MEMBERS;
       }
     } catch (err) {
       console.warn('Firestore fetch failed, using local cache:', err);
     }
-    // Fallback to local storage
-    const local = getLocalData<Member[]>('members', INITIAL_MEMBERS);
-    if (!local || local.length === 0) {
-      setLocalData('members', INITIAL_MEMBERS);
-      return INITIAL_MEMBERS;
-    }
-    return local;
+    // Fallback to local storage (never re-injects dummy items)
+    return getLocalData<Member[]>('members', []);
   },
 
   async saveMember(member: Member): Promise<void> {
+    const cleaned = cleanFirestoreData(member);
+
     // 1. Immediately update local storage and notify listeners
-    const current = getLocalData<Member[]>('members', INITIAL_MEMBERS);
-    const idx = current.findIndex((m) => m.id === member.id);
+    const current = getLocalData<Member[]>('members', []);
+    const idx = current.findIndex((m) => m.id === cleaned.id);
     if (idx >= 0) {
-      current[idx] = member;
+      current[idx] = cleaned;
     } else {
-      current.push(member);
+      current.push(cleaned);
     }
     setLocalData('members', current);
 
@@ -541,10 +412,10 @@ export const dbService = {
 
     // 2. Persist to Firestore
     try {
-      const writePromise = setDoc(doc(db, 'members', member.id), member);
+      const writePromise = setDoc(doc(db, 'members', cleaned.id), cleaned);
       await Promise.race([
         writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
       ]);
     } catch (err) {
       console.warn('Firestore write failed, stored in local storage:', err);
@@ -553,7 +424,7 @@ export const dbService = {
 
   async deleteMember(id: string): Promise<void> {
     // 1. Immediately update local storage and notify listeners
-    const current = getLocalData<Member[]>('members', INITIAL_MEMBERS);
+    const current = getLocalData<Member[]>('members', []);
     const updated = current.filter((m) => m.id !== id);
     setLocalData('members', updated);
 
@@ -566,7 +437,7 @@ export const dbService = {
       const delPromise = deleteDoc(doc(db, 'members', id));
       await Promise.race([
         delPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
       ]);
     } catch (err) {
       console.warn('Firestore delete failed:', err);

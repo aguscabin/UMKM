@@ -60,13 +60,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
             <a
-              href="https://wa.me/6281289234111?text=Halo%20Admin%20Forum%20UMKM%20KUAT%20Kecamatan%20Tangerang"
+              href="https://wa.me/6285880942565?text=Halo%20Admin%20Forum%20UMKM%20KUAT%20Kecamatan%20Tangerang"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1.5 hover:text-white transition-colors group"
             >
               <Phone className="w-3 h-3 text-teal-400 group-hover:scale-110 transition-transform" />
-              <span>Hotline WhatsApp: <strong className="text-slate-200 font-semibold">0812-8923-4111</strong></span>
+              <span>Hotline WhatsApp: <strong className="text-slate-200 font-semibold">085880942565</strong></span>
             </a>
             <span className="text-slate-700 hidden sm:inline">&bull;</span>
             <span className="text-amber-400 font-semibold hidden sm:inline">8 Kelurahan Binaan</span>

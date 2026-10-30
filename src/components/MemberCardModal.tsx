@@ -5,10 +5,12 @@ import {
   Printer,
   X,
   CreditCard,
-  Download,
   CheckCircle2,
-  Layers,
-  Sparkles,
+  Phone,
+  Building2,
+  ShieldCheck,
+  QrCode,
+  User,
 } from 'lucide-react';
 
 interface MemberCardModalProps {
@@ -27,15 +29,25 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
       const day = String(baseDate.getDate()).padStart(2, '0');
       const month = String(baseDate.getMonth() + 1).padStart(2, '0');
       const year = baseDate.getFullYear();
-      return `${day}-${month}-${year}`;
+      return `${day}/${month}/${year}`;
     } catch (e) {
-      return '26-10-2029';
+      return '26/10/2029';
     }
   };
 
   const validThru = computeValidThru();
 
-  // Printable function using isolated iframe for 100% reliable printing/PDF generation
+  // Verification URL for QR code
+  const verifyUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}?tab=direktori&search=${encodeURIComponent(member.memberNumber)}`
+    : `https://umkmkuat-tangerang.id/verify/${member.memberNumber}`;
+
+  // Direct QR Code generator URL with matching Royal Blue color (#0D50B5)
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+    verifyUrl
+  )}&color=0d50b5&bgcolor=ffffff`;
+
+  // Print function using isolated iframe for exact ISO 7810 ID-1 standard (53.98 mm × 85.60 mm portrait)
   const handlePrintKTA = () => {
     const printArea = document.getElementById('kta-cards-container');
     if (!printArea) {
@@ -73,7 +85,9 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               box-sizing: border-box;
               margin: 0;
               padding: 0;
-              font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+              font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             body {
               background: #ffffff;
@@ -82,196 +96,50 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               flex-direction: column;
               align-items: center;
               justify-content: center;
-              gap: 25px;
               padding: 20px;
             }
-            .kta-card {
-              width: 85.6mm;
-              height: 54mm;
-              border-radius: 3.5mm;
-              overflow: hidden;
-              box-shadow: none;
-              border: 0.6mm solid #143872;
-              position: relative;
-              background: #ffffff;
-              page-break-inside: avoid;
-              margin: 0 auto 10mm auto;
-              box-sizing: border-box;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-            }
-            .header-bar {
-              background: #143872;
-              height: 12.5mm;
-              position: relative;
-              display: flex;
-              align-items: center;
-              justify-content: flex-end;
-              padding-right: 4mm;
-            }
-            .header-text {
-              text-align: right;
-              color: #ffffff;
-            }
-            .header-title-1, .header-title-2 {
-              font-size: 3.1mm;
-              font-weight: 800;
-              letter-spacing: 0.1mm;
-              line-height: 1.15;
-            }
-            .logo-circle {
-              position: absolute;
-              left: 3.5mm;
-              top: 1.5mm;
-              width: 15mm;
-              height: 15mm;
-              border-radius: 50%;
-              background: #ffffff;
-              border: 0.7mm solid #143872;
-              overflow: hidden;
-              z-index: 10;
-            }
-            .logo-circle img {
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-            }
-            .stripe-line {
-              height: 0.8mm;
-              background: #143872;
-              border-top: 0.3mm solid #ffffff;
-            }
-            .card-body {
-              display: flex;
-              padding: 2.5mm 3.5mm;
-              gap: 3mm;
-              height: calc(54mm - 12.5mm - 0.8mm - 2.5mm);
-              align-items: center;
-              background: linear-gradient(135deg, #ffffff 60%, #edf4fc 100%);
-              box-sizing: border-box;
-            }
-            .photo-box {
-              width: 21mm;
-              height: 28mm;
-              border-radius: 2mm;
-              background: #d4e5f7;
-              border: 0.4mm solid #143872;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
+            .header-print {
               text-align: center;
+              margin-bottom: 20px;
+            }
+            .header-print h2 {
+              font-size: 16px;
               font-weight: 800;
-              font-size: 2.2mm;
-              color: #143872;
-              overflow: hidden;
-              flex-shrink: 0;
+              color: #0d50b5;
+              letter-spacing: 0.5px;
             }
-            .photo-box img {
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-            }
-            .info-table {
-              flex: 1;
-              font-size: 2.3mm;
-              line-height: 1.45;
-              color: #0f172a;
-              font-weight: 600;
-            }
-            .info-row {
-              display: flex;
-              margin-bottom: 0.6mm;
-            }
-            .info-label {
-              width: 16mm;
-              font-weight: 700;
-              color: #0f172a;
-            }
-            .info-colon {
-              width: 2mm;
-              font-weight: 700;
-            }
-            .info-val {
-              flex: 1;
-              font-weight: 700;
-              color: #000000;
-            }
-            .rules-list {
-              font-size: 2mm;
-              line-height: 1.4;
-              color: #1e293b;
-              font-weight: 600;
-              padding-left: 3mm;
-            }
-            .rules-list li {
-              margin-bottom: 0.8mm;
-            }
-            .ttd-box {
-              width: 25mm;
-              height: 28mm;
-              border-radius: 2mm;
-              background: #d4e5f7;
-              border: 0.4mm solid #143872;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: space-between;
-              padding: 1.5mm 1mm;
-              text-align: center;
-              flex-shrink: 0;
-              box-sizing: border-box;
-            }
-            .ttd-title {
-              font-size: 1.9mm;
-              font-weight: 800;
-              color: #143872;
-              line-height: 1.15;
-            }
-            .stamp-badge {
-              width: 11mm;
-              height: 11mm;
-              border: 0.3mm dashed #1e40af;
-              border-radius: 50%;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              color: #1e40af;
-              font-size: 1.4mm;
-              font-weight: 800;
-              text-align: center;
-              transform: rotate(-8deg);
-              opacity: 0.9;
-              line-height: 1;
-            }
-            .ttd-name {
-              font-size: 1.9mm;
-              font-weight: 800;
-              color: #0f172a;
-              border-top: 0.3mm solid #143872;
-              width: 100%;
-              padding-top: 0.6mm;
-            }
-            .bottom-bar {
-              height: 2.5mm;
-              background: #143872;
-            }
-            .print-note {
+            .header-print p {
               font-size: 11px;
               color: #64748b;
-              text-align: center;
               margin-top: 4px;
+            }
+            .print-grid {
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+              gap: 20mm;
+              justify-content: center;
+              align-items: center;
+            }
+            .kta-card {
+              width: 53.98mm;
+              height: 85.60mm;
+              border-radius: 3.5mm;
+              overflow: hidden;
+              position: relative;
+              background: #ffffff;
+              box-shadow: 0 0 0 0.3mm #0d50b5;
+              page-break-inside: avoid;
+              box-sizing: border-box;
             }
           </style>
         </head>
         <body>
-          <h2 style="font-size: 14px; color: #143872; font-weight: 800; text-align: center; margin-bottom: 2px;">
-            KARTU TANDA ANGGOTA (KTA) RESMI FORUM UMKM KECAMATAN TANGERANG
-          </h2>
-          <div class="print-note">Ukuran standar kartu ID (ISO 7810 ID-1 / PVC Card: 85.60 mm × 53.98 mm). Skala 1:1 siap potong & cetak.</div>
-          <div style="margin-top: 15px;">
+          <div class="header-print">
+            <h2>KARTU TANDA ANGGOTA RESMI FORUM UMKM KUAT</h2>
+            <p>Kecamatan Tangerang &bull; Ukuran Standar ISO 7810 ID-1 Portrait (53.98 mm &times; 85.60 mm) &bull; Skala 1:1</p>
+          </div>
+          <div class="print-grid">
             ${printArea.innerHTML}
           </div>
         </body>
@@ -290,16 +158,18 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 my-6 flex flex-col max-h-[94vh]">
+      <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 my-6 flex flex-col max-h-[94vh]">
         {/* Top Modal Header */}
-        <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-teal-400" />
+        <div className="p-4 bg-slate-950 text-white flex items-center justify-between border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <CreditCard className="w-5 h-5" />
+            </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base text-white">
-                Kartu Anggota UMK Kecamatan Tangerang
+                Kartu Tanda Anggota (KTA) UMKM KUAT
               </h3>
-              <p className="text-[11px] text-teal-300 font-mono">
+              <p className="text-[11px] text-blue-300 font-mono">
                 {member.memberNumber} &bull; {member.fullName}
               </p>
             </div>
@@ -308,14 +178,14 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrintKTA}
-              className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer transition-all hover:scale-105"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / Simpan PDF KTA</span>
+              <span>Cetak / PDF KTA</span>
             </button>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white p-1 rounded-lg"
+              className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -353,186 +223,264 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
           <div className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-1 rounded-md text-[11px] font-bold">
             <CreditCard className="w-3.5 h-3.5 text-blue-700" />
-            <span>Ukuran Kartu: 85.60 mm × 53.98 mm (Standar CR-80)</span>
+            <span>Ukuran Standar ID Card: 53.98 mm &times; 85.60 mm (Portrait CR-80)</span>
           </div>
         </div>
 
         {/* Card Canvas Scroll Area */}
-        <div className="p-4 sm:p-8 bg-slate-200/80 overflow-y-auto flex flex-col items-center justify-center space-y-8">
-          <div id="kta-cards-container" className="flex flex-col items-center gap-8 w-full max-w-[480px]">
-            {/* 1. FRONT CARD (TAMPILAN DEPAN) */}
+        <div className="p-6 sm:p-10 bg-slate-200/90 overflow-y-auto flex items-center justify-center">
+          <div
+            id="kta-cards-container"
+            className="flex flex-col sm:flex-row items-center justify-center gap-8 w-full max-w-3xl"
+          >
+            {/* ======================================================== */}
+            {/* 1. FRONT CARD (TAMPILAN DEPAN)                           */}
+            {/* ======================================================== */}
             {(activeSide === 'both' || activeSide === 'front') && (
-              <div className="kta-card w-full aspect-[85.6/53.98] bg-white rounded-[18px] sm:rounded-[20px] overflow-hidden shadow-xl border border-slate-300 relative flex flex-col justify-between select-none">
-                {/* Header Blue Bar */}
-                <div className="bg-[#143872] h-[22%] min-h-[52px] sm:min-h-[64px] relative flex items-center justify-end px-4 sm:px-5 text-white">
-                  {/* Round Official Logo on Left */}
-                  <div className="absolute left-[14px] sm:left-[18px] top-[6px] sm:top-[8px] w-[62px] h-[62px] sm:w-[74px] sm:h-[74px] rounded-full bg-white border-[3px] border-[#143872] overflow-hidden shadow-md z-20 flex items-center justify-center">
-                    <img
-                      src={OFFICIAL_LOGO_URL}
-                      alt="Logo UMKM KUAT"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+              <div className="kta-card w-[295px] sm:w-[320px] aspect-[53.98/85.60] bg-white rounded-[22px] overflow-hidden shadow-2xl border border-slate-300 relative flex flex-col justify-between select-none">
+                {/* SVG Geometric Background Layers */}
+                <div className="absolute inset-0 pointer-events-none z-0">
+                  <svg
+                    viewBox="0 0 320 508"
+                    className="w-full h-full"
+                    preserveAspectRatio="none"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {/* Top-Right Sky Accent */}
+                    <polygon points="215,0 270,0 200,80 170,70" fill="#00A3FF" />
+                    <polygon points="270,0 320,0 320,35 240,65" fill="#38BDF8" opacity="0.6" />
 
-                  {/* Header Title */}
-                  <div className="text-right leading-tight">
-                    <div className="font-extrabold text-[13px] sm:text-[16px] tracking-wide text-white">
-                      KARTU ANGGOTA UMK
-                    </div>
-                    <div className="font-extrabold text-[13px] sm:text-[16px] tracking-wide text-white">
-                      KECAMATAN TANGERANG
-                    </div>
-                  </div>
+                    {/* Top-Left Main Royal Blue Diagonal Shape */}
+                    <polygon points="0,0 220,0 185,75 115,145 0,225" fill="#0D50B5" />
+
+                    {/* Mid-Left Cyan Accent Triangle */}
+                    <polygon points="0,225 60,195 0,270" fill="#00A3FF" />
+
+                    {/* Bottom Layered Polygon Accents */}
+                    <polygon points="0,455 125,508 0,508" fill="#0D50B5" />
+                    <polygon points="65,508 230,452 320,470 320,508" fill="#00A3FF" />
+                    <polygon points="150,508 320,465 320,508" fill="#093C8A" />
+                  </svg>
                 </div>
 
-                {/* Separator Stripe Line */}
-                <div className="h-[3px] sm:h-[4px] bg-[#143872] border-t-[1px] border-white"></div>
-
-                {/* Card Body */}
-                <div className="flex-1 flex items-center px-3.5 sm:px-5 py-2 sm:py-3 gap-2.5 sm:gap-4 bg-gradient-to-br from-white via-white to-blue-50/40 min-h-0">
-                  {/* Photo Frame (3x4 cm ratio) */}
-                  <div className="w-[88px] sm:w-[110px] h-[115px] sm:h-[145px] rounded-xl sm:rounded-[14px] bg-[#D4E5F7] border-[1.5px] sm:border-2 border-[#143872] overflow-hidden flex flex-col items-center justify-center text-center flex-shrink-0 shadow-2xs">
-                    {member.memberPhoto ? (
+                {/* Card Content Layer */}
+                <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-5">
+                  {/* Top Header: Logo + Organization Title */}
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-full bg-white p-0.5 border-2 border-white shadow-md overflow-hidden flex-shrink-0">
                       <img
-                        src={member.memberPhoto}
-                        alt={member.fullName}
+                        src={OFFICIAL_LOGO_URL}
+                        alt="Logo UMKM KUAT"
                         className="w-full h-full object-cover"
                       />
-                    ) : (
-                      <div className="p-1.5 text-[#143872] font-black leading-tight">
-                        <div className="text-[11px] sm:text-[13px] uppercase">FOTO</div>
-                        <div className="text-[11px] sm:text-[13px] uppercase">ANGGOTA</div>
-                        <div className="text-[10px] sm:text-[12px] font-bold mt-1 text-slate-700">3x4 CM</div>
+                    </div>
+                    <div className="leading-tight text-white drop-shadow-xs">
+                      <div className="font-extrabold text-[12px] sm:text-[13px] tracking-wide font-heading">
+                        FORUM UMKM KUAT
                       </div>
-                    )}
+                      <div className="font-semibold text-[9px] sm:text-[10px] text-sky-200 tracking-wider uppercase">
+                        Kecamatan Tangerang
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Info Table */}
-                  <div className="flex-1 text-[10.5px] sm:text-[12px] text-slate-900 font-semibold space-y-1 sm:space-y-1.5 leading-tight min-w-0">
-                    <div className="flex items-start">
-                      <span className="w-[70px] sm:w-[85px] text-slate-800 font-bold flex-shrink-0">No. Anggota</span>
-                      <span className="w-[10px] sm:w-[12px] font-bold">:</span>
-                      <span className="flex-1 font-bold text-slate-950 font-mono text-[10px] sm:text-[12px] truncate">
+                  {/* Circular Member Photo Avatar */}
+                  <div className="flex justify-center -mt-2">
+                    <div className="relative">
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-white shadow-xl">
+                        <div className="w-full h-full rounded-full border-[4px] border-[#00A3FF] overflow-hidden bg-slate-100 flex items-center justify-center">
+                          {member.memberPhoto ? (
+                            <img
+                              src={member.memberPhoto}
+                              alt={member.fullName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-slate-400">
+                              <User className="w-12 h-12 text-[#0D50B5]" />
+                              <span className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">
+                                Pas Foto
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Member Name & Job Position */}
+                  <div className="text-center space-y-0.5 pt-1">
+                    <h2 className="font-black text-[#0D50B5] text-[15px] sm:text-[17px] font-heading tracking-tight leading-tight line-clamp-1">
+                      {member.fullName.toUpperCase()}
+                    </h2>
+                    <div className="font-extrabold text-slate-800 text-[11px] sm:text-[12px] tracking-wider uppercase font-heading">
+                      {member.businessName}
+                    </div>
+                    <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">
+                      {member.category} &bull; ANGGOTA BINAAN
+                    </div>
+                  </div>
+
+                  {/* Data Fields Table */}
+                  <div className="bg-white/80 backdrop-blur-2xs rounded-xl p-2.5 border border-slate-200/80 shadow-2xs space-y-1 text-[10px] sm:text-[11px] font-semibold">
+                    <div className="flex items-center">
+                      <span className="w-[32%] text-slate-500 font-bold uppercase text-[9.5px]">ID ANGGOTA</span>
+                      <span className="w-[4%] font-bold text-slate-400">:</span>
+                      <span className="w-[64%] font-mono font-bold text-[#0D50B5] truncate">
                         {member.memberNumber}
                       </span>
                     </div>
 
-                    <div className="flex items-start">
-                      <span className="w-[70px] sm:w-[85px] text-slate-800 font-bold flex-shrink-0">Nama Pemilik</span>
-                      <span className="w-[10px] sm:w-[12px] font-bold">:</span>
-                      <span className="flex-1 font-bold text-slate-950 truncate">
-                        {member.fullName}
-                      </span>
-                    </div>
-
-                    <div className="flex items-start">
-                      <span className="w-[70px] sm:w-[85px] text-slate-800 font-bold flex-shrink-0">Nama Usaha</span>
-                      <span className="w-[10px] sm:w-[12px] font-bold">:</span>
-                      <span className="flex-1 font-bold text-[#143872] truncate">
-                        {member.businessName}
-                      </span>
-                    </div>
-
-                    <div className="flex items-start">
-                      <span className="w-[70px] sm:w-[85px] text-slate-800 font-bold flex-shrink-0">NIB</span>
-                      <span className="w-[10px] sm:w-[12px] font-bold">:</span>
-                      <span className="flex-1 font-bold text-slate-900 font-mono text-[10.5px] sm:text-[12px] truncate">
+                    <div className="flex items-center">
+                      <span className="w-[32%] text-slate-500 font-bold uppercase text-[9.5px]">NIK / NIB</span>
+                      <span className="w-[4%] font-bold text-slate-400">:</span>
+                      <span className="w-[64%] font-mono font-bold text-slate-900 truncate">
                         {member.legalities && member.legalities.includes('NIB')
                           ? member.legalities
                           : member.nik || 'Terverifikasi OSS'}
                       </span>
                     </div>
 
-                    <div className="flex items-start">
-                      <span className="w-[70px] sm:w-[85px] text-slate-800 font-bold flex-shrink-0">Jenis Usaha</span>
-                      <span className="w-[10px] sm:w-[12px] font-bold">:</span>
-                      <span className="flex-1 font-bold text-slate-950 truncate">
-                        {member.category}
+                    <div className="flex items-center">
+                      <span className="w-[32%] text-slate-500 font-bold uppercase text-[9.5px]">KELURAHAN</span>
+                      <span className="w-[4%] font-bold text-slate-400">:</span>
+                      <span className="w-[64%] font-bold text-slate-900 truncate">
+                        Kel. {member.kelurahan}
                       </span>
                     </div>
 
-                    <div className="flex items-start">
-                      <span className="w-[70px] sm:w-[85px] text-slate-800 font-bold flex-shrink-0">Valid Thru</span>
-                      <span className="w-[10px] sm:w-[12px] font-bold">:</span>
-                      <span className="flex-1 font-bold text-slate-950 font-mono">
+                    <div className="flex items-center">
+                      <span className="w-[32%] text-slate-500 font-bold uppercase text-[9.5px]">KONTAK/WA</span>
+                      <span className="w-[4%] font-bold text-slate-400">:</span>
+                      <span className="w-[64%] font-bold text-slate-900 truncate">
+                        {member.businessPhone || member.phone || '-'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center">
+                      <span className="w-[32%] text-slate-500 font-bold uppercase text-[9.5px]">BERLAKU S/D</span>
+                      <span className="w-[4%] font-bold text-slate-400">:</span>
+                      <span className="w-[64%] font-mono font-bold text-emerald-700">
                         {validThru}
                       </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom Bar */}
-                <div className="h-[10px] sm:h-[12px] bg-[#143872] w-full"></div>
+                  {/* Bottom Website Tagline */}
+                  <div className="text-center pt-1 pb-1">
+                    <span className="text-[9px] font-semibold text-slate-600 tracking-wider">
+                      www.umkmkuattangerang.id
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* 2. BACK CARD (TAMPILAN BELAKANG) */}
+            {/* ======================================================== */}
+            {/* 2. BACK CARD (TAMPILAN BELAKANG)                         */}
+            {/* ======================================================== */}
             {(activeSide === 'both' || activeSide === 'back') && (
-              <div className="kta-card w-full aspect-[85.6/53.98] bg-white rounded-[18px] sm:rounded-[20px] overflow-hidden shadow-xl border border-slate-300 relative flex flex-col justify-between select-none">
-                {/* Header Blue Bar */}
-                <div className="bg-[#143872] h-[22%] min-h-[52px] sm:min-h-[64px] relative flex items-center justify-end px-4 sm:px-5 text-white">
-                  {/* Round Official Logo on Left */}
-                  <div className="absolute left-[14px] sm:left-[18px] top-[6px] sm:top-[8px] w-[62px] h-[62px] sm:w-[74px] sm:h-[74px] rounded-full bg-white border-[3px] border-[#143872] overflow-hidden shadow-md z-20 flex items-center justify-center">
-                    <img
-                      src={OFFICIAL_LOGO_URL}
-                      alt="Logo UMKM KUAT"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+              <div className="kta-card w-[295px] sm:w-[320px] aspect-[53.98/85.60] bg-white rounded-[22px] overflow-hidden shadow-2xl border border-slate-300 relative flex flex-col justify-between select-none">
+                {/* SVG Geometric Background Layers */}
+                <div className="absolute inset-0 pointer-events-none z-0">
+                  <svg
+                    viewBox="0 0 320 508"
+                    className="w-full h-full"
+                    preserveAspectRatio="none"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {/* Top-Right Royal Blue Polygon Shape */}
+                    <polygon points="135,0 320,0 320,230 205,145 155,70" fill="#0D50B5" />
 
-                  {/* Header Title */}
-                  <div className="text-right leading-tight">
-                    <div className="font-extrabold text-[13px] sm:text-[16px] tracking-wide text-white">
-                      KARTU ANGGOTA UMK
-                    </div>
-                    <div className="font-extrabold text-[13px] sm:text-[16px] tracking-wide text-white">
-                      KECAMATAN TANGERANG
-                    </div>
-                  </div>
+                    {/* Top-Right Cyan Accent Band */}
+                    <polygon points="90,0 135,0 155,70 120,60" fill="#00A3FF" />
+                    <polygon points="320,230 260,195 320,275" fill="#00A3FF" />
+
+                    {/* Bottom Layered Polygon Accents (Mirroring Front) */}
+                    <polygon points="0,455 125,508 0,508" fill="#0D50B5" />
+                    <polygon points="65,508 230,452 320,470 320,508" fill="#00A3FF" />
+                    <polygon points="150,508 320,465 320,508" fill="#093C8A" />
+                  </svg>
                 </div>
 
-                {/* Separator Stripe Line */}
-                <div className="h-[3px] sm:h-[4px] bg-[#143872] border-t-[1px] border-white"></div>
-
-                {/* Card Body Back */}
-                <div className="flex-1 flex items-center px-3.5 sm:px-5 py-2 sm:py-3 gap-2.5 sm:gap-4 bg-gradient-to-br from-white via-white to-blue-50/40 min-h-0">
-                  {/* Signature and Stamp Box */}
-                  <div className="w-[110px] sm:w-[135px] h-[115px] sm:h-[145px] rounded-xl sm:rounded-[14px] bg-[#D4E5F7] border-[1.5px] sm:border-2 border-[#143872] flex flex-col items-center justify-between p-1.5 sm:p-2 text-center flex-shrink-0 shadow-2xs">
-                    <div className="text-[9.5px] sm:text-[11px] font-black text-[#143872] leading-tight">
-                      TTD & CAP<br />KETUA FORUM
-                    </div>
-
-                    {/* Stamp and digital sign mark */}
-                    <div className="relative w-12 h-10 sm:w-16 sm:h-12 flex items-center justify-center">
-                      <div className="stamp-badge w-11 h-11 sm:w-14 sm:h-14 rounded-full border-[1.5px] sm:border-2 border-dashed border-blue-700 flex flex-col items-center justify-center text-[6.5px] sm:text-[7.5px] font-black text-blue-800 rotate-[-8deg] opacity-80 leading-none">
-                        <span>FORUM UMKM</span>
-                        <span className="text-[7.5px] sm:text-[9px] text-red-600 font-bold my-0.5">KUAT</span>
-                        <span>KEC. TANGERANG</span>
+                {/* Card Content Layer */}
+                <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-5">
+                  {/* Top-Right Logo Lockup */}
+                  <div className="flex items-center justify-end gap-2.5">
+                    <div className="text-right leading-tight text-white drop-shadow-xs">
+                      <div className="font-extrabold text-[12px] sm:text-[13px] tracking-wide font-heading">
+                        FORUM UMKM KUAT
+                      </div>
+                      <div className="font-semibold text-[9px] sm:text-[10px] text-sky-200 tracking-wider uppercase">
+                        Kecamatan Tangerang
                       </div>
                     </div>
-
-                    {/* Official Name */}
-                    <div className="w-full border-t-[1.5px] border-[#143872] pt-0.5 sm:pt-1">
-                      <div className="font-black text-[9.5px] sm:text-[11px] text-slate-900 tracking-wider">
-                        EMUS MUSLIHANT
-                      </div>
+                    <div className="w-10 h-10 rounded-full bg-white p-0.5 border-2 border-white shadow-md overflow-hidden flex-shrink-0">
+                      <img
+                        src={OFFICIAL_LOGO_URL}
+                        alt="Logo UMKM KUAT"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   </div>
 
-                  {/* Rules & Information */}
-                  <div className="flex-1 text-[9.5px] sm:text-[11px] text-slate-800 leading-snug font-medium pl-1">
-                    <ol className="list-decimal pl-3.5 space-y-0.5 sm:space-y-1">
-                      <li>Kartu tanda anggota resmi Forum UMKM Kecamatan Tangerang.</li>
-                      <li>Memperkuat identitas nama usaha binaan Kecamatan Tangerang.</li>
-                      <li>Hak akses program pembinaan, pelatihan, perizinan, & bazar.</li>
-                      <li>Kartu ini berlaku sah dan tidak dapat dipindahtangankan.</li>
-                      <li>Menjunjung tinggi etika usaha & integritas UMKM Tangerang.</li>
-                    </ol>
+                  {/* Terms and Conditions Section */}
+                  <div className="space-y-2 pt-2">
+                    <div className="space-y-1">
+                      <h3 className="font-black text-[#0D50B5] text-[13px] sm:text-[15px] font-heading tracking-wide leading-tight">
+                        TERMS<br />AND CONDITIONS :
+                      </h3>
+                      <div className="w-10 h-[3px] bg-[#0D50B5] rounded-full"></div>
+                    </div>
+
+                    <ul className="space-y-1.5 text-[9.5px] sm:text-[10.5px] text-slate-700 leading-relaxed font-medium">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#0D50B5] font-black leading-none text-xs mt-0.5">&bull;</span>
+                        <span>Kartu ini adalah bukti sah keanggotaan Forum UMKM KUAT Kecamatan Tangerang.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#0D50B5] font-black leading-none text-xs mt-0.5">&bull;</span>
+                        <span>Berhak memperoleh pendampingan NIB OSS, sertifikasi Halal, pelatihan wirausaha, dan kurasi bazar.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#0D50B5] font-black leading-none text-xs mt-0.5">&bull;</span>
+                        <span>Kartu bersifat personal dan tidak dapat dipindahtangankan kepada pihak lain.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#0D50B5] font-black leading-none text-xs mt-0.5">&bull;</span>
+                        <span>Wajib menjaga mutu produk, etika usaha, dan nama baik pelaku UMKM Kota Tangerang.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* QR Code Verification Box */}
+                  <div className="flex flex-col items-center justify-center py-2 space-y-1">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200/90 shadow-md">
+                      <img
+                        src={qrCodeUrl}
+                        alt="QR Code Verifikasi KTA"
+                        className="w-18 h-18 sm:w-20 sm:h-20 object-contain"
+                        onError={(e) => {
+                          // Fallback to stylized SVG QR representation if offline
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      <QrCode className="w-18 h-18 text-[#0D50B5] hidden [img[style*='display: none'] ~ &]:block" />
+                    </div>
+                    <span className="text-[8.5px] sm:text-[9.5px] font-bold text-[#0D50B5] tracking-widest uppercase">
+                      Scan untuk Verifikasi
+                    </span>
+                  </div>
+
+                  {/* Secretariat Note */}
+                  <div className="text-center pb-1">
+                    <p className="text-[8.5px] text-slate-500 italic">
+                      Sekretariat: Kantor Kecamatan Tangerang, Kota Tangerang
+                    </p>
                   </div>
                 </div>
-
-                {/* Bottom Bar */}
-                <div className="h-[10px] sm:h-[12px] bg-[#143872] w-full"></div>
               </div>
             )}
           </div>
@@ -541,8 +489,8 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         {/* Modal Footer Controls */}
         <div className="p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <CheckCircle2 className="w-4 h-4 text-teal-600" />
-            <span>Format kartu ID Card standar (PVC / Cetak Kertas Foto)</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Format kartu ID Card vertikal standar (PVC Card / Kertas Foto Glossy)</span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -554,10 +502,10 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             </button>
             <button
               onClick={handlePrintKTA}
-              className="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 cursor-pointer transition-all"
+              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / Cetak ke PDF</span>
+              <span>Cetak / Simpan ke PDF</span>
             </button>
           </div>
         </div>

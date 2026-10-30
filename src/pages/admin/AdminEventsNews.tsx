@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ForumEvent, Article } from '../../types';
 import { dbService } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
+import { compressImage } from '../../utils/image';
 import {
   Calendar,
   Newspaper,
@@ -15,6 +16,9 @@ import {
   MapPin,
   X,
   ExternalLink,
+  Upload,
+  Image as ImageIcon,
+  Link as LinkIcon,
 } from 'lucide-react';
 
 interface AdminEventsNewsProps {
@@ -32,6 +36,12 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 }) => {
   const { profile, canManageEventsNews } = useAuth();
   const [section, setSection] = useState<'events' | 'articles'>('events');
+
+  // File upload refs and compression states
+  const eventPosterRef = useRef<HTMLInputElement>(null);
+  const articleImageRef = useRef<HTMLInputElement>(null);
+  const [isCompressingEvent, setIsCompressingEvent] = useState(false);
+  const [isCompressingArticle, setIsCompressingArticle] = useState(false);
 
   // Event modal state
   const [eventModalOpen, setEventModalOpen] = useState(openAddEventInitially);
@@ -68,6 +78,43 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
+
+  // Image Upload Handlers with auto-compression
+  const handleEventPosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsCompressingEvent(true);
+      const compressed = await compressImage(file, 1000, 750, 0.82);
+      setEventForm((prev) => ({
+        ...prev,
+        posterUrl: compressed,
+      }));
+    } catch (err: any) {
+      alert('Gagal memproses gambar poster: ' + (err?.message || 'Format tidak didukung'));
+    } finally {
+      setIsCompressingEvent(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleArticleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsCompressingArticle(true);
+      const compressed = await compressImage(file, 1000, 750, 0.82);
+      setArticleForm((prev) => ({
+        ...prev,
+        imageUrl: compressed,
+      }));
+    } catch (err: any) {
+      alert('Gagal memproses gambar sampul berita: ' + (err?.message || 'Format tidak didukung'));
+    } finally {
+      setIsCompressingArticle(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   // Event handlers
   const handleOpenAddEvent = () => {
@@ -522,35 +569,102 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    URL Gambar Poster
+              {/* GAMBAR POSTER / SAMPUL KEGIATAN */}
+              <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Foto / Gambar Poster Kegiatan
                   </label>
-                  <input
-                    type="url"
-                    value={eventForm.posterUrl}
-                    onChange={(e) => setEventForm({ ...eventForm, posterUrl: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
-                  />
+                  {eventForm.posterUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setEventForm({ ...eventForm, posterUrl: '' })}
+                      className="text-[11px] font-semibold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Hapus Foto
+                    </button>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Status Publikasi
-                  </label>
-                  <select
-                    value={eventForm.status}
-                    onChange={(e) => setEventForm({ ...eventForm, status: e.target.value as any })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold"
-                  >
-                    <option value="terbit">Terbit (Muncul di Website Publik)</option>
-                    <option value="draf">Draf (Hanya Admin)</option>
-                    <option value="selesai">Selesai</option>
-                    <option value="arsip">Arsip</option>
-                  </select>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5">
+                  {/* Thumbnail Preview */}
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs relative group">
+                    {eventForm.posterUrl ? (
+                      <img
+                        src={eventForm.posterUrl}
+                        alt="Preview Poster"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center p-2 text-slate-400">
+                        <ImageIcon className="w-7 h-7 mx-auto mb-1 text-slate-300" />
+                        <span className="text-[10px] block leading-tight font-medium">Belum ada foto</span>
+                      </div>
+                    )}
+                    {isCompressingEvent && (
+                      <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white text-[10px] font-bold">
+                        Memproses...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions & URL Input */}
+                  <div className="flex-1 w-full space-y-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isCompressingEvent}
+                        onClick={() => eventPosterRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isCompressingEvent ? 'Mengompres Foto...' : eventForm.posterUrl ? 'Ganti Foto' : 'Upload Foto Poster'}</span>
+                      </button>
+                      <input
+                        ref={eventPosterRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEventPosterUpload}
+                        className="hidden"
+                      />
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        JPG, PNG, WebP (otomatis dikompres)
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                        Atau Masukkan / Edit URL Gambar:
+                      </label>
+                      <div className="relative">
+                        <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={eventForm.posterUrl}
+                          onChange={(e) => setEventForm({ ...eventForm, posterUrl: e.target.value })}
+                          placeholder="https://contoh-gambar.com/poster.jpg atau unggah foto"
+                          className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-teal-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Status Publikasi
+                </label>
+                <select
+                  value={eventForm.status}
+                  onChange={(e) => setEventForm({ ...eventForm, status: e.target.value as any })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold"
+                >
+                  <option value="terbit">Terbit (Muncul di Website Publik)</option>
+                  <option value="draf">Draf (Hanya Admin)</option>
+                  <option value="selesai">Selesai</option>
+                  <option value="arsip">Arsip</option>
+                </select>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
@@ -659,34 +773,101 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    URL Gambar Sampul
+              {/* GAMBAR SAMPUL ARTIKEL BERITA */}
+              <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Foto / Gambar Sampul Artikel
                   </label>
-                  <input
-                    type="url"
-                    value={articleForm.imageUrl}
-                    onChange={(e) => setArticleForm({ ...articleForm, imageUrl: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
-                  />
+                  {articleForm.imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setArticleForm({ ...articleForm, imageUrl: '' })}
+                      className="text-[11px] font-semibold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Hapus Foto
+                    </button>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Status Publikasi
-                  </label>
-                  <select
-                    value={articleForm.status}
-                    onChange={(e) => setArticleForm({ ...articleForm, status: e.target.value as any })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold"
-                  >
-                    <option value="terbit">Terbit (Tampil di Publik)</option>
-                    <option value="draf">Draf (Hanya Admin)</option>
-                    <option value="arsip">Arsip</option>
-                  </select>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5">
+                  {/* Thumbnail Preview */}
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs relative group">
+                    {articleForm.imageUrl ? (
+                      <img
+                        src={articleForm.imageUrl}
+                        alt="Preview Sampul"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center p-2 text-slate-400">
+                        <ImageIcon className="w-7 h-7 mx-auto mb-1 text-slate-300" />
+                        <span className="text-[10px] block leading-tight font-medium">Belum ada foto</span>
+                      </div>
+                    )}
+                    {isCompressingArticle && (
+                      <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white text-[10px] font-bold">
+                        Memproses...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions & URL Input */}
+                  <div className="flex-1 w-full space-y-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isCompressingArticle}
+                        onClick={() => articleImageRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isCompressingArticle ? 'Mengompres Foto...' : articleForm.imageUrl ? 'Ganti Foto' : 'Upload Foto Sampul'}</span>
+                      </button>
+                      <input
+                        ref={articleImageRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleArticleImageUpload}
+                        className="hidden"
+                      />
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        JPG, PNG, WebP (otomatis dikompres)
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                        Atau Masukkan / Edit URL Gambar:
+                      </label>
+                      <div className="relative">
+                        <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={articleForm.imageUrl}
+                          onChange={(e) => setArticleForm({ ...articleForm, imageUrl: e.target.value })}
+                          placeholder="https://contoh-gambar.com/sampul-berita.jpg atau unggah foto"
+                          className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-teal-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Status Publikasi
+                </label>
+                <select
+                  value={articleForm.status}
+                  onChange={(e) => setArticleForm({ ...articleForm, status: e.target.value as any })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold"
+                >
+                  <option value="terbit">Terbit (Tampil di Publik)</option>
+                  <option value="draf">Draf (Hanya Admin)</option>
+                  <option value="arsip">Arsip</option>
+                </select>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">

@@ -1284,7 +1284,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
                       required
                       value={contactForm.whatsapp}
                       onChange={(e) => setContactForm({ ...contactForm, whatsapp: e.target.value })}
-                      placeholder="Contoh: 085880942565"
+                      placeholder="Contoh: 082258570582 / +62 82258570582"
                       className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:border-teal-500"
                     />
                     <p className="text-[10px] text-teal-600 font-medium mt-1">

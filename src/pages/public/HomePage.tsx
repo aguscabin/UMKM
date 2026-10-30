@@ -587,7 +587,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <ArrowRight className="w-4 h-4" />
               </button>
               <a
-                href="https://wa.me/6285880942565?text=Halo%20Pengurus%20Forum%20UMKM%20KUAT%20Kecamatan%20Tangerang,%20saya%20ingin%20mendaftarkan%20usaha%20saya"
+                href="https://wa.me/6282258570582?text=Halo%20Pengurus%20Forum%20UMKM%20KUAT%20Kecamatan%20Tangerang,%20saya%20ingin%20mendaftarkan%20usaha%20saya"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 text-slate-200 px-5 py-3.5 rounded-xl font-semibold text-sm border border-slate-700/80 transition-colors"

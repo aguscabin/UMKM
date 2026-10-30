@@ -1,0 +1,139 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default Deny All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // AUTH HELPER FUNCTIONS
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // System Security Rule 1: SUPER ADMIN CONTROL
+    function isBootstrapSuperAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'umkmkectangerang@gmail.com' ||
+        (request.auth.token.email != null && request.auth.token.email.matches('.*@tangerangkota\\.go\\.id$'))
+      );
+    }
+
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        isBootstrapSuperAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserDoc().role == 'super_admin')
+      );
+    }
+
+    // Admin Staff (Pengurus yang berwenang, excluding 'member')
+    function isAdminStaff() {
+      return isSignedIn() && (
+        isSuperAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserDoc().role in [
+           'pengurus_kecamatan',
+           'admin_keanggotaan',
+           'bendahara',
+           'admin_informasi',
+           'pengurus_kelurahan'
+         ])
+      );
+    }
+
+    function isFinanceAdmin() {
+      return isSignedIn() && (
+        isSuperAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserDoc().role == 'bendahara')
+      );
+    }
+
+    // USERS COLLECTION (Rule 1 & Rule 2: User management & Role immutability)
+    match /users/{userId} {
+      // User can read their own profile; Admin Staff can read users; Super Admin has full visibility
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdminStaff());
+      allow list: if isAdminStaff();
+      
+      // Rule 2: Self-registration default role must be 'member'. Only Super Admin can assign administrative roles.
+      allow create: if isSignedIn() && (
+        isSuperAdmin() || 
+        (request.auth.uid == userId && request.resource.data.role == 'member')
+      );
+
+      // Rule 1: Regular users cannot change their own role. Only Super Admin can assign/modify roles.
+      allow update: if isSignedIn() && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+      );
+
+      // Only Super Admin can delete users
+      allow delete: if isSuperAdmin();
+    }
+
+    // ADMINS MARKER COLLECTION
+    match /admins/{adminUid} {
+      allow read: if isAdminStaff();
+      allow write: if isSuperAdmin();
+    }
+
+    // MEMBERS COLLECTION (Direktori UMKM & Pendaftaran Mandiri)
+    match /members/{memberId} {
+      // Rule 3: Member can read their own record; Public can only read approved directory; Admin can read all
+      allow get: if resource.data.isPublicDirectory == true ||
+                    isAdminStaff() ||
+                    (isSignedIn() && resource.data.userId == request.auth.uid);
+
+      allow list: if isAdminStaff() || (resource.data.isPublicDirectory == true);
+
+      // Rule 3: Member can register their own profile; Admin Staff can register any member
+      allow create: if isAdminStaff() || (isSignedIn() && request.resource.data.userId == request.auth.uid);
+
+      // Member can update their own data; Admin Staff can update any member
+      allow update: if isAdminStaff() || (isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid);
+
+      // Only Admin Staff can delete member records
+      allow delete: if isAdminStaff();
+    }
+
+    // TRANSACTIONS COLLECTION (Rule 4: STRICT ISOLATION - Financial data strictly hidden from 'member')
+    match /transactions/{transactionId} {
+      allow read: if isFinanceAdmin();
+      allow create, update, delete: if isFinanceAdmin();
+    }
+
+    // EVENTS COLLECTION
+    match /events/{eventId} {
+      allow get, list: if resource.data.status in ['terbit', 'selesai'] || isAdminStaff();
+      allow create, update, delete: if isAdminStaff();
+    }
+
+    // ARTICLES COLLECTION (Kabar Berita)
+    match /articles/{articleId} {
+      allow get, list: if resource.data.status == 'terbit' || isAdminStaff();
+      allow create, update, delete: if isAdminStaff();
+    }
+
+    // ACTIVITY LOGS (Rule 4: Audit trails protected)
+    match /activity_logs/{logId} {
+      allow read: if isAdminStaff();
+      allow create: if isSignedIn();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // ORGANIZATION STRUCTURE & SETTINGS (Publik & Admin Website Profile)
+    match /org_structure/{memberId} {
+      allow read, write: if true;
+    }
+
+    match /org_settings/{settingId} {
+      allow read, write: if true;
+    }
+  }
+}

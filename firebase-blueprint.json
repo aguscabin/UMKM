@@ -1,0 +1,174 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Admin or officer user with role-based access control.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 150 },
+        "displayName": { "type": "string", "maxLength": 150 },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "pengurus_kecamatan", "admin_keanggotaan", "bendahara", "admin_informasi", "pengurus_kelurahan"]
+        },
+        "kelurahan": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Member": {
+      "title": "Member",
+      "description": "Registered UMKM member with business and contact profile.",
+      "type": "object",
+      "properties": {
+        "memberNumber": { "type": "string", "maxLength": 50 },
+        "fullName": { "type": "string", "maxLength": 150 },
+        "nik": { "type": "string", "maxLength": 20 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 150 },
+        "address": { "type": "string", "maxLength": 300 },
+        "kelurahan": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["aktif", "nonaktif", "pending"] },
+        "joinDate": { "type": "string", "maxLength": 30 },
+        "businessName": { "type": "string", "maxLength": 150 },
+        "category": { "type": "string", "maxLength": 80 },
+        "topProduct": { "type": "string", "maxLength": 150 },
+        "businessAddress": { "type": "string", "maxLength": 300 },
+        "businessPhone": { "type": "string", "maxLength": 30 },
+        "memberPhoto": { "type": "string" },
+        "productPhoto": { "type": "string" },
+        "legalities": { "type": "string", "maxLength": 300 },
+        "isPublicDirectory": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberNumber", "fullName", "kelurahan", "businessName", "category", "status", "isPublicDirectory"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial cashbook entry for income, expense, and dues.",
+      "type": "object",
+      "properties": {
+        "transactionNumber": { "type": "string", "maxLength": 50 },
+        "type": { "type": "string", "enum": ["pemasukan", "pengeluaran"] },
+        "category": { "type": "string", "maxLength": 100 },
+        "date": { "type": "string", "maxLength": 30 },
+        "amount": { "type": "number" },
+        "description": { "type": "string", "maxLength": 500 },
+        "recorderName": { "type": "string", "maxLength": 150 },
+        "recorderId": { "type": "string", "maxLength": 128 },
+        "approvalStatus": { "type": "string", "enum": ["disetujui", "menunggu", "ditolak"] },
+        "approvedBy": { "type": "string", "maxLength": 150 },
+        "proofUrl": { "type": "string", "maxLength": 500 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["transactionNumber", "type", "category", "date", "amount", "description", "approvalStatus"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Forum event, training, bazaar, or exhibition.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 3000 },
+        "date": { "type": "string", "maxLength": 30 },
+        "time": { "type": "string", "maxLength": 50 },
+        "location": { "type": "string", "maxLength": 250 },
+        "organizer": { "type": "string", "maxLength": 150 },
+        "posterUrl": { "type": "string", "maxLength": 500 },
+        "documentationUrls": { "type": "string", "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["terbit", "draf", "arsip", "selesai"] },
+        "targetAudience": { "type": "string", "maxLength": 150 },
+        "registrationUrl": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "date", "location", "status"]
+    },
+    "Article": {
+      "title": "Article",
+      "description": "News and educational article published by the forum.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 250 },
+        "excerpt": { "type": "string", "maxLength": 400 },
+        "content": { "type": "string", "maxLength": 10000 },
+        "category": { "type": "string", "maxLength": 80 },
+        "author": { "type": "string", "maxLength": 150 },
+        "authorId": { "type": "string", "maxLength": 128 },
+        "imageUrl": { "type": "string", "maxLength": 500 },
+        "publishedDate": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "enum": ["terbit", "draf", "arsip"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "category", "author", "status"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit trail log of administrative activities.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 150 },
+        "action": { "type": "string", "maxLength": 100 },
+        "target": { "type": "string", "maxLength": 200 },
+        "details": { "type": "string", "maxLength": 500 },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userName", "action", "target", "timestamp"]
+    },
+    "OrgStructureMember": {
+      "title": "OrgStructureMember",
+      "description": "Leadership and officer structure for Forum UMKM KUAT.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "maxLength": 100 },
+        "name": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 200 },
+        "image": { "type": "string" },
+        "order": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "name", "order"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "System admin users and role profiles."
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Admin privilege marker document."
+    },
+    "/members/{memberId}": {
+      "schema": { "$ref": "#/entities/Member" },
+      "description": "UMKM member directory and details."
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Internal financial transactions and cash flow."
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/Event" },
+      "description": "Community events and programs."
+    },
+    "/articles/{articleId}": {
+      "schema": { "$ref": "#/entities/Article" },
+      "description": "News and educational publications."
+    },
+    "/activity_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Administrative audit trail."
+    },
+    "/org_structure/{memberId}": {
+      "schema": { "$ref": "#/entities/OrgStructureMember" },
+      "description": "Official leadership and officer profiles."
+    }
+  }
+}

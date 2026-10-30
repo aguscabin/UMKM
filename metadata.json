@@ -1,0 +1,8 @@
+{
+  "name": "Remix UMKM MANAGEMENT - Forum UMKM KUAT Kec. Tangerang",
+  "description": "Portal Resmi \u0026 Sistem Manajemen Forum UMKM KUAT Kecamatan Tangerang - Direktori Usaha, Pembinaan, Keuangan, dan Publikasi UMKM.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

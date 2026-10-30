@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Printing styles for PDF & KTA export */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* When printing KTA card specifically */
+  body.printing-kta * {
+    visibility: hidden;
+  }
+
+  body.printing-kta #kta-printable-area,
+  body.printing-kta #kta-printable-area * {
+    visibility: visible;
+  }
+
+  body.printing-kta #kta-printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { dbService } from './services/db';
+import { dbService, INITIAL_MEMBERS } from './services/db';
 import { Member, Transaction, ForumEvent, Article, ActivityLog } from './types';
 import { Navbar } from './components/public/Navbar';
 import { Footer } from './components/public/Footer';
@@ -35,8 +35,21 @@ function MainApp() {
   const [selectedEvent, setSelectedEvent] = useState<ForumEvent | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
-  // Data Store
-  const [members, setMembers] = useState<Member[]>([]);
+  // Data Store with safe immediate initial state (prevents empty screen flash on mobile)
+  const [members, setMembers] = useState<Member[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('umkm_mgmt_members');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    return INITIAL_MEMBERS;
+  });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [events, setEvents] = useState<ForumEvent[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -57,7 +70,9 @@ function MainApp() {
         dbService.getArticles(),
         dbService.getLogs(),
       ]);
-      setMembers(m);
+      if (m && m.length > 0) {
+        setMembers(m);
+      }
       setTransactions(t);
       setEvents(e);
       setArticles(a);
@@ -71,6 +86,20 @@ function MainApp() {
 
   useEffect(() => {
     loadAllData();
+
+    // Listen for cross-component member updates
+    const handleMembersUpdated = (e: any) => {
+      if (e.detail && Array.isArray(e.detail) && e.detail.length > 0) {
+        setMembers(e.detail);
+      } else {
+        dbService.getMembers().then((res) => {
+          if (res && res.length > 0) setMembers(res);
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('umkm_members_updated', handleMembersUpdated);
+
     try {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('tab') === 'daftar') {
@@ -79,6 +108,10 @@ function MainApp() {
     } catch (e) {
       // ignore
     }
+
+    return () => {
+      window.removeEventListener('umkm_members_updated', handleMembersUpdated);
+    };
   }, []);
 
   // Public View Render

@@ -38,9 +38,9 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
   const validThru = computeValidThru();
 
   // Verification URL for QR code
-  const verifyUrl = typeof window !== 'undefined'
+  const verifyUrl = typeof window !== 'undefined' && window.location.origin.includes('netlify.app')
     ? `${window.location.origin}?tab=direktori&search=${encodeURIComponent(member.memberNumber)}`
-    : `https://umkmkuat-tangerang.id/verify/${member.memberNumber}`;
+    : `https://www.umkmkectangerang.netlify.app/?tab=direktori&search=${encodeURIComponent(member.memberNumber)}`;
 
   // Direct QR Code generator URL with matching Royal Blue color (#0D50B5)
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
@@ -369,8 +369,8 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
                   {/* Bottom Website Tagline */}
                   <div className="text-center pt-1 pb-1">
-                    <span className="text-[9px] font-semibold text-slate-600 tracking-wider">
-                      www.umkmkuattangerang.id
+                    <span className="text-[8.5px] sm:text-[9.5px] font-semibold text-slate-600 tracking-wider">
+                      www.umkmkectangerang.netlify.app
                     </span>
                   </div>
                 </div>

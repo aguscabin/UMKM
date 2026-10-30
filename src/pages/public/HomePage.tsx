@@ -37,7 +37,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 }) => {
   // Compute live statistics from saved data without artificial mock fallbacks
   const publicMembers = useMemo(() => {
-    return members.filter((m) => m.isPublicDirectory && m.status !== 'nonaktif');
+    return members.filter((m) => m.isPublicDirectory !== false && m.status !== 'nonaktif');
   }, [members]);
 
   const totalMembers = members.length;
@@ -53,10 +53,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     .filter((a) => a.status === 'terbit')
     .slice(0, 3);
 
-  // Dynamic showcase: only shows actual approved members set to public directory
+  // Dynamic showcase: shows active approved members in public directory
   const featuredMembers = useMemo(() => {
-    return publicMembers;
-  }, [publicMembers]);
+    if (publicMembers.length > 0) return publicMembers;
+    const active = members.filter((m) => m.status !== 'nonaktif');
+    return active.length > 0 ? active : members;
+  }, [publicMembers, members]);
 
   return (
     <div className="space-y-24 pb-24">

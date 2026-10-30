@@ -56,17 +56,16 @@ export const ContactPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
       {/* Title */}
       <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold uppercase tracking-wider">
-          <MessageSquare className="w-3.5 h-3.5 text-teal-600" />
-          <span>Layanan Informasi & Aduan</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+        <span className="text-xs font-bold uppercase tracking-widest text-teal-700">
+          Layanan Informasi & Aduan
+        </span>
+        <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
           Hubungi Sekretariat Forum UMKM KUAT
         </h1>
-        <p className="text-slate-600 text-sm sm:text-base">
+        <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
           Konsultasikan kebutuhan perizinan usaha Anda, tanyakan informasi keanggotaan, atau sampaikan aspirasi Anda kepada pengurus Kecamatan Tangerang.
         </p>
       </div>

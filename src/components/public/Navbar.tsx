@@ -46,28 +46,30 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-      {/* Top Banner Alert / Info Bar */}
-      <div className="bg-slate-900 text-slate-300 px-4 py-1.5 text-xs font-medium">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+      {/* Top Civic Banner */}
+      <div className="bg-slate-950 text-slate-300 px-4 py-2 text-xs border-b border-slate-800/80 font-normal">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-400"></span>
             </span>
-            <span>Portal Resmi Forum UMKM KUAT &mdash; Kecamatan Tangerang, Kota Tangerang</span>
+            <span className="text-slate-300 tracking-tight font-medium">
+              Portal Resmi Forum UMKM KUAT &mdash; Kecamatan Tangerang, Kota Tangerang
+            </span>
           </div>
-          <div className="flex items-center gap-4 text-[11px]">
+          <div className="flex items-center gap-4 text-[11px] text-slate-400">
             <a
               href="https://wa.me/6281289234111?text=Halo%20Admin%20Forum%20UMKM%20KUAT%20Kecamatan%20Tangerang"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 hover:text-white transition-colors group"
             >
-              <Phone className="w-3 h-3 text-teal-400" />
-              <span>Hotline WhatsApp: 0812-8923-4111</span>
+              <Phone className="w-3 h-3 text-teal-400 group-hover:scale-110 transition-transform" />
+              <span>Hotline WhatsApp: <strong className="text-slate-200 font-semibold">0812-8923-4111</strong></span>
             </a>
-            <span className="text-slate-600">|</span>
-            <span className="text-amber-400 font-semibold">8 Kelurahan Binaan</span>
+            <span className="text-slate-700 hidden sm:inline">&bull;</span>
+            <span className="text-amber-400 font-semibold hidden sm:inline">8 Kelurahan Binaan</span>
           </div>
         </div>
       </div>
@@ -78,13 +80,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Logo */}
           <button
             onClick={() => handleNavClick('beranda')}
-            className="flex items-center text-left focus:outline-hidden"
+            className="flex items-center text-left focus:outline-hidden group transition-opacity hover:opacity-95"
           >
             <UmkmKuatLogo size="md" variant="full" theme="dark" />
           </button>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1.5">
             {navLinks.map((link) => {
               const isActive = currentTab === link.id;
               return (
@@ -93,8 +95,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => handleNavClick(link.id)}
                   className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
                     isActive
-                      ? 'text-teal-700 bg-teal-50/80 shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                      ? 'text-teal-900 bg-teal-50 border border-teal-200/70 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
                   }`}
                 >
                   {link.label}
@@ -108,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {profile ? (
               <button
                 onClick={() => setCurrentTab('admin')}
-                className="flex items-center gap-2 bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 cursor-pointer border border-slate-700 hover:shadow-md"
+                className="flex items-center gap-2 bg-slate-950 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 cursor-pointer border border-slate-800 hover:border-slate-700 hover:shadow-md"
               >
                 <LayoutDashboard className="w-4 h-4 text-teal-400" />
                 <span>Dashboard Admin</span>
@@ -119,9 +121,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={openLoginModal}
-                className="flex items-center gap-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                className="flex items-center gap-2 bg-gradient-to-r from-teal-700 via-teal-600 to-teal-700 hover:from-teal-800 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-teal-600/30"
               >
-                <ShieldCheck className="w-4 h-4 text-orange-300" />
+                <ShieldCheck className="w-4 h-4 text-amber-300" />
                 <span>Masuk Admin</span>
               </button>
             )}

@@ -40,17 +40,16 @@ export const EventsPage: React.FC<EventsPageProps> = ({
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-10">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-800 text-xs font-bold uppercase tracking-wider">
-          <Calendar className="w-3.5 h-3.5 text-orange-600" />
-          <span>Agenda & Pelatihan</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+        <span className="text-xs font-bold uppercase tracking-widest text-amber-700">
+          Agenda & Pelatihan
+        </span>
+        <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
           Event & Kegiatan Forum UMKM KUAT
         </h1>
-        <p className="text-slate-600 text-sm sm:text-base">
+        <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
           Ikuti berbagai agenda bazar tahunan, workshop legalitas NIB & Halal, pelatihan pemasaran digital, dan temu bisnis di Kecamatan Tangerang.
         </p>
       </div>

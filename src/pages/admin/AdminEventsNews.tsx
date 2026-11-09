@@ -37,12 +37,6 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
   const { profile, canManageEventsNews } = useAuth();
   const [section, setSection] = useState<'events' | 'articles'>('events');
 
-  // File upload refs and compression states
-  const eventPosterRef = useRef<HTMLInputElement>(null);
-  const articleImageRef = useRef<HTMLInputElement>(null);
-  const [isCompressingEvent, setIsCompressingEvent] = useState(false);
-  const [isCompressingArticle, setIsCompressingArticle] = useState(false);
-
   // Event modal state
   const [eventModalOpen, setEventModalOpen] = useState(openAddEventInitially);
   const [editingEvent, setEditingEvent] = useState<ForumEvent | null>(null);
@@ -79,13 +73,21 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
     updatedAt: new Date().toISOString(),
   });
 
-  // Image Upload Handlers with auto-compression
+  // File upload refs and compression states
+  const eventPosterRef = useRef<HTMLInputElement>(null);
+  const articleImageRef = useRef<HTMLInputElement>(null);
+  const [isCompressingEvent, setIsCompressingEvent] = useState(false);
+  const [isCompressingArticle, setIsCompressingArticle] = useState(false);
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [isSavingArticle, setIsSavingArticle] = useState(false);
+
+  // Image Upload Handlers with auto-compression (compact 640x480 for fast cloud sync)
   const handleEventPosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       setIsCompressingEvent(true);
-      const compressed = await compressImage(file, 1000, 750, 0.82);
+      const compressed = await compressImage(file, 640, 480, 0.70);
       setEventForm((prev) => ({
         ...prev,
         posterUrl: compressed,
@@ -103,7 +105,7 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
     if (!file) return;
     try {
       setIsCompressingArticle(true);
-      const compressed = await compressImage(file, 1000, 750, 0.82);
+      const compressed = await compressImage(file, 640, 480, 0.70);
       setArticleForm((prev) => ({
         ...prev,
         imageUrl: compressed,
@@ -159,37 +161,59 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = editingEvent ? editingEvent.id : 'evt-' + Date.now();
-    const eventToSave: ForumEvent = {
-      id,
-      ...eventForm,
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      setIsSavingEvent(true);
+      const id = editingEvent ? editingEvent.id : 'evt-' + Date.now();
+      const eventToSave: ForumEvent = {
+        id,
+        ...eventForm,
+        updatedAt: new Date().toISOString(),
+      };
 
-    await dbService.saveEvent(eventToSave);
-    await dbService.addLog({
-      userId: profile?.uid || 'usr-admin',
-      userName: profile?.displayName || 'Admin Informasi',
-      action: editingEvent ? 'Ubah Agenda Kegiatan' : 'Buat Agenda Kegiatan Baru',
-      target: eventToSave.title,
-      details: `Status: ${eventToSave.status} | Tanggal: ${eventToSave.date}`,
-    });
+      await dbService.saveEvent(eventToSave);
+      try {
+        await dbService.addLog({
+          userId: profile?.uid || 'usr-admin',
+          userName: profile?.displayName || 'Admin Informasi',
+          action: editingEvent ? 'Ubah Agenda Kegiatan' : 'Buat Agenda Kegiatan Baru',
+          target: eventToSave.title,
+          details: `Status: ${eventToSave.status} | Tanggal: ${eventToSave.date}`,
+        });
+      } catch (logErr) {
+        console.warn('Logging non-fatal error:', logErr);
+      }
 
-    setEventModalOpen(false);
-    onRefresh();
+      setEventModalOpen(false);
+      onRefresh();
+      alert('Agenda kegiatan berhasil disimpan dan otomatis tersinkron ke semua perangkat!');
+    } catch (err: any) {
+      console.error('Save event failed:', err);
+      alert('Gagal menyimpan agenda ke database: ' + (err?.message || 'Silakan periksa koneksi internet Anda'));
+    } finally {
+      setIsSavingEvent(false);
+    }
   };
 
   const handleDeleteEvent = async (evt: ForumEvent) => {
     if (confirm(`Hapus agenda kegiatan "${evt.title}"?`)) {
-      await dbService.deleteEvent(evt.id);
-      await dbService.addLog({
-        userId: profile?.uid || 'usr-admin',
-        userName: profile?.displayName || 'Admin',
-        action: 'Hapus Agenda Kegiatan',
-        target: evt.title,
-        details: 'Menghapus data agenda',
-      });
-      onRefresh();
+      try {
+        await dbService.deleteEvent(evt.id);
+        try {
+          await dbService.addLog({
+            userId: profile?.uid || 'usr-admin',
+            userName: profile?.displayName || 'Admin',
+            action: 'Hapus Agenda Kegiatan',
+            target: evt.title,
+            details: 'Menghapus data agenda',
+          });
+        } catch (logErr) {
+          // ignore
+        }
+        onRefresh();
+        alert('Agenda kegiatan berhasil dihapus dari semua perangkat!');
+      } catch (err: any) {
+        alert('Gagal menghapus agenda: ' + (err?.message || 'Koneksi bermasalah'));
+      }
     }
   };
 
@@ -232,37 +256,59 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
   const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = editingArticle ? editingArticle.id : 'art-' + Date.now();
-    const articleToSave: Article = {
-      id,
-      ...articleForm,
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      setIsSavingArticle(true);
+      const id = editingArticle ? editingArticle.id : 'art-' + Date.now();
+      const articleToSave: Article = {
+        id,
+        ...articleForm,
+        updatedAt: new Date().toISOString(),
+      };
 
-    await dbService.saveArticle(articleToSave);
-    await dbService.addLog({
-      userId: profile?.uid || 'usr-admin',
-      userName: profile?.displayName || 'Admin Informasi',
-      action: editingArticle ? 'Ubah Artikel Berita' : 'Terbitkan Artikel Baru',
-      target: articleToSave.title,
-      details: `Kategori: ${articleToSave.category} | Status: ${articleToSave.status}`,
-    });
+      await dbService.saveArticle(articleToSave);
+      try {
+        await dbService.addLog({
+          userId: profile?.uid || 'usr-admin',
+          userName: profile?.displayName || 'Admin Informasi',
+          action: editingArticle ? 'Ubah Artikel Berita' : 'Terbitkan Artikel Baru',
+          target: articleToSave.title,
+          details: `Kategori: ${articleToSave.category} | Status: ${articleToSave.status}`,
+        });
+      } catch (logErr) {
+        console.warn('Logging non-fatal error:', logErr);
+      }
 
-    setArticleModalOpen(false);
-    onRefresh();
+      setArticleModalOpen(false);
+      onRefresh();
+      alert('Kabar berita berhasil disimpan dan otomatis tersinkron ke semua perangkat!');
+    } catch (err: any) {
+      console.error('Save article failed:', err);
+      alert('Gagal menyimpan kabar berita ke database: ' + (err?.message || 'Silakan periksa koneksi internet Anda'));
+    } finally {
+      setIsSavingArticle(false);
+    }
   };
 
   const handleDeleteArticle = async (art: Article) => {
     if (confirm(`Hapus artikel berita "${art.title}"?`)) {
-      await dbService.deleteArticle(art.id);
-      await dbService.addLog({
-        userId: profile?.uid || 'usr-admin',
-        userName: profile?.displayName || 'Admin',
-        action: 'Hapus Artikel',
-        target: art.title,
-        details: 'Menghapus publikasi',
-      });
-      onRefresh();
+      try {
+        await dbService.deleteArticle(art.id);
+        try {
+          await dbService.addLog({
+            userId: profile?.uid || 'usr-admin',
+            userName: profile?.displayName || 'Admin',
+            action: 'Hapus Artikel',
+            target: art.title,
+            details: 'Menghapus publikasi',
+          });
+        } catch (logErr) {
+          // ignore
+        }
+        onRefresh();
+        alert('Artikel berita berhasil dihapus dari semua perangkat!');
+      } catch (err: any) {
+        alert('Gagal menghapus artikel: ' + (err?.message || 'Koneksi bermasalah'));
+      }
     }
   };
 
@@ -667,19 +713,28 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                 </select>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
+              <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-slate-200">
                 <button
                   type="button"
+                  disabled={isSavingEvent}
                   onClick={() => setEventModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                  disabled={isSavingEvent || isCompressingEvent}
+                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Simpan Agenda
+                  {isSavingEvent ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Menyimpan ke Cloud...</span>
+                    </>
+                  ) : (
+                    <span>Simpan Agenda</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -870,19 +925,28 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                 </select>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
+              <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-slate-200">
                 <button
                   type="button"
+                  disabled={isSavingArticle}
                   onClick={() => setArticleModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                  disabled={isSavingArticle || isCompressingArticle}
+                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Simpan & Terbitkan
+                  {isSavingArticle ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Menyimpan ke Cloud...</span>
+                    </>
+                  ) : (
+                    <span>Simpan & Terbitkan</span>
+                  )}
                 </button>
               </div>
             </form>

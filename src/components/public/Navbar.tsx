@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UmkmKuatLogo } from '../UmkmKuatLogo';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -13,7 +13,13 @@ import {
   Newspaper,
   Info,
   HelpCircle,
+  Instagram,
+  Youtube,
+  Facebook,
 } from 'lucide-react';
+import { TikTokIcon, formatSocialUrl } from '../common/SocialIcons';
+import { dbService, INITIAL_CONTACT_INFO } from '../../services/db';
+import { OrgContactInfo } from '../../types';
 
 interface NavbarProps {
   currentTab: string;
@@ -27,7 +33,34 @@ export const Navbar: React.FC<NavbarProps> = ({
   openLoginModal,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [contactInfo, setContactInfo] = useState<OrgContactInfo>(INITIAL_CONTACT_INFO);
   const { profile } = useAuth();
+
+  useEffect(() => {
+    const loadContact = async () => {
+      try {
+        const data = await dbService.getContactInfo();
+        if (data) setContactInfo(data);
+      } catch (e) {
+        // silent fallback
+      }
+    };
+    loadContact();
+
+    const unsubscribe = dbService.subscribeContactInfo((data) => {
+      if (data) setContactInfo(data);
+    });
+
+    const handleUpdate = (e: any) => {
+      if (e.detail) setContactInfo(e.detail);
+    };
+    window.addEventListener('umkm_contact_info_updated', handleUpdate);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('umkm_contact_info_updated', handleUpdate);
+    };
+  }, []);
 
   const navLinks = [
     { id: 'beranda', label: 'Beranda' },
@@ -70,6 +103,60 @@ export const Navbar: React.FC<NavbarProps> = ({
             </a>
             <span className="text-slate-700 hidden sm:inline">&bull;</span>
             <span className="text-amber-400 font-semibold hidden sm:inline">8 Kelurahan Binaan</span>
+
+            {/* Top Bar Social Media Icons (Desktop) */}
+            {(contactInfo.instagram || contactInfo.tiktok || contactInfo.youtube || contactInfo.facebook) && (
+              <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-slate-800">
+                {contactInfo.instagram && (
+                  <a
+                    href={formatSocialUrl(contactInfo.instagram, 'instagram')}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-slate-400 hover:text-pink-400 transition-colors"
+                    title={`Instagram: ${contactInfo.instagram}`}
+                    aria-label="Instagram"
+                  >
+                    <Instagram className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {contactInfo.tiktok && (
+                  <a
+                    href={formatSocialUrl(contactInfo.tiktok, 'tiktok')}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-slate-400 hover:text-white transition-colors"
+                    title={`TikTok: ${contactInfo.tiktok}`}
+                    aria-label="TikTok"
+                  >
+                    <TikTokIcon className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {contactInfo.youtube && (
+                  <a
+                    href={formatSocialUrl(contactInfo.youtube, 'youtube')}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-slate-400 hover:text-red-400 transition-colors"
+                    title={`YouTube: ${contactInfo.youtube}`}
+                    aria-label="YouTube"
+                  >
+                    <Youtube className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {contactInfo.facebook && (
+                  <a
+                    href={formatSocialUrl(contactInfo.facebook, 'facebook')}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-slate-400 hover:text-blue-400 transition-colors"
+                    title={`Facebook: ${contactInfo.facebook}`}
+                    aria-label="Facebook"
+                  >
+                    <Facebook className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

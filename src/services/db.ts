@@ -496,25 +496,66 @@ export const dbService = {
     setLocalData('transactions', updated);
   },
 
+  // SEED HELPERS: Ensures Firestore always contains data for all devices
+  async seedEventsIfEmpty(): Promise<ForumEvent[]> {
+    try {
+      const snap = await getDocs(collection(db, 'events'));
+      if (snap.empty) {
+        for (const evt of INITIAL_EVENTS) {
+          await setDoc(doc(db, 'events', evt.id), cleanFirestoreData(evt));
+        }
+        setLocalData('events', INITIAL_EVENTS);
+        return INITIAL_EVENTS;
+      }
+    } catch (e) {
+      console.warn('seedEventsIfEmpty warning:', e);
+    }
+    return INITIAL_EVENTS;
+  },
+
+  async seedArticlesIfEmpty(): Promise<Article[]> {
+    try {
+      const snap = await getDocs(collection(db, 'articles'));
+      if (snap.empty) {
+        for (const art of INITIAL_ARTICLES) {
+          await setDoc(doc(db, 'articles', art.id), cleanFirestoreData(art));
+        }
+        setLocalData('articles', INITIAL_ARTICLES);
+        return INITIAL_ARTICLES;
+      }
+    } catch (e) {
+      console.warn('seedArticlesIfEmpty warning:', e);
+    }
+    return INITIAL_ARTICLES;
+  },
+
   // EVENTS
   subscribeEvents(callback: (events: ForumEvent[]) => void): () => void {
     try {
-      const q = query(collection(db, 'events'), orderBy('date', 'desc'));
+      const colRef = collection(db, 'events');
       const unsubscribe = onSnapshot(
-        q,
+        colRef,
         (snapshot) => {
           if (!snapshot.empty) {
             const list: ForumEvent[] = [];
             snapshot.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<ForumEvent, 'id'>) }));
+            list.sort((a, b) => (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''));
             setLocalData('events', list);
             callback(list);
           } else {
-            const local = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
-            callback(local);
+            // Auto seed if empty so other devices don't see blank state
+            this.seedEventsIfEmpty().then((seeded) => {
+              callback(seeded);
+            }).catch(() => {
+              const local = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
+              callback(local);
+            });
           }
         },
         (err) => {
-          console.warn('Realtime events listener error:', err);
+          console.warn('Realtime events listener warning:', err);
+          const local = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
+          callback(local);
         }
       );
       return unsubscribe;
@@ -526,25 +567,29 @@ export const dbService = {
 
   async getEvents(): Promise<ForumEvent[]> {
     try {
-      const q = query(collection(db, 'events'), orderBy('date', 'desc'));
+      const colRef = collection(db, 'events');
       const snapshot = await Promise.race([
-        getDocs(q),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+        getDocs(colRef),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
       ]);
       if (snapshot && !snapshot.empty) {
         const list: ForumEvent[] = [];
         snapshot.forEach((d: any) => list.push({ id: d.id, ...(d.data() as Omit<ForumEvent, 'id'>) }));
+        list.sort((a, b) => (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''));
         setLocalData('events', list);
         return list;
+      } else if (snapshot && snapshot.empty) {
+        return await this.seedEventsIfEmpty();
       }
     } catch (err) {
-      console.warn('Firestore getEvents failed, fallback to local cache:', err);
+      console.warn('Firestore getEvents fallback to local cache:', err);
     }
     return getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
   },
 
   async saveEvent(event: ForumEvent): Promise<void> {
     const cleaned = cleanFirestoreData(event);
+
     // 1. Immediately update local storage and notify listeners
     const current = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
     const idx = current.findIndex((e) => e.id === cleaned.id);
@@ -561,13 +606,10 @@ export const dbService = {
 
     // 2. Persist to Firestore
     try {
-      const writePromise = setDoc(doc(db, 'events', cleaned.id), cleaned);
-      await Promise.race([
-        writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
+      await setDoc(doc(db, 'events', cleaned.id), cleaned);
     } catch (err) {
-      console.warn('Firestore saveEvent failed:', err);
+      console.error('Firestore saveEvent failed:', err);
+      throw err;
     }
   },
 
@@ -583,35 +625,44 @@ export const dbService = {
 
     // 2. Delete from Firestore
     try {
-      const delPromise = deleteDoc(doc(db, 'events', id));
-      await Promise.race([
-        delPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
+      await deleteDoc(doc(db, 'events', id));
     } catch (err) {
-      console.warn('Firestore deleteEvent failed:', err);
+      console.error('Firestore deleteEvent failed:', err);
+      throw err;
     }
   },
 
   // ARTICLES
   subscribeArticles(callback: (articles: Article[]) => void): () => void {
     try {
-      const q = query(collection(db, 'articles'), orderBy('publishedDate', 'desc'));
+      const colRef = collection(db, 'articles');
       const unsubscribe = onSnapshot(
-        q,
+        colRef,
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Article[] = [];
             snapshot.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<Article, 'id'>) }));
+            list.sort((a, b) => {
+              const dateA = a.publishedDate || a.createdAt || '';
+              const dateB = b.publishedDate || b.createdAt || '';
+              return dateB.localeCompare(dateA);
+            });
             setLocalData('articles', list);
             callback(list);
           } else {
-            const local = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
-            callback(local);
+            // Auto seed if empty so HP & other devices receive real articles immediately
+            this.seedArticlesIfEmpty().then((seeded) => {
+              callback(seeded);
+            }).catch(() => {
+              const local = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
+              callback(local);
+            });
           }
         },
         (err) => {
-          console.warn('Realtime articles listener error:', err);
+          console.warn('Realtime articles listener warning:', err);
+          const local = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
+          callback(local);
         }
       );
       return unsubscribe;
@@ -623,25 +674,33 @@ export const dbService = {
 
   async getArticles(): Promise<Article[]> {
     try {
-      const q = query(collection(db, 'articles'), orderBy('publishedDate', 'desc'));
+      const colRef = collection(db, 'articles');
       const snapshot = await Promise.race([
-        getDocs(q),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+        getDocs(colRef),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
       ]);
       if (snapshot && !snapshot.empty) {
         const list: Article[] = [];
         snapshot.forEach((d: any) => list.push({ id: d.id, ...(d.data() as Omit<Article, 'id'>) }));
+        list.sort((a, b) => {
+          const dateA = a.publishedDate || a.createdAt || '';
+          const dateB = b.publishedDate || b.createdAt || '';
+          return dateB.localeCompare(dateA);
+        });
         setLocalData('articles', list);
         return list;
+      } else if (snapshot && snapshot.empty) {
+        return await this.seedArticlesIfEmpty();
       }
     } catch (err) {
-      console.warn('Firestore getArticles failed, fallback to local cache:', err);
+      console.warn('Firestore getArticles fallback to local cache:', err);
     }
     return getLocalData<Article[]>('articles', INITIAL_ARTICLES);
   },
 
   async saveArticle(article: Article): Promise<void> {
     const cleaned = cleanFirestoreData(article);
+
     // 1. Immediately update local storage and notify listeners
     const current = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
     const idx = current.findIndex((a) => a.id === cleaned.id);
@@ -658,13 +717,10 @@ export const dbService = {
 
     // 2. Persist to Firestore
     try {
-      const writePromise = setDoc(doc(db, 'articles', cleaned.id), cleaned);
-      await Promise.race([
-        writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
+      await setDoc(doc(db, 'articles', cleaned.id), cleaned);
     } catch (err) {
-      console.warn('Firestore saveArticle failed:', err);
+      console.error('Firestore saveArticle failed:', err);
+      throw err;
     }
   },
 
@@ -680,13 +736,10 @@ export const dbService = {
 
     // 2. Delete from Firestore
     try {
-      const delPromise = deleteDoc(doc(db, 'articles', id));
-      await Promise.race([
-        delPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
+      await deleteDoc(doc(db, 'articles', id));
     } catch (err) {
-      console.warn('Firestore deleteArticle failed:', err);
+      console.error('Firestore deleteArticle failed:', err);
+      throw err;
     }
   },
 

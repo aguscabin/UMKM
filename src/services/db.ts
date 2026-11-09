@@ -231,9 +231,17 @@ export const INITIAL_CONTACT_INFO: OrgContactInfo = {
 
 export const INITIAL_USERS: UserProfile[] = [
   {
+    uid: 'usr-agus-superadmin',
+    email: 'agus.cabin@gmail.com',
+    displayName: 'Agus Cabin (Super Admin)',
+    role: 'super_admin',
+    kelurahan: 'Semua Kelurahan (Kecamatan)',
+    createdAt: '2026-01-01T08:00:00Z',
+  },
+  {
     uid: 'usr-admin-01',
     email: 'umkmkectangerang@gmail.com',
-    displayName: 'Riswan Setyo Kardinto, S.STP',
+    displayName: 'Riswan Setyo Kardinto, S.STP (Super Admin)',
     role: 'super_admin',
     kelurahan: 'Semua Kelurahan (Kecamatan)',
     createdAt: '2026-01-01T08:00:00Z',
@@ -241,42 +249,34 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     uid: 'usr-ketua-02',
     email: 'ketua.umkm@tangerangkota.go.id',
-    displayName: 'EMus Muslihant',
-    role: 'pengurus_kecamatan',
+    displayName: 'EMus Muslihant (Ketua Forum)',
+    role: 'super_admin',
     kelurahan: 'Semua Kelurahan (Kecamatan)',
     createdAt: '2026-01-05T08:00:00Z',
   },
   {
-    uid: 'usr-keanggotaan-03',
+    uid: 'usr-wakil-03',
     email: 'keanggotaan@umkmkuat-tangerang.org',
-    displayName: 'Ferry Juni Purwanto',
-    role: 'admin_keanggotaan',
+    displayName: 'Ferry Juni Purwanto (Wakil Ketua)',
+    role: 'super_admin',
     kelurahan: 'Semua Kelurahan (Kecamatan)',
     createdAt: '2026-01-10T08:00:00Z',
   },
   {
-    uid: 'usr-bendahara-04',
+    uid: 'usr-sekretaris-04',
+    email: 'sekretaris@umkmkuat-tangerang.org',
+    displayName: 'DIna Fatrian S.I.Kom (Sekretaris)',
+    role: 'super_admin',
+    kelurahan: 'Semua Kelurahan (Kecamatan)',
+    createdAt: '2026-01-10T08:00:00Z',
+  },
+  {
+    uid: 'usr-bendahara-05',
     email: 'bendahara@umkmkuat-tangerang.org',
-    displayName: 'Peni Martin',
-    role: 'bendahara',
+    displayName: 'Peni Martin (Bendahara)',
+    role: 'super_admin',
     kelurahan: 'Semua Kelurahan (Kecamatan)',
     createdAt: '2026-01-10T08:00:00Z',
-  },
-  {
-    uid: 'usr-informasi-05',
-    email: 'informasi@umkmkuat-tangerang.org',
-    displayName: 'DIna Fatrian S.I.Kom',
-    role: 'admin_informasi',
-    kelurahan: 'Semua Kelurahan (Kecamatan)',
-    createdAt: '2026-01-15T08:00:00Z',
-  },
-  {
-    uid: 'usr-babakan-06',
-    email: 'babakan@umkmkuat-tangerang.org',
-    displayName: 'Koordinator UMKM Babakan',
-    role: 'pengurus_kelurahan',
-    kelurahan: 'Babakan',
-    createdAt: '2026-01-20T08:00:00Z',
   },
 ];
 
@@ -495,89 +495,197 @@ export const dbService = {
   },
 
   // EVENTS
+  subscribeEvents(callback: (events: ForumEvent[]) => void): () => void {
+    try {
+      const q = query(collection(db, 'events'), orderBy('date', 'desc'));
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: ForumEvent[] = [];
+            snapshot.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<ForumEvent, 'id'>) }));
+            setLocalData('events', list);
+            callback(list);
+          } else {
+            const local = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
+            callback(local);
+          }
+        },
+        (err) => {
+          console.warn('Realtime events listener error:', err);
+        }
+      );
+      return unsubscribe;
+    } catch (e) {
+      console.warn('Subscribe events error:', e);
+      return () => {};
+    }
+  },
+
   async getEvents(): Promise<ForumEvent[]> {
     try {
       const q = query(collection(db, 'events'), orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
+      const snapshot = await Promise.race([
+        getDocs(q),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+      ]);
+      if (snapshot && !snapshot.empty) {
         const list: ForumEvent[] = [];
-        snapshot.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<ForumEvent, 'id'>) }));
+        snapshot.forEach((d: any) => list.push({ id: d.id, ...(d.data() as Omit<ForumEvent, 'id'>) }));
         setLocalData('events', list);
         return list;
       }
     } catch (err) {
-      console.warn('Firestore getEvents failed:', err);
+      console.warn('Firestore getEvents failed, fallback to local cache:', err);
     }
     return getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
   },
 
   async saveEvent(event: ForumEvent): Promise<void> {
+    const cleaned = cleanFirestoreData(event);
+    // 1. Immediately update local storage and notify listeners
+    const current = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
+    const idx = current.findIndex((e) => e.id === cleaned.id);
+    if (idx >= 0) {
+      current[idx] = cleaned;
+    } else {
+      current.unshift(cleaned);
+    }
+    setLocalData('events', current);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_events_updated', { detail: current }));
+    }
+
+    // 2. Persist to Firestore
     try {
-      await setDoc(doc(db, 'events', event.id), event);
+      const writePromise = setDoc(doc(db, 'events', cleaned.id), cleaned);
+      await Promise.race([
+        writePromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+      ]);
     } catch (err) {
       console.warn('Firestore saveEvent failed:', err);
     }
-    const current = await this.getEvents();
-    const idx = current.findIndex((e) => e.id === event.id);
-    if (idx >= 0) {
-      current[idx] = event;
-    } else {
-      current.unshift(event);
-    }
-    setLocalData('events', current);
   },
 
   async deleteEvent(id: string): Promise<void> {
+    // 1. Immediately update local storage and notify listeners
+    const current = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
+    const updated = current.filter((e) => e.id !== id);
+    setLocalData('events', updated);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_events_updated', { detail: updated }));
+    }
+
+    // 2. Delete from Firestore
     try {
-      await deleteDoc(doc(db, 'events', id));
+      const delPromise = deleteDoc(doc(db, 'events', id));
+      await Promise.race([
+        delPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+      ]);
     } catch (err) {
       console.warn('Firestore deleteEvent failed:', err);
     }
-    const current = await this.getEvents();
-    setLocalData('events', current.filter((e) => e.id !== id));
   },
 
   // ARTICLES
+  subscribeArticles(callback: (articles: Article[]) => void): () => void {
+    try {
+      const q = query(collection(db, 'articles'), orderBy('publishedDate', 'desc'));
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Article[] = [];
+            snapshot.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<Article, 'id'>) }));
+            setLocalData('articles', list);
+            callback(list);
+          } else {
+            const local = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
+            callback(local);
+          }
+        },
+        (err) => {
+          console.warn('Realtime articles listener error:', err);
+        }
+      );
+      return unsubscribe;
+    } catch (e) {
+      console.warn('Subscribe articles error:', e);
+      return () => {};
+    }
+  },
+
   async getArticles(): Promise<Article[]> {
     try {
       const q = query(collection(db, 'articles'), orderBy('publishedDate', 'desc'));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
+      const snapshot = await Promise.race([
+        getDocs(q),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+      ]);
+      if (snapshot && !snapshot.empty) {
         const list: Article[] = [];
-        snapshot.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<Article, 'id'>) }));
+        snapshot.forEach((d: any) => list.push({ id: d.id, ...(d.data() as Omit<Article, 'id'>) }));
         setLocalData('articles', list);
         return list;
       }
     } catch (err) {
-      console.warn('Firestore getArticles failed:', err);
+      console.warn('Firestore getArticles failed, fallback to local cache:', err);
     }
     return getLocalData<Article[]>('articles', INITIAL_ARTICLES);
   },
 
   async saveArticle(article: Article): Promise<void> {
+    const cleaned = cleanFirestoreData(article);
+    // 1. Immediately update local storage and notify listeners
+    const current = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
+    const idx = current.findIndex((a) => a.id === cleaned.id);
+    if (idx >= 0) {
+      current[idx] = cleaned;
+    } else {
+      current.unshift(cleaned);
+    }
+    setLocalData('articles', current);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_articles_updated', { detail: current }));
+    }
+
+    // 2. Persist to Firestore
     try {
-      await setDoc(doc(db, 'articles', article.id), article);
+      const writePromise = setDoc(doc(db, 'articles', cleaned.id), cleaned);
+      await Promise.race([
+        writePromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+      ]);
     } catch (err) {
       console.warn('Firestore saveArticle failed:', err);
     }
-    const current = await this.getArticles();
-    const idx = current.findIndex((a) => a.id === article.id);
-    if (idx >= 0) {
-      current[idx] = article;
-    } else {
-      current.unshift(article);
-    }
-    setLocalData('articles', current);
   },
 
   async deleteArticle(id: string): Promise<void> {
+    // 1. Immediately update local storage and notify listeners
+    const current = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
+    const updated = current.filter((a) => a.id !== id);
+    setLocalData('articles', updated);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_articles_updated', { detail: updated }));
+    }
+
+    // 2. Delete from Firestore
     try {
-      await deleteDoc(doc(db, 'articles', id));
+      const delPromise = deleteDoc(doc(db, 'articles', id));
+      await Promise.race([
+        delPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+      ]);
     } catch (err) {
       console.warn('Firestore deleteArticle failed:', err);
     }
-    const current = await this.getArticles();
-    setLocalData('articles', current.filter((a) => a.id !== id));
   },
 
   // ACTIVITY LOGS

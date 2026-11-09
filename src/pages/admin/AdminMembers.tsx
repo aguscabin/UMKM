@@ -55,6 +55,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [duplicationWarning, setDuplicationWarning] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Automatic KTA Card Modal state
   const [cardMember, setCardMember] = useState<Member | null>(null);
@@ -118,25 +119,25 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     setEditingMember(m);
     setDuplicationWarning(null);
     setFormData({
-      memberNumber: m.memberNumber,
-      fullName: m.fullName,
-      nik: m.nik,
-      phone: m.phone,
+      memberNumber: m.memberNumber || '',
+      fullName: m.fullName || '',
+      nik: m.nik || '',
+      phone: m.phone || '',
       email: m.email || '',
-      address: m.address,
-      kelurahan: m.kelurahan,
-      status: m.status,
-      joinDate: m.joinDate,
-      businessName: m.businessName,
-      category: m.category,
-      topProduct: m.topProduct,
-      businessAddress: m.businessAddress,
-      businessPhone: m.businessPhone,
+      address: m.address || '',
+      kelurahan: m.kelurahan || 'Babakan',
+      status: m.status || 'aktif',
+      joinDate: m.joinDate || new Date().toISOString().split('T')[0],
+      businessName: m.businessName || '',
+      category: m.category || 'Kuliner',
+      topProduct: m.topProduct || '',
+      businessAddress: m.businessAddress || '',
+      businessPhone: m.businessPhone || '',
       memberPhoto: m.memberPhoto || '',
       productPhoto: m.productPhoto || '',
-      legalities: m.legalities,
-      isPublicDirectory: m.isPublicDirectory,
-      createdAt: m.createdAt,
+      legalities: m.legalities || '',
+      isPublicDirectory: m.isPublicDirectory ?? true,
+      createdAt: m.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
     setModalOpen(true);
@@ -173,18 +174,28 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
   // Check duplication when NIK or Phone changes
   const checkDuplication = (nik: string, phone: string) => {
-    const duplicateNik = members.find(
-      (m) => m.nik === nik && (!editingMember || m.id !== editingMember.id)
-    );
-    if (duplicateNik) {
-      return `Peringatan: NIK ${nik} sudah terdaftar atas nama ${duplicateNik.fullName} (${duplicateNik.memberNumber})`;
+    if (nik && nik.trim() !== '') {
+      const cleanNik = nik.trim();
+      const duplicateNik = members.find(
+        (m) => m.nik && m.nik.trim() === cleanNik && (!editingMember || m.id !== editingMember.id)
+      );
+      if (duplicateNik) {
+        return `Peringatan: NIK ${cleanNik} sudah terdaftar atas nama ${duplicateNik.fullName} (${duplicateNik.memberNumber})`;
+      }
     }
 
-    const duplicatePhone = members.find(
-      (m) => m.phone === phone && (!editingMember || m.id !== editingMember.id)
-    );
-    if (duplicatePhone) {
-      return `Peringatan: No WhatsApp/HP ${phone} sudah digunakan oleh anggota ${duplicatePhone.fullName}`;
+    if (phone && phone.trim() !== '') {
+      const cleanPhone = phone.trim().replace(/\D/g, '');
+      if (cleanPhone.length >= 8) {
+        const duplicatePhone = members.find((m) => {
+          if (!m.phone || (editingMember && m.id === editingMember.id)) return false;
+          const existingCleanPhone = m.phone.trim().replace(/\D/g, '');
+          return existingCleanPhone.length >= 8 && existingCleanPhone === cleanPhone;
+        });
+        if (duplicatePhone) {
+          return `Peringatan: No WhatsApp/HP ${phone} sudah digunakan oleh anggota ${duplicatePhone.fullName} (${duplicatePhone.memberNumber})`;
+        }
+      }
     }
 
     return null;
@@ -192,33 +203,85 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const dup = checkDuplication(formData.nik, formData.phone);
-    if (dup) {
-      setDuplicationWarning(dup);
+
+    // 1. Explicit validation with immediate, clear feedback on mobile
+    if (!formData.fullName || formData.fullName.trim() === '') {
+      alert('Mohon isi Nama Lengkap anggota sesuai KTP.');
+      return;
+    }
+    if (!formData.nik || formData.nik.trim() === '') {
+      alert('Mohon isi NIK (Nomor Induk Kependudukan).');
+      return;
+    }
+    if (formData.nik.trim().length !== 16) {
+      alert('NIK harus terdiri dari 16 digit angka.');
+      return;
+    }
+    if (!formData.phone || formData.phone.trim() === '') {
+      alert('Mohon isi Nomor WhatsApp / HP anggota.');
+      return;
+    }
+    if (!formData.address || formData.address.trim() === '') {
+      alert('Mohon isi Alamat Domisili KTP anggota.');
+      return;
+    }
+    if (!formData.businessName || formData.businessName.trim() === '') {
+      alert('Mohon isi Nama Usaha / Merk.');
+      return;
+    }
+    if (!formData.topProduct || formData.topProduct.trim() === '') {
+      alert('Mohon isi Produk Unggulan usaha.');
       return;
     }
 
-    const id = editingMember ? editingMember.id : 'mem-' + Date.now();
-    const memberToSave: Member = {
-      id,
-      ...formData,
-      updatedAt: new Date().toISOString(),
-    };
+    // 2. Duplication check
+    const dup = checkDuplication(formData.nik, formData.phone);
+    if (dup) {
+      setDuplicationWarning(dup);
+      alert(dup);
+      return;
+    }
 
-    await dbService.saveMember(memberToSave);
-    await dbService.addLog({
-      userId: profile?.uid || 'admin',
-      userName: profile?.displayName || 'Pengurus',
-      action: editingMember ? 'Ubah Data Anggota' : 'Tambah Anggota Baru',
-      target: memberToSave.memberNumber,
-      details: `${memberToSave.fullName} - ${memberToSave.businessName} (Kel. ${memberToSave.kelurahan})`,
-    });
+    try {
+      setIsSubmitting(true);
+      const id = editingMember ? editingMember.id : 'mem-' + Date.now();
+      const memberToSave: Member = {
+        id,
+        ...formData,
+        fullName: formData.fullName.trim(),
+        nik: formData.nik.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        businessName: formData.businessName.trim(),
+        topProduct: formData.topProduct.trim(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    setModalOpen(false);
-    onRefresh();
+      await dbService.saveMember(memberToSave);
 
-    // OTOMATIS TAMPILKAN KARTU ANGGOTA (KTA) DENGAN NOMOR KEANGGOTAAN OTOMATIS
-    setCardMember(memberToSave);
+      try {
+        await dbService.addLog({
+          userId: profile?.uid || 'admin',
+          userName: profile?.displayName || 'Pengurus',
+          action: editingMember ? 'Ubah Data Anggota' : 'Tambah Anggota Baru',
+          target: memberToSave.memberNumber,
+          details: `${memberToSave.fullName} - ${memberToSave.businessName} (Kel. ${memberToSave.kelurahan})`,
+        });
+      } catch (logErr) {
+        console.warn('Logging non-fatal error:', logErr);
+      }
+
+      setModalOpen(false);
+      onRefresh();
+
+      // Show KTA Card
+      setCardMember(memberToSave);
+    } catch (err: any) {
+      console.error('Error saving member:', err);
+      alert('Gagal menyimpan data anggota: ' + (err?.message || 'Terjadi kesalahan sistem'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async (m: Member) => {
@@ -347,15 +410,15 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
           {/* Tombol Share Link Pendaftaran */}
           <button
             onClick={() => setShareModalOpen(true)}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer min-h-[42px]"
           >
             <Share2 className="w-4 h-4" />
-            <span>Bagikan Link Pendaftaran</span>
+            <span>Bagikan Link</span>
           </button>
 
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer min-h-[42px]"
           >
             <Download className="w-4 h-4 text-teal-600" />
             <span>Ekspor CSV</span>
@@ -363,16 +426,16 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
           <button
             onClick={() => setPrintModalOpen(true)}
-            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer min-h-[42px]"
           >
             <Printer className="w-4 h-4 text-teal-600" />
-            <span>Cetak PDF Resmi</span>
+            <span>Cetak PDF</span>
           </button>
 
           {canManageMembers && (
             <button
               onClick={handleOpenAdd}
-              className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Anggota Baru</span>
@@ -463,8 +526,158 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
         </div>
       </div>
 
-      {/* Table Members */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+      {/* 1. MOBILE CARD VIEW (Khusus Layar HP / Smartphone - Tombol Besar & Responsif) */}
+      <div className="block md:hidden space-y-3">
+        {filteredMembers.length === 0 ? (
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 text-center text-slate-400 space-y-2.5">
+            <div className="h-12 w-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <Users className="w-6 h-6" />
+            </div>
+            <div className="font-bold text-slate-800 text-sm">Belum Ada Data Anggota</div>
+            <p className="text-xs text-slate-500">
+              {members.length === 0
+                ? 'Basis data keanggotaan masih kosong. Daftarkan anggota baru di atas.'
+                : 'Tidak ada data anggota yang sesuai kriteria pencarian.'}
+            </p>
+            {members.length === 0 && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleOpenAdd}
+                  className="w-full py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer min-h-[44px]"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Daftarkan Anggota Pertama</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          filteredMembers.map((m) => (
+            <div
+              key={m.id}
+              className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 space-y-3.5 transition-all"
+            >
+              {/* Header Anggota HP */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center shadow-2xs">
+                    {m.memberPhoto ? (
+                      <img src={m.memberPhoto} alt={m.fullName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-black text-teal-700 text-base">
+                        {m.fullName.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-slate-900 text-sm truncate leading-snug">
+                      {m.fullName}
+                    </h4>
+                    <div className="text-[11px] font-mono font-bold text-teal-700">
+                      {m.memberNumber}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      Kel. {m.kelurahan}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Toggle Badge */}
+                <button
+                  type="button"
+                  onClick={() => toggleStatus(m)}
+                  title="Klik untuk mengubah status"
+                  className={`text-[10px] font-bold px-2.5 py-1 rounded-lg cursor-pointer flex-shrink-0 transition-colors ${
+                    m.status === 'aktif'
+                      ? 'bg-green-100 text-green-800 active:bg-green-200'
+                      : m.status === 'pending'
+                      ? 'bg-amber-100 text-amber-800 active:bg-amber-200'
+                      : 'bg-red-100 text-red-800 active:bg-red-200'
+                  }`}
+                >
+                  {m.status.toUpperCase()}
+                </button>
+              </div>
+
+              {/* Data Usaha & Kontak */}
+              <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+                    <span className="truncate">{m.businessName}</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 flex-shrink-0">
+                    {m.category}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  <span className="text-slate-400 font-medium">Produk:</span> {m.topProduct}
+                </div>
+                <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200/60">
+                  <span className="font-mono">WA: {m.phone}</span>
+                  {m.phone && (
+                    <a
+                      href={`https://wa.me/${m.phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-teal-700 font-bold hover:underline flex items-center gap-1"
+                    >
+                      <span>Chat WA</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons HP - Ukuran Sentuh Responsif (Touch-Friendly) */}
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                {canManageMembers && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(m)}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 rounded-xl text-xs font-bold border border-blue-200 transition-colors cursor-pointer min-h-[44px]"
+                  >
+                    <Edit2 className="w-4 h-4 text-blue-600" />
+                    <span>Ubah Data</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setCardMember(m)}
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-teal-800 rounded-xl text-xs font-bold border border-teal-200 transition-colors cursor-pointer min-h-[44px]"
+                >
+                  <CreditCard className="w-4 h-4 text-teal-600" />
+                  <span>Cetak KTA</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewingMember(m)}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer min-h-[42px]"
+                >
+                  <Eye className="w-4 h-4 text-slate-600" />
+                  <span>Lihat Detail</span>
+                </button>
+
+                {canManageMembers && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(m)}
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 rounded-xl text-xs font-semibold border border-red-200 transition-colors cursor-pointer min-h-[42px]"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <span>Hapus</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 2. DESKTOP TABLE VIEW (Layar Komputer / Tablet) */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold uppercase tracking-wider">
@@ -689,367 +902,388 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
       {/* FORM MODAL (TAMBAH / UBAH ANGGOTA LENGKAP DENGAN UPLOAD FOTO ANGGOTA & FOTO PRODUK) */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <div>
-                <h3 className="font-black text-slate-900 text-lg">
-                  {editingMember ? 'Ubah Data Anggota UMKM' : 'Pendaftaran Anggota UMKM Baru'}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Nomor Anggota Otomatis: <span className="font-mono font-bold text-teal-700">{formData.memberNumber}</span>
-                </p>
-              </div>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
-              {duplicationWarning && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                  <span>{duplicationWarning}</span>
-                </div>
-              )}
-
-              {/* UPLOAD FOTO ANGGOTA (UNTUK KARTU TANDA ANGGOTA KTA) */}
-              <div className="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
-                <div className="w-20 h-24 rounded-xl overflow-hidden bg-white border-2 border-teal-400 flex items-center justify-center flex-shrink-0 shadow-sm">
-                  {formData.memberPhoto ? (
-                    <img src={formData.memberPhoto} alt="Foto Anggota" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-center text-teal-600 p-2">
-                      <Camera className="w-6 h-6 mx-auto mb-1" />
-                      <span className="text-[9px] font-bold">Pas Foto</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1.5 text-center sm:text-left flex-1">
-                  <div className="text-xs font-bold text-teal-900 flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>Foto Anggota (Tampil di Kartu KTA Resmi)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    Upload pas foto anggota atau foto selfie wajah. Format JPG/PNG (Maks. 5MB).
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/75 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full sm:max-w-3xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[94vh] sm:max-h-[90vh] flex flex-col">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
+              {/* Header Tetap di Atas (Pinned Header) */}
+              <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 flex-shrink-0">
+                <div>
+                  <h3 className="font-black text-slate-900 text-base sm:text-lg">
+                    {editingMember ? 'Ubah Data Anggota UMKM' : 'Pendaftaran Anggota UMKM Baru'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Nomor Anggota: <span className="font-mono font-bold text-teal-700">{formData.memberNumber}</span>
                   </p>
-                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => memberPhotoRef.current?.click()}
-                      className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{formData.memberPhoto ? 'Ganti Foto' : 'Upload Pas Foto'}</span>
-                    </button>
-                    {formData.memberPhoto && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, memberPhoto: '' })}
-                        className="px-2 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold cursor-pointer"
-                      >
-                        Hapus
-                      </button>
-                    )}
-                    <input
-                      ref={memberPhotoRef}
-                      type="file"
-                      accept="image/*"
-                      capture="user"
-                      onChange={handleMemberPhotoUpload}
-                      className="hidden"
-                    />
-                  </div>
                 </div>
-              </div>
-
-              {/* SEKSI 1: DATA PRIBADI ANGGOTA */}
-              <div className="space-y-4">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-teal-800 bg-teal-50 px-3 py-1.5 rounded-lg">
-                  1. Data Pribadi Anggota
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Nama Lengkap <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      placeholder="Nama lengkap sesuai KTP"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      NIK (Nomor Induk Kependudukan) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={16}
-                      value={formData.nik}
-                      onChange={(e) => {
-                        setDuplicationWarning(null);
-                        setFormData({ ...formData, nik: e.target.value });
-                      }}
-                      placeholder="16 digit NIK Kota Tangerang"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      No. WhatsApp / HP <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => {
-                        setDuplicationWarning(null);
-                        setFormData({ ...formData, phone: e.target.value });
-                      }}
-                      placeholder="081234567890"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="email@gmail.com"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Kelurahan <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.kelurahan}
-                      onChange={(e) => setFormData({ ...formData, kelurahan: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-medium"
-                    >
-                      {KELURAHAN_LIST.map((k) => (
-                        <option key={k} value={k}>
-                          Kelurahan {k}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Alamat Domisili KTP <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Jl. RT/RW Kelurahan..."
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                  />
-                </div>
-              </div>
-
-              {/* SEKSI 2: DATA USAHA & PRODUK */}
-              <div className="space-y-4 pt-2">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-orange-800 bg-orange-50 px-3 py-1.5 rounded-lg">
-                  2. Data Usaha & Produk
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Nama Usaha / Merk <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.businessName}
-                      onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                      placeholder="Contoh: Dapur Kue Mak Rohmah"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Kategori Usaha <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-medium"
-                    >
-                      <option value="Kuliner">Kuliner</option>
-                      <option value="Fashion & Tekstil">Fashion & Tekstil</option>
-                      <option value="Kriya & Kerajinan">Kriya & Kerajinan</option>
-                      <option value="Jasa & Konsultasi">Jasa & Konsultasi</option>
-                      <option value="Perdagangan & Toko">Perdagangan & Toko</option>
-                      <option value="Pertanian & Agro">Pertanian & Agro</option>
-                      <option value="Kesehatan & Kecantikan">Kesehatan & Kecantikan</option>
-                      <option value="Teknologi & Digital">Teknologi & Digital</option>
-                      <option value="Lainnya">Lainnya</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Produk Unggulan <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.topProduct}
-                      onChange={(e) => setFormData({ ...formData, topProduct: e.target.value })}
-                      placeholder="Contoh: Kue Cucur Pandan & Tumpeng Mini"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      No. Kontak WhatsApp Usaha
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.businessPhone}
-                      onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
-                      placeholder="0812..."
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Alamat Usaha / Toko
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.businessAddress}
-                    onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
-                    placeholder="Alamat tempat produksi / toko offline"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Legalitas Yang Dimiliki
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.legalities}
-                      onChange={(e) => setFormData({ ...formData, legalities: e.target.value })}
-                      placeholder="NIB, Sertifikat Halal, P-IRT, dsb."
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Upload Foto Produk
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => productPhotoRef.current?.click()}
-                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Camera className="w-4 h-4 text-teal-600" />
-                        <span>{formData.productPhoto ? 'Foto Terpilih' : 'Pilih Foto'}</span>
-                      </button>
-                      <input
-                        ref={productPhotoRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProductPhotoUpload}
-                        className="hidden"
-                      />
-                      {formData.productPhoto && (
-                        <img
-                          src={formData.productPhoto}
-                          alt="Produk"
-                          className="h-9 w-9 object-cover rounded-lg border border-slate-300"
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* SEKSI 3: PENGATURAN PRIVASI & STATUS */}
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-xs text-slate-900">
-                        Tampilkan di Katalog Direktori Publik?
-                      </div>
-                      <div className="text-[11px] text-slate-500">
-                        Hanya data usaha yang disetujui yang akan muncul di website publik (NIK dan data pribadi tetap rahasia).
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.isPublicDirectory}
-                        onChange={(e) => setFormData({ ...formData, isPublicDirectory: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                    <span className="text-xs font-bold text-slate-800">Status Keanggotaan</span>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-bold"
-                    >
-                      <option value="aktif">Aktif</option>
-                      <option value="pending">Pending</option>
-                      <option value="nonaktif">Nonaktif</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                  aria-label="Tutup Formulir"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Isi Formulir yang Bisa Di-scroll */}
+              <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
+                {duplicationWarning && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span>{duplicationWarning}</span>
+                  </div>
+                )}
+
+                {/* UPLOAD FOTO ANGGOTA (UNTUK KARTU TANDA ANGGOTA KTA) */}
+                <div className="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
+                  <div className="w-20 h-24 rounded-xl overflow-hidden bg-white border-2 border-teal-400 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    {formData.memberPhoto ? (
+                      <img src={formData.memberPhoto} alt="Foto Anggota" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-center text-teal-600 p-2">
+                        <Camera className="w-6 h-6 mx-auto mb-1" />
+                        <span className="text-[9px] font-bold">Pas Foto</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5 text-center sm:text-left flex-1">
+                    <div className="text-xs font-bold text-teal-900 flex items-center justify-center sm:justify-start gap-1.5">
+                      <span>Foto Anggota (Tampil di Kartu KTA Resmi)</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      Upload pas foto anggota atau foto selfie wajah. Format JPG/PNG (Maks. 5MB).
+                    </p>
+                    <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => memberPhotoRef.current?.click()}
+                        className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px] shadow-2xs"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{formData.memberPhoto ? 'Ganti Foto' : 'Upload Pas Foto'}</span>
+                      </button>
+                      {formData.memberPhoto && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, memberPhoto: '' })}
+                          className="px-3 py-2 text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl text-xs font-semibold cursor-pointer min-h-[40px]"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                      <input
+                        ref={memberPhotoRef}
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        onChange={handleMemberPhotoUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SEKSI 1: DATA PRIBADI ANGGOTA */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-teal-800 bg-teal-50 px-3 py-1.5 rounded-lg">
+                    1. Data Pribadi Anggota
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Nama Lengkap Sesuai KTP <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        placeholder="Nama lengkap sesuai KTP"
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        NIK (Nomor Induk Kependudukan) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        maxLength={16}
+                        value={formData.nik}
+                        onChange={(e) => {
+                          setDuplicationWarning(null);
+                          setFormData({ ...formData, nik: e.target.value.replace(/\D/g, '') });
+                        }}
+                        placeholder="16 digit NIK Kota Tangerang"
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        No. WhatsApp / HP <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => {
+                          setDuplicationWarning(null);
+                          setFormData({ ...formData, phone: e.target.value });
+                        }}
+                        placeholder="081234567890"
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="email@gmail.com"
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Kelurahan <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={formData.kelurahan}
+                        onChange={(e) => setFormData({ ...formData, kelurahan: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-medium"
+                      >
+                        {KELURAHAN_LIST.map((k) => (
+                          <option key={k} value={k}>
+                            Kelurahan {k}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Alamat Domisili KTP <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="Jl. RT/RW Kelurahan..."
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+
+                {/* SEKSI 2: DATA USAHA & PRODUK */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-orange-800 bg-orange-50 px-3 py-1.5 rounded-lg">
+                    2. Data Usaha & Produk
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Nama Usaha / Merk <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.businessName}
+                        onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                        placeholder="Contoh: Dapur Kue Mak Rohmah"
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Kategori Usaha <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-medium"
+                      >
+                        <option value="Kuliner">Kuliner</option>
+                        <option value="Fashion & Tekstil">Fashion & Tekstil</option>
+                        <option value="Kriya & Kerajinan">Kriya & Kerajinan</option>
+                        <option value="Jasa & Konsultasi">Jasa & Konsultasi</option>
+                        <option value="Perdagangan & Toko">Perdagangan & Toko</option>
+                        <option value="Pertanian & Agro">Pertanian & Agro</option>
+                        <option value="Kesehatan & Kecantikan">Kesehatan & Kecantikan</option>
+                        <option value="Teknologi & Digital">Teknologi & Digital</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Produk Unggulan <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.topProduct}
+                        onChange={(e) => setFormData({ ...formData, topProduct: e.target.value })}
+                        placeholder="Contoh: Kue Cucur Pandan & Tumpeng Mini"
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        No. Kontak WhatsApp Usaha
+                      </label>
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        value={formData.businessPhone}
+                        onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
+                        placeholder="0812..."
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Alamat Usaha / Toko
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.businessAddress}
+                      onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
+                      placeholder="Alamat tempat produksi / toko offline"
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Legalitas Yang Dimiliki
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.legalities}
+                        onChange={(e) => setFormData({ ...formData, legalities: e.target.value })}
+                        placeholder="NIB, Sertifikat Halal, P-IRT, dsb."
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Upload Foto Produk
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => productPhotoRef.current?.click()}
+                          className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+                        >
+                          <Camera className="w-4 h-4 text-teal-600" />
+                          <span>{formData.productPhoto ? 'Foto Terpilih' : 'Pilih Foto'}</span>
+                        </button>
+                        <input
+                          ref={productPhotoRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProductPhotoUpload}
+                          className="hidden"
+                        />
+                        {formData.productPhoto && (
+                          <img
+                            src={formData.productPhoto}
+                            alt="Produk"
+                            className="h-9 w-9 object-cover rounded-lg border border-slate-300 shadow-2xs"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SEKSI 3: PENGATURAN PRIVASI & STATUS */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-xs text-slate-900">
+                          Tampilkan di Katalog Direktori Publik?
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Hanya data usaha yang disetujui yang akan muncul di website publik (NIK dan data pribadi tetap rahasia).
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isPublicDirectory}
+                          onChange={(e) => setFormData({ ...formData, isPublicDirectory: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                      <span className="text-xs font-bold text-slate-800">Status Keanggotaan</span>
+                      <select
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                        className="px-3.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-bold"
+                      >
+                        <option value="aktif">Aktif</option>
+                        <option value="pending">Pending</option>
+                        <option value="nonaktif">Nonaktif</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tombol Simpan Perubahan - Selalu Menempel di Bawah (Pinned Footer) */}
+              <div className="p-3.5 sm:p-4 sm:px-6 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 flex-shrink-0 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer min-h-[44px]"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 disabled:opacity-60 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
                 >
-                  {editingMember ? 'Simpan Perubahan' : 'Daftarkan & Terbitkan KTA'}
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>{editingMember ? 'Simpan Perubahan' : 'Daftarkan & Terbitkan KTA'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -1119,21 +1353,39 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const m = viewingMember;
+                    setViewingMember(null);
+                    setCardMember(m);
+                  }}
+                  className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Buka Kartu KTA</span>
+                </button>
+                {canManageMembers && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const m = viewingMember;
+                      setViewingMember(null);
+                      handleOpenEdit(m);
+                    }}
+                    className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Ubah Data</span>
+                  </button>
+                )}
+              </div>
               <button
-                onClick={() => {
-                  const m = viewingMember;
-                  setViewingMember(null);
-                  setCardMember(m);
-                }}
-                className="inline-flex items-center gap-1.5 bg-teal-600 text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>Buka Kartu KTA</span>
-              </button>
-              <button
+                type="button"
                 onClick={() => setViewingMember(null)}
-                className="bg-slate-800 text-white px-5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
               >
                 Tutup
               </button>

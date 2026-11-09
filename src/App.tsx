@@ -90,14 +90,34 @@ function MainApp() {
       setMembers(realtimeMembers);
     });
 
-    // Listen for cross-component member updates in same window
+    const unsubscribeEvents = dbService.subscribeEvents((realtimeEvents) => {
+      setEvents(realtimeEvents);
+    });
+
+    const unsubscribeArticles = dbService.subscribeArticles((realtimeArticles) => {
+      setArticles(realtimeArticles);
+    });
+
+    // Listen for cross-component updates in same window
     const handleMembersUpdated = (e: any) => {
       if (e.detail && Array.isArray(e.detail)) {
         setMembers(e.detail);
       }
     };
+    const handleEventsUpdated = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setEvents(e.detail);
+      }
+    };
+    const handleArticlesUpdated = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setArticles(e.detail);
+      }
+    };
 
     window.addEventListener('umkm_members_updated', handleMembersUpdated);
+    window.addEventListener('umkm_events_updated', handleEventsUpdated);
+    window.addEventListener('umkm_articles_updated', handleArticlesUpdated);
 
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -110,7 +130,11 @@ function MainApp() {
 
     return () => {
       unsubscribeMembers();
+      unsubscribeEvents();
+      unsubscribeArticles();
       window.removeEventListener('umkm_members_updated', handleMembersUpdated);
+      window.removeEventListener('umkm_events_updated', handleEventsUpdated);
+      window.removeEventListener('umkm_articles_updated', handleArticlesUpdated);
     };
   }, []);
 
@@ -299,8 +323,14 @@ function MainApp() {
 
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden bg-slate-900/80 backdrop-blur-xs">
-          <div className="relative w-72 max-w-full">
+        <div
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 z-50 flex lg:hidden bg-slate-900/80 backdrop-blur-xs animate-in fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-72 max-w-[85vw] h-full shadow-2xl animate-in slide-in-from-left duration-200"
+          >
             <AdminSidebar
               activeMenu={adminMenu}
               setActiveMenu={(m) => {
@@ -313,11 +343,12 @@ function MainApp() {
               }}
             />
             <button
+              type="button"
               onClick={() => setMobileSidebarOpen(false)}
-              className="absolute top-4 -right-12 p-2 text-white bg-slate-800 rounded-lg"
-              aria-label="Close Sidebar"
+              className="absolute top-4 right-3 p-1.5 text-white/80 hover:text-white bg-slate-800/90 active:bg-slate-700 rounded-lg cursor-pointer z-20 shadow-md"
+              aria-label="Tutup Menu Sidebar"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

@@ -28,32 +28,67 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ROLE_STORAGE_KEY = 'umkm_active_role';
 const DEMO_USER_KEY = 'umkm_demo_active';
 
+export const REGISTERED_SUPER_ADMIN_EMAILS = [
+  'agus.cabin@gmail.com',
+  'umkmkectangerang@gmail.com',
+  'ketua.umkm@tangerangkota.go.id',
+  'keanggotaan@umkmkuat-tangerang.org',
+  'sekretaris@umkmkuat-tangerang.org',
+  'bendahara@umkmkuat-tangerang.org',
+];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Determine user profile and role
+  // Determine user profile and role strictly based on registered emails
   const resolveProfile = (fbUser: FirebaseUser | null, forcedRole?: UserRole): UserProfile | null => {
     if (!fbUser) return null;
     
-    const savedRole = (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || forcedRole;
-    const isBootstrapAdmin = fbUser.email?.toLowerCase() === 'umkmkectangerang@gmail.com';
+    const emailLower = (fbUser.email || '').trim().toLowerCase();
+    
+    // Check registered super admin emails (ketua sampai bendahara)
+    const isRegisteredSuperAdmin = REGISTERED_SUPER_ADMIN_EMAILS.includes(emailLower);
 
-    // System Security Rule 2: DEFAULT REGISTRATION ROLE IS 'member'
+    // Also check registered users in local storage / database
+    let registeredDbRole: UserRole | null = null;
+    try {
+      const rawUsers = localStorage.getItem('umkm_mgmt_users');
+      if (rawUsers) {
+        const usersList: UserProfile[] = JSON.parse(rawUsers);
+        const match = usersList.find((u) => u.email?.trim().toLowerCase() === emailLower);
+        if (match) {
+          registeredDbRole = match.role;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // Default: strictly 'member' for any unregistered user
     let role: UserRole = 'member';
 
-    if (isBootstrapAdmin) {
-      // System Security Rule 1: Bootstrap Super Admin
+    if (isRegisteredSuperAdmin) {
       role = 'super_admin';
-    } else if (savedRole) {
+    } else if (registeredDbRole && registeredDbRole !== 'member') {
+      role = registeredDbRole;
+    } else {
+      // Non-registered email only receives member access
+      role = 'member';
+      localStorage.removeItem(ROLE_STORAGE_KEY);
+    }
+
+    // Allow role simulation ONLY if user is already a verified super admin
+    const savedRole = (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || forcedRole;
+    if ((isRegisteredSuperAdmin || registeredDbRole === 'super_admin') && savedRole) {
       role = savedRole;
     }
 
     return {
       uid: fbUser.uid,
       email: fbUser.email || 'user@umkmkuat-tangerang.org',
-      displayName: fbUser.displayName || 'Pengguna Terdaftar',
+      displayName: fbUser.displayName || (role === 'member' ? 'Anggota UMKM' : 'Pengurus Forum'),
       role,
       photoURL: fbUser.photoURL || undefined,
       kelurahan: role === 'member' ? 'Kecamatan Tangerang' : 'Kecamatan Tangerang (Semua)',
@@ -66,9 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isDemo) {
       const demoRole = (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || 'super_admin';
       const mockUser = {
-        uid: 'demo-admin-tangerang-01',
-        email: 'umkmkectangerang@gmail.com',
-        displayName: 'Pengurus Forum UMKM KUAT (Admin)',
+        uid: 'usr-agus-superadmin',
+        email: 'agus.cabin@gmail.com',
+        displayName: 'Agus Cabin (Super Admin)',
       } as unknown as FirebaseUser;
       
       setUser(mockUser);
@@ -105,8 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(resolveProfile(res.user));
     } catch (err: unknown) {
       console.error('Google Sign-in failed:', err);
-      // If popup was blocked or iframe restriction occurs, offer seamless demo sign-in
-      quickAdminLogin('super_admin');
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -125,9 +159,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const simulateRole = (role: UserRole) => {
-    localStorage.setItem(ROLE_STORAGE_KEY, role);
-    if (profile) {
-      setProfile({ ...profile, role });
+    // Only verified super admin can simulate roles
+    const currentEmail = (profile?.email || '').trim().toLowerCase();
+    const canSimulate = profile?.role === 'super_admin' || REGISTERED_SUPER_ADMIN_EMAILS.includes(currentEmail);
+    if (canSimulate) {
+      localStorage.setItem(ROLE_STORAGE_KEY, role);
+      if (profile) {
+        setProfile({ ...profile, role });
+      }
     }
   };
 
@@ -135,9 +174,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(DEMO_USER_KEY, 'true');
     localStorage.setItem(ROLE_STORAGE_KEY, role);
     const mockUser = {
-      uid: 'admin-umkm-kuat-tng',
-      email: 'umkmkectangerang@gmail.com',
-      displayName: 'Pengurus Forum UMKM KUAT',
+      uid: 'usr-agus-superadmin',
+      email: 'agus.cabin@gmail.com',
+      displayName: 'Agus Cabin (Super Admin)',
     } as unknown as FirebaseUser;
     
     setUser(mockUser);

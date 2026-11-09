@@ -31,6 +31,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     profile,
     logout,
     simulateRole,
+    isSuperAdmin,
     canManageMembers,
     canManageFinances,
     canManageEventsNews,
@@ -117,24 +118,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
           </div>
 
-          {/* Quick Role Simulation Selector */}
-          <div className="mt-3 pt-2.5 border-t border-slate-800/80">
-            <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-              <span className="font-semibold uppercase tracking-wider">Peran Aktif (RBAC):</span>
+          {/* Quick Role Simulation Selector - Only accessible for Super Admin */}
+          {isSuperAdmin && (
+            <div className="mt-3 pt-2.5 border-t border-slate-800/80">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                <span className="font-semibold uppercase tracking-wider">Peran Aktif (RBAC):</span>
+              </div>
+              <select
+                value={profile?.role || 'super_admin'}
+                onChange={(e) => simulateRole(e.target.value as UserRole)}
+                className="w-full bg-slate-800 border border-slate-700 text-teal-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-teal-500 font-semibold cursor-pointer"
+              >
+                <option value="super_admin">Super Admin</option>
+                <option value="pengurus_kecamatan">Pengurus Kecamatan</option>
+                <option value="admin_keanggotaan">Admin Keanggotaan</option>
+                <option value="bendahara">Bendahara</option>
+                <option value="admin_informasi">Admin Informasi</option>
+                <option value="pengurus_kelurahan">Pengurus Kelurahan</option>
+              </select>
             </div>
-            <select
-              value={profile?.role || 'super_admin'}
-              onChange={(e) => simulateRole(e.target.value as UserRole)}
-              className="w-full bg-slate-800 border border-slate-700 text-teal-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-teal-500 font-semibold cursor-pointer"
-            >
-              <option value="super_admin">Super Admin</option>
-              <option value="pengurus_kecamatan">Pengurus Kecamatan</option>
-              <option value="admin_keanggotaan">Admin Keanggotaan</option>
-              <option value="bendahara">Bendahara</option>
-              <option value="admin_informasi">Admin Informasi</option>
-              <option value="pengurus_kelurahan">Pengurus Kelurahan</option>
-            </select>
-          </div>
+          )}
         </div>
 
         {/* Navigation Menus */}

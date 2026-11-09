@@ -21,7 +21,7 @@ interface LoginModalProps {
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { loginWithGoogle, quickAdminLogin, loading } = useAuth();
+  const { loginWithGoogle, quickAdminLogin, loading, isSuperAdmin } = useAuth();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedDemoRole, setSelectedDemoRole] = useState<UserRole>('super_admin');
 
@@ -35,7 +35,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
       onClose();
     } catch (err: unknown) {
       console.error(err);
-      setErrorMsg('Gagal masuk dengan Google. Anda dapat mencoba mode demo pengurus di bawah.');
+      setErrorMsg('Gagal masuk dengan Google. Pastikan Anda menggunakan akun email pengurus terdaftar Forum UMKM KUAT.');
     }
   };
 
@@ -107,92 +107,105 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
               </svg>
               <span>{loading ? 'Memproses...' : 'Masuk dengan Google'}</span>
             </button>
-            <p className="text-[11px] text-slate-500 text-center">
-              Akses otomatis diatur sesuai email pengurus yang terdaftar di database.
-            </p>
-          </div>
-
-          <div className="relative flex py-1 items-center">
-            <div className="grow border-t border-slate-200"></div>
-            <span className="shrink mx-3 text-slate-400 text-xs uppercase font-semibold">
-              atau pilih peran pengurus
-            </span>
-            <div className="grow border-t border-slate-200"></div>
-          </div>
-
-          {/* Secondary Option: Role-Based Quick Preview */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                2. Uji Coba Cepat Hak Akses (RBAC)
-              </span>
-              <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-bold">
-                6 Peran
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                onClick={() => handleDemoLogin('super_admin')}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                  Super Admin
-                </div>
-                <div className="text-[10px] text-slate-500">Akses Penuh Semua Modul</div>
-              </button>
-
-              <button
-                onClick={() => handleDemoLogin('bendahara')}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                  Bendahara
-                </div>
-                <div className="text-[10px] text-slate-500">Kelola Kas & Iuran</div>
-              </button>
-
-              <button
-                onClick={() => handleDemoLogin('admin_keanggotaan')}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                  Admin Keanggotaan
-                </div>
-                <div className="text-[10px] text-slate-500">Kelola Data UMKM</div>
-              </button>
-
-              <button
-                onClick={() => handleDemoLogin('admin_informasi')}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                  Admin Informasi
-                </div>
-                <div className="text-[10px] text-slate-500">Event & Kabar Berita</div>
-              </button>
-
-              <button
-                onClick={() => handleDemoLogin('pengurus_kecamatan')}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                  Pengurus Kecamatan
-                </div>
-                <div className="text-[10px] text-slate-500">Laporan & Eksekutif</div>
-              </button>
-
-              <button
-                onClick={() => handleDemoLogin('pengurus_kelurahan')}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                  Pengurus Kelurahan
-                </div>
-                <div className="text-[10px] text-slate-500">Input UMKM Wilayah</div>
-              </button>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 leading-relaxed space-y-1">
+              <p className="font-semibold text-slate-800">
+                Catatan Hak Akses Portal:
+              </p>
+              <p>
+                Hanya pengurus terdaftar (mulai dari Ketua hingga Bendahara) yang memiliki hak akses administratif ke portal admin.
+              </p>
+              <p className="text-slate-500">
+                Pendaftar / anggota umum hanya diberikan hak akses anggota untuk melihat website dan formulir pendaftaran.
+              </p>
             </div>
           </div>
+
+          {/* Opsi Pilih Peran / Uji Coba Cepat Hak Akses (RBAC) - HANYA TAMPIL SETELAH SUPER ADMIN LOGIN */}
+          {isSuperAdmin && (
+            <>
+              <div className="relative flex py-1 items-center">
+                <div className="grow border-t border-slate-200"></div>
+                <span className="shrink mx-3 text-slate-400 text-xs uppercase font-semibold">
+                  atau pilih peran pengurus
+                </span>
+                <div className="grow border-t border-slate-200"></div>
+              </div>
+
+              {/* Secondary Option: Role-Based Quick Preview */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    2. Uji Coba Cepat Hak Akses (RBAC)
+                  </span>
+                  <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-bold">
+                    6 Peran
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    onClick={() => handleDemoLogin('super_admin')}
+                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
+                      Super Admin
+                    </div>
+                    <div className="text-[10px] text-slate-500">Akses Penuh Semua Modul</div>
+                  </button>
+
+                  <button
+                    onClick={() => handleDemoLogin('bendahara')}
+                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
+                      Bendahara
+                    </div>
+                    <div className="text-[10px] text-slate-500">Kelola Kas & Iuran</div>
+                  </button>
+
+                  <button
+                    onClick={() => handleDemoLogin('admin_keanggotaan')}
+                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
+                      Admin Keanggotaan
+                    </div>
+                    <div className="text-[10px] text-slate-500">Kelola Data UMKM</div>
+                  </button>
+
+                  <button
+                    onClick={() => handleDemoLogin('admin_informasi')}
+                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
+                      Admin Informasi
+                    </div>
+                    <div className="text-[10px] text-slate-500">Event & Kabar Berita</div>
+                  </button>
+
+                  <button
+                    onClick={() => handleDemoLogin('pengurus_kecamatan')}
+                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
+                      Pengurus Kecamatan
+                    </div>
+                    <div className="text-[10px] text-slate-500">Laporan & Eksekutif</div>
+                  </button>
+
+                  <button
+                    onClick={() => handleDemoLogin('pengurus_kelurahan')}
+                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
+                      Pengurus Kelurahan
+                    </div>
+                    <div className="text-[10px] text-slate-500">Input UMKM Wilayah</div>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer info */}

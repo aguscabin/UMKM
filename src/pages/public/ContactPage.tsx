@@ -10,9 +10,13 @@ import {
   CheckCircle2,
   Building,
   ExternalLink,
+  Instagram,
+  Youtube,
+  Facebook,
 } from 'lucide-react';
 import { KELURAHAN_LIST, OrgContactInfo } from '../../types';
 import { dbService, INITIAL_CONTACT_INFO } from '../../services/db';
+import { TikTokIcon, formatSocialUrl } from '../../components/common/SocialIcons';
 
 export const ContactPage: React.FC = () => {
   const [contactInfo, setContactInfo] = useState<OrgContactInfo>(INITIAL_CONTACT_INFO);
@@ -37,6 +41,20 @@ export const ContactPage: React.FC = () => {
       }
     };
     loadContact();
+
+    const unsubscribe = dbService.subscribeContactInfo((data) => {
+      if (data) setContactInfo(data);
+    });
+
+    const handleUpdate = (e: any) => {
+      if (e.detail) setContactInfo(e.detail);
+    };
+    window.addEventListener('umkm_contact_info_updated', handleUpdate);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('umkm_contact_info_updated', handleUpdate);
+    };
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -158,6 +176,61 @@ export const ContactPage: React.FC = () => {
                     <span>Petunjuk Lokasi Google Maps</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
+                )}
+
+                {/* Social Media Channels */}
+                {(contactInfo.instagram || contactInfo.tiktok || contactInfo.youtube || contactInfo.facebook) && (
+                  <div className="pt-3 border-t border-slate-800 space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Media Sosial Resmi Forum:
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {contactInfo.instagram && (
+                        <a
+                          href={formatSocialUrl(contactInfo.instagram, 'instagram')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors border border-slate-700/50"
+                        >
+                          <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                          <span>Instagram</span>
+                        </a>
+                      )}
+                      {contactInfo.tiktok && (
+                        <a
+                          href={formatSocialUrl(contactInfo.tiktok, 'tiktok')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors border border-slate-700/50"
+                        >
+                          <TikTokIcon className="w-3.5 h-3.5 text-white" />
+                          <span>TikTok</span>
+                        </a>
+                      )}
+                      {contactInfo.youtube && (
+                        <a
+                          href={formatSocialUrl(contactInfo.youtube, 'youtube')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors border border-slate-700/50"
+                        >
+                          <Youtube className="w-3.5 h-3.5 text-red-500" />
+                          <span>YouTube</span>
+                        </a>
+                      )}
+                      {contactInfo.facebook && (
+                        <a
+                          href={formatSocialUrl(contactInfo.facebook, 'facebook')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors border border-slate-700/50"
+                        >
+                          <Facebook className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Facebook</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             )}

@@ -135,6 +135,27 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["role", "name", "order"]
+    },
+    "OrgContactInfo": {
+      "title": "OrgContactInfo",
+      "description": "Contact info, address, office hours, and social media links (Instagram, TikTok, YouTube, Facebook).",
+      "type": "object",
+      "properties": {
+        "officeName": { "type": "string", "maxLength": 150 },
+        "subTitle": { "type": "string", "maxLength": 150 },
+        "address": { "type": "string", "maxLength": 300 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "whatsapp": { "type": "string", "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 150 },
+        "operatingHours": { "type": "string", "maxLength": 100 },
+        "googleMapsUrl": { "type": "string", "maxLength": 500 },
+        "instagram": { "type": "string", "maxLength": 200 },
+        "tiktok": { "type": "string", "maxLength": 200 },
+        "youtube": { "type": "string", "maxLength": 200 },
+        "facebook": { "type": "string", "maxLength": 200 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["officeName", "address", "whatsapp", "email"]
     }
   },
   "firestore": {
@@ -169,6 +190,10 @@
     "/org_structure/{memberId}": {
       "schema": { "$ref": "#/entities/OrgStructureMember" },
       "description": "Official leadership and officer profiles."
+    },
+    "/org_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/OrgContactInfo" },
+      "description": "General forum organization configuration including contact info and social media."
     }
   }
 }

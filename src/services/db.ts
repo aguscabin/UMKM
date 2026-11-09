@@ -226,6 +226,8 @@ export const INITIAL_CONTACT_INFO: OrgContactInfo = {
   operatingHours: 'Senin – Jumat: 08.00 – 16.00 WIB',
   googleMapsUrl: 'https://maps.google.com/?q=Kantor+Kecamatan+Tangerang',
   instagram: '@umkmkuattangerang',
+  tiktok: '@umkmkuattangerang',
+  youtube: 'https://youtube.com/@umkmkuattangerang',
   facebook: 'Forum UMKM KUAT Kec Tangerang',
 };
 
@@ -907,6 +909,29 @@ export const dbService = {
   },
 
   // CONTACT & SERVICES SETTINGS
+  subscribeContactInfo(callback: (info: OrgContactInfo) => void): () => void {
+    try {
+      const docRef = doc(db, 'org_settings', 'contact_info');
+      const unsubscribe = onSnapshot(
+        docRef,
+        (docSnap) => {
+          if (docSnap && docSnap.exists()) {
+            const data = docSnap.data() as OrgContactInfo;
+            setLocalData('contact_info', data);
+            callback(data);
+          }
+        },
+        (err) => {
+          console.warn('Realtime contact_info listener error:', err);
+        }
+      );
+      return unsubscribe;
+    } catch (e) {
+      console.warn('subscribeContactInfo error:', e);
+      return () => {};
+    }
+  },
+
   async getContactInfo(): Promise<OrgContactInfo> {
     const local = getLocalData<OrgContactInfo | null>('contact_info', null);
     try {
@@ -931,16 +956,24 @@ export const dbService = {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    const cleaned = cleanFirestoreData(payload);
+
+    // 1. Immediately update local storage and notify listeners
+    setLocalData('contact_info', cleaned);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_contact_info_updated', { detail: cleaned }));
+    }
+
+    // 2. Persist to Firestore
     try {
-      const writePromise = setDoc(doc(db, 'org_settings', 'contact_info'), payload);
+      const writePromise = setDoc(doc(db, 'org_settings', 'contact_info'), cleaned);
       await Promise.race([
         writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
       ]);
     } catch (err) {
       console.warn('Firestore saveContactInfo fallback to local:', err);
     }
-    setLocalData('contact_info', payload);
   },
 
   // DATA BACKUP & RESTORE

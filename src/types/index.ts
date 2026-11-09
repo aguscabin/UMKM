@@ -164,6 +164,8 @@ export interface OrgContactInfo {
   operatingHours: string;
   googleMapsUrl?: string;
   instagram?: string;
+  tiktok?: string;
+  youtube?: string;
   facebook?: string;
   updatedAt?: string;
 }

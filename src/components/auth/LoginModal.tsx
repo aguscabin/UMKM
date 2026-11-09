@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { UmkmKuatLogo } from '../UmkmKuatLogo';
-import { UserRole } from '../../types';
 import {
   X,
   ShieldCheck,
-  Lock,
-  LogIn,
-  KeyRound,
-  CheckCircle2,
   AlertCircle,
-  HelpCircle,
-  UserCheck,
 } from 'lucide-react';
 
 interface LoginModalProps {
@@ -21,9 +14,8 @@ interface LoginModalProps {
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { loginWithGoogle, quickAdminLogin, loading, isSuperAdmin } = useAuth();
+  const { loginWithGoogle, loading } = useAuth();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [selectedDemoRole, setSelectedDemoRole] = useState<UserRole>('super_admin');
 
   if (!isOpen) return null;
 
@@ -39,12 +31,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     }
   };
 
-  const handleDemoLogin = (role: UserRole) => {
-    quickAdminLogin(role);
-    onSuccess();
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
@@ -52,7 +38,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
         <div className="p-6 bg-slate-900 text-white relative">
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg"
+            className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -68,7 +54,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
           {errorMsg && (
             <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl flex items-center gap-2 border border-red-200">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -76,11 +62,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
             </div>
           )}
 
-          {/* Primary Option: Google Authentication */}
+          {/* Masuk Menggunakan Akun Google */}
           <div className="space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
-              1. Masuk Menggunakan Akun Google
-            </span>
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
@@ -107,105 +90,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
               </svg>
               <span>{loading ? 'Memproses...' : 'Masuk dengan Google'}</span>
             </button>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 leading-relaxed space-y-1">
-              <p className="font-semibold text-slate-800">
-                Catatan Hak Akses Portal:
-              </p>
-              <p>
-                Hanya pengurus terdaftar (mulai dari Ketua hingga Bendahara) yang memiliki hak akses administratif ke portal admin.
-              </p>
-              <p className="text-slate-500">
-                Pendaftar / anggota umum hanya diberikan hak akses anggota untuk melihat website dan formulir pendaftaran.
-              </p>
-            </div>
           </div>
-
-          {/* Opsi Pilih Peran / Uji Coba Cepat Hak Akses (RBAC) - HANYA TAMPIL SETELAH SUPER ADMIN LOGIN */}
-          {isSuperAdmin && (
-            <>
-              <div className="relative flex py-1 items-center">
-                <div className="grow border-t border-slate-200"></div>
-                <span className="shrink mx-3 text-slate-400 text-xs uppercase font-semibold">
-                  atau pilih peran pengurus
-                </span>
-                <div className="grow border-t border-slate-200"></div>
-              </div>
-
-              {/* Secondary Option: Role-Based Quick Preview */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    2. Uji Coba Cepat Hak Akses (RBAC)
-                  </span>
-                  <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-bold">
-                    6 Peran
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    onClick={() => handleDemoLogin('super_admin')}
-                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-                  >
-                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                      Super Admin
-                    </div>
-                    <div className="text-[10px] text-slate-500">Akses Penuh Semua Modul</div>
-                  </button>
-
-                  <button
-                    onClick={() => handleDemoLogin('bendahara')}
-                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-                  >
-                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                      Bendahara
-                    </div>
-                    <div className="text-[10px] text-slate-500">Kelola Kas & Iuran</div>
-                  </button>
-
-                  <button
-                    onClick={() => handleDemoLogin('admin_keanggotaan')}
-                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-                  >
-                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                      Admin Keanggotaan
-                    </div>
-                    <div className="text-[10px] text-slate-500">Kelola Data UMKM</div>
-                  </button>
-
-                  <button
-                    onClick={() => handleDemoLogin('admin_informasi')}
-                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-                  >
-                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                      Admin Informasi
-                    </div>
-                    <div className="text-[10px] text-slate-500">Event & Kabar Berita</div>
-                  </button>
-
-                  <button
-                    onClick={() => handleDemoLogin('pengurus_kecamatan')}
-                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-                  >
-                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                      Pengurus Kecamatan
-                    </div>
-                    <div className="text-[10px] text-slate-500">Laporan & Eksekutif</div>
-                  </button>
-
-                  <button
-                    onClick={() => handleDemoLogin('pengurus_kelurahan')}
-                    className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-all group cursor-pointer"
-                  >
-                    <div className="font-bold text-slate-900 group-hover:text-teal-700">
-                      Pengurus Kelurahan
-                    </div>
-                    <div className="text-[10px] text-slate-500">Input UMKM Wilayah</div>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
         </div>
 
         {/* Footer info */}

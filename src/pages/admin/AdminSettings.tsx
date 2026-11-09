@@ -39,7 +39,11 @@ import {
   Globe,
   ExternalLink,
   UserPlus,
+  Instagram,
+  Youtube,
+  Facebook,
 } from 'lucide-react';
+import { TikTokIcon, formatSocialUrl } from '../../components/common/SocialIcons';
 
 interface AdminSettingsProps {
   logs: ActivityLog[];
@@ -1336,31 +1340,79 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Akun Instagram (Opsional)
-                    </label>
-                    <input
-                      type="text"
-                      value={contactForm.instagram || ''}
-                      onChange={(e) => setContactForm({ ...contactForm, instagram: e.target.value })}
-                      placeholder="Contoh: @umkmkuattangerang"
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:border-teal-500"
-                    />
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+                      Tautan Media Sosial Resmi (Catatan Kaki / Footer)
+                    </span>
+                    <span className="text-[10px] bg-teal-50 text-teal-700 font-semibold px-2 py-0.5 rounded">
+                      Super Admin
+                    </span>
                   </div>
+                  <p className="text-[11px] text-slate-500 mb-4">
+                    Tautan ini akan tampil sebagai ikon interaktif di catatan kaki (footer) website publik. Anda dapat memasukkan username handle (contoh: <code>@umkmkuattangerang</code>) atau tautan URL lengkap.
+                  </p>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Akun Facebook / Grup (Opsional)
-                    </label>
-                    <input
-                      type="text"
-                      value={contactForm.facebook || ''}
-                      onChange={(e) => setContactForm({ ...contactForm, facebook: e.target.value })}
-                      placeholder="Contoh: Forum UMKM KUAT Kec Tangerang"
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:border-teal-500"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Instagram */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                        <Instagram className="w-3.5 h-3.5 text-pink-600" />
+                        <span>Akun Instagram (Opsional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={contactForm.instagram || ''}
+                        onChange={(e) => setContactForm({ ...contactForm, instagram: e.target.value })}
+                        placeholder="Contoh: @umkmkuattangerang atau https://instagram.com/..."
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    {/* TikTok */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                        <TikTokIcon className="w-3.5 h-3.5 text-slate-900" />
+                        <span>Akun TikTok (Opsional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={contactForm.tiktok || ''}
+                        onChange={(e) => setContactForm({ ...contactForm, tiktok: e.target.value })}
+                        placeholder="Contoh: @umkmkuattangerang atau https://tiktok.com/@..."
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    {/* YouTube */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                        <Youtube className="w-3.5 h-3.5 text-red-600" />
+                        <span>Channel YouTube (Opsional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={contactForm.youtube || ''}
+                        onChange={(e) => setContactForm({ ...contactForm, youtube: e.target.value })}
+                        placeholder="Contoh: https://youtube.com/@umkmkuattangerang"
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
+
+                    {/* Facebook */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                        <Facebook className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Akun Facebook / Halaman (Opsional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={contactForm.facebook || ''}
+                        onChange={(e) => setContactForm({ ...contactForm, facebook: e.target.value })}
+                        placeholder="Contoh: Forum UMKM KUAT Kec Tangerang"
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:border-teal-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1380,7 +1432,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      <span>Simpan Perubahan Informasi Kontak</span>
+                      <span>Simpan Perubahan Informasi Kontak & Sosmed</span>
                     </>
                   )}
                 </button>
@@ -1445,8 +1497,56 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
                   </div>
                 </div>
 
+                {/* Social media icons preview */}
+                <div className="pt-3 border-t border-slate-800">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-2">
+                    Ikon Media Sosial Terhubung:
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {contactForm.instagram ? (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800 border border-pink-500/30 text-pink-400 flex items-center justify-center text-xs" title={`Instagram: ${contactForm.instagram}`}>
+                        <Instagram className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800/40 border border-slate-700/50 text-slate-600 flex items-center justify-center text-xs" title="Instagram belum diisi">
+                        <Instagram className="w-4 h-4 opacity-30" />
+                      </div>
+                    )}
+
+                    {contactForm.tiktok ? (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-teal-300 flex items-center justify-center text-xs" title={`TikTok: ${contactForm.tiktok}`}>
+                        <TikTokIcon className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800/40 border border-slate-700/50 text-slate-600 flex items-center justify-center text-xs" title="TikTok belum diisi">
+                        <TikTokIcon className="w-4 h-4 opacity-30" />
+                      </div>
+                    )}
+
+                    {contactForm.youtube ? (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800 border border-red-500/30 text-red-400 flex items-center justify-center text-xs" title={`YouTube: ${contactForm.youtube}`}>
+                        <Youtube className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800/40 border border-slate-700/50 text-slate-600 flex items-center justify-center text-xs" title="YouTube belum diisi">
+                        <Youtube className="w-4 h-4 opacity-30" />
+                      </div>
+                    )}
+
+                    {contactForm.facebook ? (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800 border border-blue-500/30 text-blue-400 flex items-center justify-center text-xs" title={`Facebook: ${contactForm.facebook}`}>
+                        <Facebook className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-slate-800/40 border border-slate-700/50 text-slate-600 flex items-center justify-center text-xs" title="Facebook belum diisi">
+                        <Facebook className="w-4 h-4 opacity-30" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {contactForm.whatsapp && (
-                  <div className="pt-3 border-t border-slate-800">
+                  <div className="pt-2">
                     {(() => {
                       const clean = contactForm.whatsapp.replace(/[^0-9]/g, '');
                       const formatted = clean.startsWith('0') ? '62' + clean.slice(1) : clean;
@@ -1467,9 +1567,10 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
               </div>
 
               {/* Footer Preview snippet */}
-              <div className="bg-slate-900 text-slate-300 rounded-2xl p-4 border border-slate-800 text-xs space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
-                  Tampilan pada Footer Website
+              <div className="bg-slate-900 text-slate-300 rounded-2xl p-4 border border-slate-800 text-xs space-y-2.5">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-teal-400 flex items-center justify-between">
+                  <span>Pratinjau Catatan Kaki (Footer Website)</span>
+                  <span className="text-slate-500 font-mono">Live</span>
                 </div>
                 <div className="text-slate-400 text-[11px] flex items-center gap-2">
                   <Phone className="w-3 h-3 text-teal-400 shrink-0" />
@@ -1479,12 +1580,38 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
                   <Mail className="w-3 h-3 text-teal-400 shrink-0" />
                   <span>{contactForm.email}</span>
                 </div>
+                {/* Social icons row in footer preview */}
+                <div className="pt-2 border-t border-slate-800 flex items-center gap-2">
+                  <span className="text-[10px] text-slate-500">Ikon Sosmed:</span>
+                  <div className="flex items-center gap-1.5">
+                    {contactForm.instagram && (
+                      <span className="p-1 rounded bg-slate-800 text-pink-400" title="Instagram">
+                        <Instagram className="w-3 h-3" />
+                      </span>
+                    )}
+                    {contactForm.tiktok && (
+                      <span className="p-1 rounded bg-slate-800 text-white" title="TikTok">
+                        <TikTokIcon className="w-3 h-3" />
+                      </span>
+                    )}
+                    {contactForm.youtube && (
+                      <span className="p-1 rounded bg-slate-800 text-red-400" title="YouTube">
+                        <Youtube className="w-3 h-3" />
+                      </span>
+                    )}
+                    {contactForm.facebook && (
+                      <span className="p-1 rounded bg-slate-800 text-blue-400" title="Facebook">
+                        <Facebook className="w-3 h-3" />
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="text-[11px] text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-start gap-2">
                 <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
                 <span>
-                  Perubahan data kontak disimpan langsung ke koleksi Firestore <code>org_settings/contact_info</code> dan langsung memperbarui seluruh halaman publik secara real-time.
+                  Perubahan data kontak dan media sosial disimpan langsung ke koleksi Firestore <code>org_settings/contact_info</code> dan otomatis memperbarui tampilan catatan kaki (footer) publik secara real-time.
                 </span>
               </div>
             </div>

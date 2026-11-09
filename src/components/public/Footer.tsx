@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { UmkmKuatLogo } from '../UmkmKuatLogo';
 import { KELURAHAN_LIST, OrgContactInfo } from '../../types';
 import { dbService, INITIAL_CONTACT_INFO } from '../../services/db';
-import { MapPin, Phone, Mail, Clock, ShieldCheck, ExternalLink, Heart } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, ShieldCheck, ExternalLink, Instagram, Youtube, Facebook } from 'lucide-react';
+import { TikTokIcon, formatSocialUrl } from '../common/SocialIcons';
 
 interface FooterProps {
   setCurrentTab: (tab: string) => void;
@@ -22,13 +23,29 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
       }
     };
     loadContact();
+
+    // Subscribe to realtime contact_info updates from Firestore
+    const unsubscribe = dbService.subscribeContactInfo((data) => {
+      if (data) setContactInfo(data);
+    });
+
+    // Also listen to in-window custom update event
+    const handleUpdate = (e: any) => {
+      if (e.detail) setContactInfo(e.detail);
+    };
+    window.addEventListener('umkm_contact_info_updated', handleUpdate);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('umkm_contact_info_updated', handleUpdate);
+    };
   }, []);
 
   return (
     <footer className="bg-slate-950 text-slate-300 pt-20 pb-12 border-t border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-14">
-          {/* Col 1: Brand & About */}
+          {/* Col 1: Brand & About & Social Media Icons */}
           <div className="space-y-4">
             <UmkmKuatLogo size="lg" variant="full" theme="light" />
             <p className="text-sm text-slate-400 leading-relaxed font-normal">
@@ -38,6 +55,72 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
               <ShieldCheck className="w-4 h-4 text-teal-400" />
               <span>Mitra Resmi Kecamatan Tangerang</span>
             </div>
+
+            {/* Social Media Icons (Instagram, TikTok, YouTube, Facebook) */}
+            {(contactInfo.instagram || contactInfo.tiktok || contactInfo.youtube || contactInfo.facebook) && (
+              <div className="pt-2">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                  Media Sosial Resmi:
+                </div>
+                <div className="flex items-center gap-2.5">
+                  {/* Instagram */}
+                  {contactInfo.instagram && (
+                    <a
+                      href={formatSocialUrl(contactInfo.instagram, 'instagram')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram Forum UMKM KUAT"
+                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 transition-all hover:scale-105 shadow-xs"
+                      title={`Instagram: ${contactInfo.instagram}`}
+                    >
+                      <Instagram className="w-4 h-4" />
+                    </a>
+                  )}
+
+                  {/* TikTok */}
+                  {contactInfo.tiktok && (
+                    <a
+                      href={formatSocialUrl(contactInfo.tiktok, 'tiktok')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="TikTok Forum UMKM KUAT"
+                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 hover:border-slate-700 transition-all hover:scale-105 shadow-xs"
+                      title={`TikTok: ${contactInfo.tiktok}`}
+                    >
+                      <TikTokIcon className="w-4 h-4" />
+                    </a>
+                  )}
+
+                  {/* YouTube */}
+                  {contactInfo.youtube && (
+                    <a
+                      href={formatSocialUrl(contactInfo.youtube, 'youtube')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="YouTube Forum UMKM KUAT"
+                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-red-600 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 transition-all hover:scale-105 shadow-xs"
+                      title={`YouTube: ${contactInfo.youtube}`}
+                    >
+                      <Youtube className="w-4 h-4" />
+                    </a>
+                  )}
+
+                  {/* Facebook */}
+                  {contactInfo.facebook && (
+                    <a
+                      href={formatSocialUrl(contactInfo.facebook, 'facebook')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook Forum UMKM KUAT"
+                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-blue-600 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 transition-all hover:scale-105 shadow-xs"
+                      title={`Facebook: ${contactInfo.facebook}`}
+                    >
+                      <Facebook className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Col 2: 8 Kelurahan Binaan */}
@@ -180,15 +263,73 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-normal">
+        {/* Bottom Bar with Social Media and Copyright */}
+        <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-normal">
           <div>
             &copy; {new Date().getFullYear()} Forum UMKM KUAT Kecamatan Tangerang. Hak Cipta Dilindungi Undang-Undang.
           </div>
+
+          {/* Social icons in bottom bar */}
+          {(contactInfo.instagram || contactInfo.tiktok || contactInfo.youtube || contactInfo.facebook) && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400 font-medium">Sosial Media:</span>
+              <div className="flex items-center gap-1.5">
+                {contactInfo.instagram && (
+                  <a
+                    href={formatSocialUrl(contactInfo.instagram, 'instagram')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-pink-400 hover:bg-slate-800 transition-colors"
+                    title={`Instagram: ${contactInfo.instagram}`}
+                    aria-label="Instagram"
+                  >
+                    <Instagram className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {contactInfo.tiktok && (
+                  <a
+                    href={formatSocialUrl(contactInfo.tiktok, 'tiktok')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    title={`TikTok: ${contactInfo.tiktok}`}
+                    aria-label="TikTok"
+                  >
+                    <TikTokIcon className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {contactInfo.youtube && (
+                  <a
+                    href={formatSocialUrl(contactInfo.youtube, 'youtube')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                    title={`YouTube: ${contactInfo.youtube}`}
+                    aria-label="YouTube"
+                  >
+                    <Youtube className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {contactInfo.facebook && (
+                  <a
+                    href={formatSocialUrl(contactInfo.facebook, 'facebook')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors"
+                    title={`Facebook: ${contactInfo.facebook}`}
+                    aria-label="Facebook"
+                  >
+                    <Facebook className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-1.5 text-slate-400">
             <span>Membangun UMKM Berdaya Saing &</span>
             <span className="text-amber-400 font-bold">KUAT</span>
-            <span>untuk Tangerang Gemilang</span>
+            <span>Tangerang</span>
           </div>
         </div>
       </div>

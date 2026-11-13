@@ -5,6 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 import { OFFICIAL_LOGO_URL } from '../../components/UmkmKuatLogo';
 import { MemberCardModal } from '../../components/MemberCardModal';
 import { compressImage } from '../../utils/image';
+import { validateMemberInput, validateUploadedFile } from '../../utils/validation';
+import {
+  downloadExcelTemplate,
+  parseExcelMembersFile,
+  ExcelParseResult,
+  DEFAULT_MEMBER_PHOTO_PLACEHOLDER,
+  DEFAULT_PRODUCT_PHOTO_PLACEHOLDER,
+} from '../../utils/excelImport';
 import {
   Users,
   Search,
@@ -66,6 +74,15 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
   // Printable PDF Modal state
   const [printModalOpen, setPrintModalOpen] = useState(false);
+
+  // Excel Bulk Import states
+  const excelInputRef = useRef<HTMLInputElement>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState('');
+  const [importResult, setImportResult] = useState<ExcelParseResult | null>(null);
+  const [isParsingExcel, setIsParsingExcel] = useState(false);
+  const [isImportingBulk, setIsImportingBulk] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ saved: number; total: number } | null>(null);
 
   // File upload refs
   const memberPhotoRef = useRef<HTMLInputElement>(null);
@@ -143,10 +160,16 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     setModalOpen(true);
   };
 
-  // Upload Photo handlers with compression
+  // Upload Photo handlers with file size/MIME check & compression
   const handleMemberPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      alert(fileCheck.error || 'File foto anggota tidak valid.');
+      if (e.target) e.target.value = '';
+      return;
+    }
     try {
       const compressed = await compressImage(file, 500, 500, 0.82);
       setFormData((prev) => ({
@@ -155,12 +178,20 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       }));
     } catch (err: any) {
       alert('Gagal memproses foto anggota: ' + (err?.message || 'Format tidak didukung'));
+    } finally {
+      if (e.target) e.target.value = '';
     }
   };
 
   const handleProductPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      alert(fileCheck.error || 'File foto produk tidak valid.');
+      if (e.target) e.target.value = '';
+      return;
+    }
     try {
       const compressed = await compressImage(file, 600, 600, 0.82);
       setFormData((prev) => ({
@@ -169,6 +200,8 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       }));
     } catch (err: any) {
       alert('Gagal memproses foto produk: ' + (err?.message || 'Format tidak didukung'));
+    } finally {
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -204,38 +237,19 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Explicit validation with immediate, clear feedback on mobile
-    if (!formData.fullName || formData.fullName.trim() === '') {
-      alert('Mohon isi Nama Lengkap anggota sesuai KTP.');
-      return;
-    }
-    if (!formData.nik || formData.nik.trim() === '') {
-      alert('Mohon isi NIK (Nomor Induk Kependudukan).');
-      return;
-    }
-    if (formData.nik.trim().length !== 16) {
-      alert('NIK harus terdiri dari 16 digit angka.');
-      return;
-    }
-    if (!formData.phone || formData.phone.trim() === '') {
-      alert('Mohon isi Nomor WhatsApp / HP anggota.');
-      return;
-    }
-    if (!formData.address || formData.address.trim() === '') {
-      alert('Mohon isi Alamat Domisili KTP anggota.');
-      return;
-    }
-    if (!formData.businessName || formData.businessName.trim() === '') {
-      alert('Mohon isi Nama Usaha / Merk.');
-      return;
-    }
-    if (!formData.topProduct || formData.topProduct.trim() === '') {
-      alert('Mohon isi Produk Unggulan usaha.');
+    // 1. Validasi ketat & sanitasi XSS (NIK 16 digit, email, no WA/HP)
+    const validation = validateMemberInput(formData, { requireValidNik: true });
+    if (!validation.valid) {
+      const msg = validation.errors[0] || 'Data anggota belum lengkap atau tidak valid.';
+      setDuplicationWarning(msg);
+      alert(msg);
       return;
     }
 
+    const sanitized = validation.sanitized;
+
     // 2. Duplication check
-    const dup = checkDuplication(formData.nik, formData.phone);
+    const dup = checkDuplication(sanitized.nik, sanitized.phone);
     if (dup) {
       setDuplicationWarning(dup);
       alert(dup);
@@ -246,14 +260,10 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       setIsSubmitting(true);
       const id = editingMember ? editingMember.id : 'mem-' + Date.now();
       const memberToSave: Member = {
+        ...sanitized,
         id,
-        ...formData,
-        fullName: formData.fullName.trim(),
-        nik: formData.nik.trim(),
-        phone: formData.phone.trim(),
-        address: formData.address.trim(),
-        businessName: formData.businessName.trim(),
-        topProduct: formData.topProduct.trim(),
+        memberNumber: formData.memberNumber || sanitized.memberNumber,
+        createdAt: editingMember ? editingMember.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -393,6 +403,108 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
+  // Excel Template & Import Handlers
+  const handleDownloadTemplateExcel = () => {
+    try {
+      downloadExcelTemplate();
+    } catch (err: any) {
+      alert('Gagal membuat file template Excel: ' + (err?.message || 'Terjadi kesalahan'));
+    }
+  };
+
+  const handleExcelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fileCheck = validateUploadedFile(file, 'excel');
+    if (!fileCheck.valid) {
+      alert(fileCheck.error || 'File spreadsheet tidak valid.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+    try {
+      setIsParsingExcel(true);
+      setImportFileName(file.name);
+      const parsed = await parseExcelMembersFile(file, members);
+      setImportResult(parsed);
+      setImportModalOpen(true);
+    } catch (err: any) {
+      alert('Gagal membaca file Excel: ' + (err?.message || 'Pastikan format file (.xlsx, .xls, .csv) valid'));
+    } finally {
+      setIsParsingExcel(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleConfirmBulkImport = async () => {
+    if (!importResult) return;
+    const validRows = importResult.rows.filter((r) => r.isValid);
+    if (validRows.length === 0) {
+      alert('Tidak ada data anggota yang valid untuk disimpan.');
+      return;
+    }
+
+    try {
+      setIsImportingBulk(true);
+      const year = new Date().getFullYear();
+
+      // Hitung nomor urut tertinggi untuk tahun berjalan agar tidak bentrok
+      let maxSeq = 0;
+      const prefix = `KUAT-TNG-${year}-`;
+      for (const m of members) {
+        if (m.memberNumber && m.memberNumber.startsWith(prefix)) {
+          const tail = parseInt(m.memberNumber.slice(prefix.length), 10);
+          if (!isNaN(tail) && tail > maxSeq) maxSeq = tail;
+        }
+      }
+      if (maxSeq < members.length) {
+        maxSeq = members.length;
+      }
+
+      const nowIso = new Date().toISOString();
+      const baseTs = Date.now();
+
+      const membersToSave: Member[] = validRows.map((row, idx) => {
+        const seq = String(maxSeq + idx + 1).padStart(3, '0');
+        return {
+          id: `mem-${baseTs}-${idx}`,
+          memberNumber: `${prefix}${seq}`,
+          ...row.data,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        };
+      });
+
+      setImportProgress({ saved: 0, total: membersToSave.length });
+      await dbService.saveMembersBulk(membersToSave, (saved, total) => {
+        setImportProgress({ saved, total });
+      });
+
+      try {
+        await dbService.addLog({
+          userId: profile?.uid || 'admin',
+          userName: profile?.displayName || 'Pengurus',
+          action: 'Import Massal Excel Anggota',
+          target: `${membersToSave.length} Anggota Baru`,
+          details: `Import dari file "${importFileName}" (${membersToSave.length} berhasil, ${importResult.invalidCount} dilewati)`,
+        });
+      } catch (logErr) {
+        console.warn('Logging non-fatal error:', logErr);
+      }
+
+      setImportModalOpen(false);
+      setImportResult(null);
+      setImportProgress(null);
+      onRefresh();
+      alert(`Berhasil mengimpor ${membersToSave.length} data anggota UMKM ke database!`);
+    } catch (err: any) {
+      console.error('Bulk import failed:', err);
+      alert('Gagal menyimpan data import ke database: ' + (err?.message || 'Silakan periksa koneksi atau izin akses'));
+    } finally {
+      setIsImportingBulk(false);
+      setImportProgress(null);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Top Header & Actions */}
@@ -415,6 +527,36 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
             <Share2 className="w-4 h-4" />
             <span>Bagikan Link</span>
           </button>
+
+          {canManageMembers && (
+            <>
+              <button
+                type="button"
+                onClick={handleDownloadTemplateExcel}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-emerald-50 active:bg-emerald-100 text-emerald-700 px-3.5 py-2.5 rounded-xl border border-emerald-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer min-h-[42px]"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>Download Template Excel</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isParsingExcel}
+                onClick={() => excelInputRef.current?.click()}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer min-h-[42px] disabled:opacity-60"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{isParsingExcel ? 'Membaca Excel...' : 'Import Excel'}</span>
+              </button>
+              <input
+                ref={excelInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleExcelFileChange}
+                className="hidden"
+              />
+            </>
+          )}
 
           <button
             onClick={handleExportCSV}
@@ -1525,6 +1667,249 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 <Printer className="w-4 h-4" />
                 <span>Cetak Dokumen Sekarang</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PRATINJAU & VALIDASI IMPORT EXCEL */}
+      {importModalOpen && importResult && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full sm:max-w-6xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[94vh] sm:max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-black text-slate-900 text-base sm:text-lg truncate">
+                    Pratinjau Import Data Anggota Excel
+                  </h3>
+                  <p className="text-[11px] text-slate-500 truncate">
+                    File: <span className="font-semibold text-slate-700">{importFileName}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isImportingBulk}
+                onClick={() => setImportModalOpen(false)}
+                className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                aria-label="Tutup Modal Import"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              {/* Summary Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold text-slate-500">Total Baris Terbaca</div>
+                    <div className="text-xl font-black text-slate-900">{importResult.rows.length}</div>
+                  </div>
+                  <Users className="w-6 h-6 text-slate-400" />
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold text-emerald-700">Valid & Siap Disimpan</div>
+                    <div className="text-xl font-black text-emerald-800">{importResult.validCount}</div>
+                  </div>
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold text-red-700">Error / Duplikat (Dilewati)</div>
+                    <div className="text-xl font-black text-red-800">{importResult.invalidCount}</div>
+                  </div>
+                  <AlertTriangle className="w-6 h-6 text-red-500" />
+                </div>
+              </div>
+
+              {/* Missing Headers Alert */}
+              {importResult.missingHeaders.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                  <div>
+                    <div className="font-bold">Beberapa kolom template tidak ditemukan pada header Excel:</div>
+                    <div className="mt-0.5 text-[11px] font-mono">
+                      {importResult.missingHeaders.join(', ')}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview Table */}
+              {importResult.rows.length === 0 ? (
+                <div className="p-10 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 text-xs">
+                  Tidak ada baris data anggota yang ditemukan di bawah baris header.
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                  <div className="overflow-x-auto max-h-[46vh]">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] sticky top-0 z-10 border-b border-slate-200">
+                        <tr>
+                          <th className="px-3 py-3">Baris</th>
+                          <th className="px-3 py-3">Status Validasi</th>
+                          <th className="px-3 py-3">Foto</th>
+                          <th className="px-3 py-3">Nama & Domisili</th>
+                          <th className="px-3 py-3">NIK (Teks)</th>
+                          <th className="px-3 py-3">No. WA / Email</th>
+                          <th className="px-3 py-3">Usaha & Produk</th>
+                          <th className="px-3 py-3">Legalitas</th>
+                          <th className="px-3 py-3">Produk</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {importResult.rows.map((row) => (
+                          <tr
+                            key={row.rowNumber}
+                            className={row.isValid ? 'hover:bg-slate-50/80' : 'bg-red-50/40 hover:bg-red-50/70'}
+                          >
+                            <td className="px-3 py-2.5 font-mono text-slate-500 font-semibold whitespace-nowrap">
+                              #{row.rowNumber}
+                            </td>
+                            <td className="px-3 py-2.5 min-w-[170px]">
+                              {row.isValid ? (
+                                <div className="space-y-1">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Valid
+                                  </span>
+                                  {row.warnings.length > 0 && (
+                                    <div className="text-[10px] text-amber-700 leading-tight">
+                                      {row.warnings.join('; ')}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="space-y-1">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-800 text-[10px] font-bold">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    Tidak Valid
+                                  </span>
+                                  <div className="text-[10px] text-red-700 font-medium leading-tight">
+                                    {row.errors.join('; ')}
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <img
+                                src={row.data.memberPhoto}
+                                alt={row.data.fullName || 'Foto'}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = DEFAULT_MEMBER_PHOTO_PLACEHOLDER;
+                                }}
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 bg-slate-100"
+                              />
+                            </td>
+                            <td className="px-3 py-2.5 min-w-[160px]">
+                              <div className="font-bold text-slate-900">
+                                {row.data.fullName || <span className="text-red-500 italic">(Kosong)</span>}
+                              </div>
+                              <div className="text-[10px] text-teal-700 font-semibold">
+                                Kel. {row.data.kelurahan}
+                              </div>
+                              <div className="text-[10px] text-slate-500 line-clamp-1" title={row.data.address}>
+                                {row.data.address}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-slate-800 whitespace-nowrap">
+                              {row.data.nik || <span className="text-red-500 italic">(Kosong)</span>}
+                            </td>
+                            <td className="px-3 py-2.5 whitespace-nowrap">
+                              <div className="font-mono text-[11px] font-semibold text-slate-800">
+                                {row.data.phone || <span className="text-red-500 italic">(Kosong)</span>}
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate max-w-[140px]">
+                                {row.data.email || '-'}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 min-w-[160px]">
+                              <div className="font-bold text-slate-800">
+                                {row.data.businessName || <span className="text-red-500 italic">(Kosong)</span>}
+                              </div>
+                              <div className="text-[10px] text-teal-700 font-medium">
+                                {row.data.category} &bull; {row.data.topProduct}
+                              </div>
+                              <div className="text-[10px] text-slate-500 font-mono">
+                                WA Usaha: {row.data.businessPhone || '-'}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 max-w-[130px]">
+                              <span className="text-[10px] text-slate-600 line-clamp-2">
+                                {row.data.legalities || '-'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <img
+                                src={row.data.productPhoto}
+                                alt={row.data.businessName || 'Produk'}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_PHOTO_PLACEHOLDER;
+                                }}
+                                className="w-12 h-10 rounded-xl object-cover border border-slate-200 bg-slate-100"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 flex-shrink-0">
+              <div className="text-[11px] text-slate-500 text-center sm:text-left">
+                {importResult.invalidCount > 0 ? (
+                  <span>
+                    Baris berstatus <strong>Tidak Valid</strong> tidak akan ikut disimpan. Hanya{' '}
+                    <strong className="text-emerald-700">{importResult.validCount} data valid</strong> yang disimpan.
+                  </span>
+                ) : (
+                  <span>Semua tautan Google Drive otomatis dikonversi ke format gambar langsung.</span>
+                )}
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  type="button"
+                  disabled={isImportingBulk}
+                  onClick={() => setImportModalOpen(false)}
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-slate-600 hover:bg-slate-200/70 rounded-xl cursor-pointer disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={isImportingBulk || importResult.validCount === 0}
+                  onClick={handleConfirmBulkImport}
+                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isImportingBulk ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>
+                        Menyimpan ({importProgress?.saved ?? 0}/{importProgress?.total ?? importResult.validCount})...
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Simpan Semua ke Database ({importResult.validCount})</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -3,6 +3,8 @@ import { Transaction, TransactionType } from '../../types';
 import { dbService } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
 import { OFFICIAL_LOGO_URL } from '../../components/UmkmKuatLogo';
+import { compressImage } from '../../utils/image';
+import { validateTransactionInput, validateUploadedFile } from '../../utils/validation';
 import {
   Wallet,
   ArrowUpRight,
@@ -86,65 +88,74 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
     setModalOpen(true);
   };
 
-  // Image Upload handler (Screenshots, direct camera photos, gallery)
-  const handleProofImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image Upload handler with validation & compression
+  const handleProofImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('Mohon pilih file gambar (JPG, PNG, WEBP, tangkapan layar)');
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      alert(fileCheck.error || 'Mohon pilih file gambar (JPG, PNG, WEBP) maksimal 5MB.');
+      if (e.target) e.target.value = '';
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran file maksimal 5MB');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
+    try {
+      const compressed = await compressImage(file, 800, 800, 0.78);
       setFormData((prev) => ({
         ...prev,
-        proofUrl: base64,
+        proofUrl: compressed,
       }));
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      alert('Gagal memproses bukti gambar: ' + (err?.message || 'Format tidak didukung'));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.amount <= 0) {
-      alert('Nominal transaksi harus lebih dari 0');
+    const validation = validateTransactionInput(formData);
+    if (!validation.valid) {
+      alert(validation.errors[0] || 'Data transaksi tidak valid.');
       return;
     }
 
-    const id = 'trx-' + Date.now();
-    const newTx: Transaction = {
-      id,
-      ...formData,
-      history: [
-        {
-          timestamp: new Date().toISOString(),
-          action: 'Pencatatan Awal Transaksi',
+    try {
+      const id = 'trx-' + Date.now();
+      const newTx: Transaction = {
+        ...validation.sanitized,
+        id,
+        transactionNumber: formData.transactionNumber || validation.sanitized.transactionNumber,
+        history: [
+          {
+            timestamp: new Date().toISOString(),
+            action: 'Pencatatan Awal Transaksi',
+            userName: profile?.displayName || 'Bendahara',
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await dbService.saveTransaction(newTx);
+      try {
+        await dbService.addLog({
+          userId: profile?.uid || 'usr-bendahara',
           userName: profile?.displayName || 'Bendahara',
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+          action: 'Catat Transaksi Keuangan',
+          target: newTx.transactionNumber,
+          details: `${newTx.type.toUpperCase()}: ${newTx.category} - Rp ${newTx.amount.toLocaleString('id-ID')} (${newTx.description})`,
+        });
+      } catch (logErr) {
+        console.warn('Logging non-fatal error:', logErr);
+      }
 
-    await dbService.saveTransaction(newTx);
-    await dbService.addLog({
-      userId: profile?.uid || 'usr-bendahara',
-      userName: profile?.displayName || 'Bendahara',
-      action: 'Catat Transaksi Keuangan',
-      target: newTx.transactionNumber,
-      details: `${newTx.type.toUpperCase()}: ${newTx.category} - Rp ${newTx.amount.toLocaleString('id-ID')} (${newTx.description})`,
-    });
-
-    setModalOpen(false);
-    onRefresh();
+      setModalOpen(false);
+      onRefresh();
+    } catch (err: any) {
+      alert('Gagal menyimpan transaksi: ' + (err?.message || 'Terjadi kesalahan sistem'));
+    }
   };
 
   // Calculations

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db, googleProvider } from '../lib/firebase';
 import { UserProfile, UserRole } from '../types';
 
 interface AuthContextType {
@@ -13,7 +14,6 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   simulateRole: (role: UserRole) => void;
-  quickAdminLogin: (role?: UserRole) => void;
   // Permissions
   canManageMembers: boolean;
   canManageFinances: boolean;
@@ -26,7 +26,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ROLE_STORAGE_KEY = 'umkm_active_role';
-const DEMO_USER_KEY = 'umkm_demo_active';
+
+const VALID_STAFF_ROLES: UserRole[] = [
+  'super_admin',
+  'pengurus_kecamatan',
+  'admin_keanggotaan',
+  'bendahara',
+  'admin_informasi',
+  'pengurus_kelurahan',
+];
 
 export const REGISTERED_SUPER_ADMIN_EMAILS = [
   'agus.cabin@gmail.com',
@@ -40,104 +48,117 @@ export const REGISTERED_SUPER_ADMIN_EMAILS = [
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [verifiedBaseRole, setVerifiedBaseRole] = useState<UserRole>('member');
   const [loading, setLoading] = useState(true);
 
-  // Determine user profile and role strictly based on registered emails
-  const resolveProfile = (fbUser: FirebaseUser | null, forcedRole?: UserRole): UserProfile | null => {
-    if (!fbUser) return null;
-    
+  /**
+   * Verifikasi token & hak akses RBAC langsung melalui backend (/api/auth/verify).
+   * Fallback baca Firestore terproteksi hanya jika backend sementara tidak terjangkau.
+   */
+  const resolveAuthoritativeProfile = async (fbUser: FirebaseUser): Promise<UserProfile> => {
     const emailLower = (fbUser.email || '').trim().toLowerCase();
-    
-    // Check registered super admin emails (ketua sampai bendahara)
-    const isRegisteredSuperAdmin = REGISTERED_SUPER_ADMIN_EMAILS.includes(emailLower);
+    let authoritativeRole: UserRole = 'member';
 
-    // Also check registered users in local storage / database
-    let registeredDbRole: UserRole | null = null;
     try {
-      const rawUsers = localStorage.getItem('umkm_mgmt_users');
-      if (rawUsers) {
-        const usersList: UserProfile[] = JSON.parse(rawUsers);
-        const match = usersList.find((u) => u.email?.trim().toLowerCase() === emailLower);
-        if (match) {
-          registeredDbRole = match.role;
+      const idToken = await fbUser.getIdToken();
+      const res = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (
+          typeof data?.role === 'string' &&
+          (VALID_STAFF_ROLES.includes(data.role as UserRole) || data.role === 'member')
+        ) {
+          authoritativeRole = data.role as UserRole;
+        }
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch {
+      // Fallback baca langsung dokumen terproteksi Firestore untuk user terautentikasi
+      if (fbUser.emailVerified && REGISTERED_SUPER_ADMIN_EMAILS.includes(emailLower)) {
+        authoritativeRole = 'super_admin';
+      } else if (fbUser.emailVerified) {
+        try {
+          const emailSnap = await getDoc(doc(db, 'admin_emails', emailLower));
+          if (emailSnap.exists()) {
+            const r = emailSnap.data()?.role;
+            if (VALID_STAFF_ROLES.includes(r)) {
+              authoritativeRole = r as UserRole;
+            }
+          } else {
+            const userSnap = await getDoc(doc(db, 'users', fbUser.uid));
+            if (userSnap.exists()) {
+              const r = userSnap.data()?.role;
+              if (VALID_STAFF_ROLES.includes(r)) {
+                authoritativeRole = r as UserRole;
+              }
+            }
+          }
+        } catch {
+          authoritativeRole = 'member';
         }
       }
-    } catch (e) {
-      // ignore
     }
 
-    // Default: strictly 'member' for any unregistered user
-    let role: UserRole = 'member';
+    setVerifiedBaseRole(authoritativeRole);
 
-    if (isRegisteredSuperAdmin) {
-      role = 'super_admin';
-    } else if (registeredDbRole && registeredDbRole !== 'member') {
-      role = registeredDbRole;
+    // Simulasi UI hanya boleh aktif jika peran otoritatif terverifikasi adalah 'super_admin'
+    let effectiveRole: UserRole = authoritativeRole;
+    if (authoritativeRole === 'super_admin') {
+      const savedSimRole = sessionStorage.getItem(ROLE_STORAGE_KEY) as UserRole | null;
+      if (savedSimRole && (VALID_STAFF_ROLES.includes(savedSimRole) || savedSimRole === 'member')) {
+        effectiveRole = savedSimRole;
+      }
     } else {
-      // Non-registered email only receives member access
-      role = 'member';
-      localStorage.removeItem(ROLE_STORAGE_KEY);
-    }
-
-    // Allow role simulation ONLY if user is already a verified super admin
-    const savedRole = (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || forcedRole;
-    if ((isRegisteredSuperAdmin || registeredDbRole === 'super_admin') && savedRole) {
-      role = savedRole;
+      sessionStorage.removeItem(ROLE_STORAGE_KEY);
     }
 
     return {
       uid: fbUser.uid,
-      email: fbUser.email || 'user@umkmkuat-tangerang.org',
-      displayName: fbUser.displayName || (role === 'member' ? 'Anggota UMKM' : 'Pengurus Forum'),
-      role,
+      email: fbUser.email || '',
+      displayName: fbUser.displayName || (effectiveRole === 'member' ? 'Anggota UMKM' : 'Pengurus Forum'),
+      role: effectiveRole,
       photoURL: fbUser.photoURL || undefined,
-      kelurahan: role === 'member' ? 'Kecamatan Tangerang' : 'Kecamatan Tangerang (Semua)',
+      kelurahan: effectiveRole === 'member' ? 'Kecamatan Tangerang' : 'Kecamatan Tangerang (Semua)',
     };
   };
 
   useEffect(() => {
-    // Check if demo admin mode is active
-    const isDemo = localStorage.getItem(DEMO_USER_KEY) === 'true';
-    if (isDemo) {
-      const demoRole = (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || 'super_admin';
-      const mockUser = {
-        uid: 'usr-agus-superadmin',
-        email: 'agus.cabin@gmail.com',
-        displayName: 'Agus Cabin (Super Admin)',
-      } as unknown as FirebaseUser;
-      
-      setUser(mockUser);
-      setProfile({
-        uid: mockUser.uid,
-        email: mockUser.email || '',
-        displayName: mockUser.displayName || '',
-        role: demoRole,
-        kelurahan: 'Kecamatan Tangerang',
-      });
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (!active) return;
       setUser(fbUser);
       if (fbUser) {
-        setProfile(resolveProfile(fbUser));
+        const resolved = await resolveAuthoritativeProfile(fbUser);
+        if (active) setProfile(resolved);
       } else {
+        setVerifiedBaseRole('member');
         setProfile(null);
+        sessionStorage.removeItem(ROLE_STORAGE_KEY);
       }
-      setLoading(false);
+      if (active) setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
-      localStorage.removeItem(DEMO_USER_KEY);
       const res = await signInWithPopup(auth, googleProvider);
       setUser(res.user);
-      setProfile(resolveProfile(res.user));
+      const resolved = await resolveAuthoritativeProfile(res.user);
+      setProfile(resolved);
     } catch (err: unknown) {
       console.error('Google Sign-in failed:', err);
       throw err;
@@ -147,8 +168,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    localStorage.removeItem(DEMO_USER_KEY);
-    localStorage.removeItem(ROLE_STORAGE_KEY);
+    sessionStorage.removeItem(ROLE_STORAGE_KEY);
+    setVerifiedBaseRole('member');
     setUser(null);
     setProfile(null);
     try {
@@ -159,34 +180,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const simulateRole = (role: UserRole) => {
-    // Only verified super admin can simulate roles
-    const currentEmail = (profile?.email || '').trim().toLowerCase();
-    const canSimulate = profile?.role === 'super_admin' || REGISTERED_SUPER_ADMIN_EMAILS.includes(currentEmail);
-    if (canSimulate) {
-      localStorage.setItem(ROLE_STORAGE_KEY, role);
+    // Hanya Super Admin terverifikasi di backend yang dapat mengubah pratinjau peran UI
+    if (verifiedBaseRole === 'super_admin') {
+      sessionStorage.setItem(ROLE_STORAGE_KEY, role);
       if (profile) {
         setProfile({ ...profile, role });
       }
     }
-  };
-
-  const quickAdminLogin = (role: UserRole = 'super_admin') => {
-    localStorage.setItem(DEMO_USER_KEY, 'true');
-    localStorage.setItem(ROLE_STORAGE_KEY, role);
-    const mockUser = {
-      uid: 'usr-agus-superadmin',
-      email: 'agus.cabin@gmail.com',
-      displayName: 'Agus Cabin (Super Admin)',
-    } as unknown as FirebaseUser;
-    
-    setUser(mockUser);
-    setProfile({
-      uid: mockUser.uid,
-      email: mockUser.email || '',
-      displayName: mockUser.displayName || '',
-      role,
-      kelurahan: 'Kecamatan Tangerang',
-    });
   };
 
   // RBAC Permission gates (System Security Rule 4: Strict Isolation for 'member')
@@ -199,7 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const canManageMembers = ['super_admin', 'pengurus_kecamatan', 'admin_keanggotaan', 'pengurus_kelurahan'].includes(currentRole || '');
   const canManageFinances = ['super_admin', 'bendahara'].includes(currentRole || '');
   const canManageEventsNews = ['super_admin', 'pengurus_kecamatan', 'admin_informasi'].includes(currentRole || '');
-  
+
   // System Security Rule 1: Super Admin Control
   const canManageSettings = isSuperAdmin;
   const canAssignRoles = isSuperAdmin;
@@ -217,7 +217,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithGoogle,
         logout,
         simulateRole,
-        quickAdminLogin,
         canManageMembers,
         canManageFinances,
         canManageEventsNews,

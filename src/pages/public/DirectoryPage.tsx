@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Member, KELURAHAN_LIST, BusinessCategory } from '../../types';
+import { DEFAULT_PRODUCT_PHOTO_PLACEHOLDER } from '../../utils/excelImport';
 import {
   Search,
   Filter,
@@ -59,7 +60,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ members }) => {
   }, [publicMembers, searchQuery, selectedKelurahan, selectedCategory]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-10">
+    <div className="max-w-3xl mx-auto px-3 lg:max-w-7xl lg:px-8 py-12 sm:py-16 space-y-8 sm:space-y-10">
       {/* Page Title */}
       <div className="text-center max-w-3xl mx-auto space-y-3">
         <span className="text-xs font-bold uppercase tracking-widest text-teal-700">
@@ -167,68 +168,73 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ members }) => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-6 w-full">
           {filteredList.map((member) => (
             <div
               key={member.id}
               onClick={() => setSelectedMember(member)}
-              className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-2xs hover:shadow-xl hover:shadow-slate-200/50 hover:border-teal-500/40 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+              className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md hover:border-teal-500/40 transition-all duration-300 flex flex-col justify-between h-full group cursor-pointer min-w-0"
             >
-              <div>
+              <div className="flex-1 flex flex-col">
                 {/* Photo & Category Badge */}
-                <div className="relative h-48 sm:h-52 w-full bg-slate-100 overflow-hidden">
+                <div className="relative aspect-square w-full bg-slate-100 overflow-hidden flex-shrink-0">
                   <img
-                    src={
-                      member.productPhoto ||
-                      'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=600&q=80'
-                    }
+                    src={member.productPhoto || DEFAULT_PRODUCT_PHOTO_PLACEHOLDER}
                     alt={member.businessName}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_PHOTO_PLACEHOLDER;
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
-                  <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-md">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 max-w-[68%] truncate bg-slate-950/80 backdrop-blur-xs text-white text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md">
                     {member.category}
                   </div>
-                  <div className="absolute top-3 right-3 bg-teal-700/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-amber-300" />
-                    <span>Terverifikasi</span>
+                  <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 bg-teal-700/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded shadow-xs flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-amber-300 flex-shrink-0" />
+                    <span className="hidden sm:inline">Terverifikasi</span>
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center gap-1 text-xs font-semibold text-teal-700">
-                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Kelurahan {member.kelurahan}</span>
+                {/* Content (Preserving Exact 4 Lines) */}
+                <div className="p-2.5 sm:p-3 lg:p-4 flex-1 flex flex-col justify-between gap-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-[11px] font-medium text-teal-700 min-w-0">
+                      <MapPin className="w-3 h-3 flex-shrink-0 text-teal-600" />
+                      <span className="truncate">Kelurahan {member.kelurahan}</span>
+                    </div>
+
+                    <h3
+                      className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-1 leading-snug"
+                      title={member.businessName}
+                    >
+                      {member.businessName}
+                    </h3>
+
+                    <p className="text-xs text-slate-600 line-clamp-2 sm:line-clamp-3 leading-relaxed">
+                      <strong className="text-slate-800 font-semibold">Produk:</strong> {member.topProduct}
+                    </p>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 text-base group-hover:text-teal-700 transition-colors line-clamp-1">
-                    {member.businessName}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                    <strong className="text-slate-800">Unggulan:</strong> {member.topProduct}
-                  </p>
-
-                  {/* Legalities tag */}
+                  {/* Legalities row aligned at bottom of info block */}
                   {member.legalities && (
-                    <div className="pt-1 flex flex-wrap gap-1.5">
-                      {member.legalities.split(',').map((leg, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium"
-                        >
-                          {leg.trim()}
-                        </span>
-                      ))}
+                    <div className="pt-1.5 mt-auto border-t border-gray-100">
+                      <span
+                        className="inline-block max-w-full truncate text-[10px] sm:text-[11px] bg-teal-50/80 text-teal-800 border border-teal-100/80 px-2 py-0.5 rounded-md font-medium"
+                        title={`Legalitas: ${member.legalities}`}
+                      >
+                        <strong className="font-semibold text-teal-700">Legalitas:</strong> {member.legalities}
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Action Footer */}
-              <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between mt-auto bg-slate-50/40">
-                <span className="text-[11px] text-slate-400 font-mono">
+              <div className="px-2.5 pb-2.5 pt-2 sm:px-3 sm:pb-3 lg:px-4 lg:pb-4 border-t border-gray-100 flex items-center justify-between gap-2 bg-slate-50/40">
+                <span className="hidden sm:inline text-[10px] lg:text-[11px] text-slate-400 font-mono truncate">
                   {member.memberNumber}
                 </span>
 
@@ -243,7 +249,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ members }) => {
                       '_blank'
                     );
                   }}
-                  className="inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-700 hover:bg-teal-600 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
                 >
                   <Phone className="w-3 h-3" />
                   <span>WhatsApp</span>
@@ -281,11 +287,12 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ members }) => {
               {/* Product Photo */}
               <div className="relative h-64 w-full rounded-xl overflow-hidden bg-slate-100">
                 <img
-                  src={
-                    selectedMember.productPhoto ||
-                    'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=800&q=80'
-                  }
+                  src={selectedMember.productPhoto || DEFAULT_PRODUCT_PHOTO_PLACEHOLDER}
                   alt={selectedMember.businessName}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_PHOTO_PLACEHOLDER;
+                  }}
                   className="w-full h-full object-cover"
                 />
               </div>

@@ -1,109 +1,416 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Default Deny All
+
+    // 0. Global Default-Deny Catch-All
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // AUTH HELPER FUNCTIONS
+    // 1. Primitive & Auth Helpers
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidEmailId(id) {
+      return id is string && id.size() >= 5 && id.size() <= 150 &&
+        id.matches('^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$');
+    }
+
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // System Security Rule 1: SUPER ADMIN CONTROL
+    function isEmailVerified() {
+      return isSignedIn() &&
+        request.auth.token.email != null &&
+        request.auth.token.email_verified == true;
+    }
+
+    function currentUserEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    // 2. Authoritative Role Helpers (No reliance on custom JWT claims or unverified emails)
     function isBootstrapSuperAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'umkmkectangerang@gmail.com' ||
-        request.auth.token.email == 'agus.cabin@gmail.com' ||
-        (request.auth.token.email != null && request.auth.token.email.matches('.*@tangerangkota\\.go\\.id$'))
+      return isEmailVerified() && (
+        currentUserEmail() in [
+          'agus.cabin@gmail.com',
+          'umkmkectangerang@gmail.com',
+          'ketua.umkm@tangerangkota.go.id',
+          'keanggotaan@umkmkuat-tangerang.org',
+          'sekretaris@umkmkuat-tangerang.org',
+          'bendahara@umkmkuat-tangerang.org'
+        ] ||
+        currentUserEmail().matches('.*@tangerangkota\\.go\\.id$')
       );
     }
 
-    function getUserDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function hasAdminEmailDoc() {
+      return exists(/databases/$(database)/documents/admin_emails/$(currentUserEmail()));
+    }
+
+    function getAdminEmailRole() {
+      return get(/databases/$(database)/documents/admin_emails/$(currentUserEmail())).data.role;
+    }
+
+    function hasUserDoc() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isRoleIn(roles) {
+      return isEmailVerified() && (
+        (hasAdminEmailDoc() && getAdminEmailRole() in roles) ||
+        (hasUserDoc() && getUserRole() in roles)
+      );
     }
 
     function isSuperAdmin() {
-      return isSignedIn() && (
-        isBootstrapSuperAdmin() ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         getUserDoc().role == 'super_admin')
-      );
+      return isBootstrapSuperAdmin() || isRoleIn(['super_admin']);
     }
 
-    // Admin Staff (Pengurus yang berwenang, excluding 'member')
     function isAdminStaff() {
-      return isSignedIn() && (
-        isSuperAdmin() ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         getUserDoc().role in [
-           'pengurus_kecamatan',
-           'admin_keanggotaan',
-           'bendahara',
-           'admin_informasi',
-           'pengurus_kelurahan'
-         ])
-      );
+      return isSuperAdmin() || isRoleIn([
+        'pengurus_kecamatan',
+        'admin_keanggotaan',
+        'bendahara',
+        'admin_informasi',
+        'pengurus_kelurahan'
+      ]);
+    }
+
+    function isMemberAdmin() {
+      return isSuperAdmin() || isRoleIn([
+        'pengurus_kecamatan',
+        'admin_keanggotaan',
+        'pengurus_kelurahan'
+      ]);
+    }
+
+    function isInfoAdmin() {
+      return isSuperAdmin() || isRoleIn([
+        'pengurus_kecamatan',
+        'admin_informasi'
+      ]);
     }
 
     function isFinanceAdmin() {
-      return isSignedIn() && (
-        isSuperAdmin() ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         getUserDoc().role == 'bendahara')
+      return isSuperAdmin() || isRoleIn(['bendahara']);
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap & Payload Poisoning Guards)
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role']) &&
+        data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'role', 'kelurahan', 'photoURL', 'createdAt', 'updatedAt'
+        ]) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.email is string && data.email.size() >= 5 && data.email.size() <= 150 &&
+        data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 150 &&
+        data.role in [
+          'super_admin',
+          'pengurus_kecamatan',
+          'admin_keanggotaan',
+          'bendahara',
+          'admin_informasi',
+          'pengurus_kelurahan',
+          'member'
+        ] &&
+        (!('kelurahan' in data) || (data.kelurahan is string && data.kelurahan.size() <= 100)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidAdminEmail(data) {
+      return data.keys().hasAll(['email', 'role', 'uid']) &&
+        data.keys().hasOnly(['email', 'role', 'uid', 'updatedAt']) &&
+        data.email is string && data.email.size() >= 5 && data.email.size() <= 150 &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.role in [
+          'super_admin',
+          'pengurus_kecamatan',
+          'admin_keanggotaan',
+          'bendahara',
+          'admin_informasi',
+          'pengurus_kelurahan',
+          'member'
+        ] &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidMember(data) {
+      return data.keys().hasAll([
+          'memberNumber', 'fullName', 'nik', 'phone', 'kelurahan',
+          'businessName', 'category', 'status', 'isPublicDirectory'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'memberNumber', 'fullName', 'nik', 'phone', 'email', 'address',
+          'kelurahan', 'status', 'joinDate', 'businessName', 'category', 'topProduct',
+          'businessAddress', 'businessPhone', 'memberPhoto', 'productPhoto',
+          'legalities', 'isPublicDirectory', 'createdAt', 'updatedAt'
+        ]) &&
+        (!('id' in data) || isValidId(data.id)) &&
+        data.memberNumber is string && data.memberNumber.size() <= 50 &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 150 &&
+        data.nik is string && data.nik.matches('^[0-9]{16}$') &&
+        data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 30 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+        (!('address' in data) || (data.address is string && data.address.size() <= 300)) &&
+        data.kelurahan is string && data.kelurahan.size() >= 2 && data.kelurahan.size() <= 100 &&
+        data.status in ['aktif', 'nonaktif', 'pending'] &&
+        (!('joinDate' in data) || (data.joinDate is string && data.joinDate.size() <= 30)) &&
+        data.businessName is string && data.businessName.size() >= 2 && data.businessName.size() <= 150 &&
+        data.category is string && data.category.size() >= 2 && data.category.size() <= 80 &&
+        (!('topProduct' in data) || (data.topProduct is string && data.topProduct.size() <= 150)) &&
+        (!('businessAddress' in data) || (data.businessAddress is string && data.businessAddress.size() <= 300)) &&
+        (!('businessPhone' in data) || (data.businessPhone is string && data.businessPhone.size() <= 30)) &&
+        (!('memberPhoto' in data) || (data.memberPhoto is string && data.memberPhoto.size() <= 900000)) &&
+        (!('productPhoto' in data) || (data.productPhoto is string && data.productPhoto.size() <= 900000)) &&
+        (!('legalities' in data) || (data.legalities is string && data.legalities.size() <= 300)) &&
+        data.isPublicDirectory is bool &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll([
+          'transactionNumber', 'type', 'category', 'date', 'amount', 'description', 'approvalStatus'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'transactionNumber', 'type', 'category', 'date', 'amount', 'description',
+          'recorderName', 'recorderId', 'approvalStatus', 'approvedBy', 'proofUrl',
+          'notes', 'history', 'createdAt', 'updatedAt'
+        ]) &&
+        (!('id' in data) || isValidId(data.id)) &&
+        data.transactionNumber is string && data.transactionNumber.size() <= 50 &&
+        data.type in ['pemasukan', 'pengeluaran'] &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 100 &&
+        data.date is string && data.date.size() >= 4 && data.date.size() <= 30 &&
+        data.amount is number && data.amount > 0 && data.amount <= 100000000000 &&
+        data.description is string && data.description.size() >= 2 && data.description.size() <= 500 &&
+        (!('recorderName' in data) || (data.recorderName is string && data.recorderName.size() <= 150)) &&
+        (!('recorderId' in data) || (data.recorderId is string && data.recorderId.size() <= 128)) &&
+        data.approvalStatus in ['disetujui', 'menunggu', 'ditolak'] &&
+        (!('approvedBy' in data) || (data.approvedBy is string && data.approvedBy.size() <= 150)) &&
+        (!('proofUrl' in data) || (data.proofUrl is string && data.proofUrl.size() <= 900000)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+        (!('history' in data) || (data.history is list && data.history.size() <= 20)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidEvent(data) {
+      return data.keys().hasAll(['title', 'description', 'date', 'location', 'status']) &&
+        data.keys().hasOnly([
+          'id', 'title', 'description', 'date', 'time', 'location', 'organizer',
+          'posterUrl', 'documentationUrls', 'status', 'targetAudience', 'registrationUrl',
+          'createdAt', 'updatedAt'
+        ]) &&
+        (!('id' in data) || isValidId(data.id)) &&
+        data.title is string && data.title.size() >= 3 && data.title.size() <= 200 &&
+        data.description is string && data.description.size() >= 3 && data.description.size() <= 3000 &&
+        data.date is string && data.date.size() >= 4 && data.date.size() <= 30 &&
+        (!('time' in data) || (data.time is string && data.time.size() <= 50)) &&
+        data.location is string && data.location.size() >= 2 && data.location.size() <= 250 &&
+        (!('organizer' in data) || (data.organizer is string && data.organizer.size() <= 150)) &&
+        (!('posterUrl' in data) || (data.posterUrl is string && data.posterUrl.size() <= 900000)) &&
+        (!('documentationUrls' in data) || (data.documentationUrls is string && data.documentationUrls.size() <= 1000)) &&
+        data.status in ['terbit', 'draf', 'arsip', 'selesai'] &&
+        (!('targetAudience' in data) || (data.targetAudience is string && data.targetAudience.size() <= 150)) &&
+        (!('registrationUrl' in data) || (data.registrationUrl is string && data.registrationUrl.size() <= 300)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidArticle(data) {
+      return data.keys().hasAll(['title', 'content', 'category', 'author', 'status']) &&
+        data.keys().hasOnly([
+          'id', 'title', 'excerpt', 'content', 'category', 'author', 'authorId',
+          'imageUrl', 'publishedDate', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        (!('id' in data) || isValidId(data.id)) &&
+        data.title is string && data.title.size() >= 3 && data.title.size() <= 250 &&
+        (!('excerpt' in data) || (data.excerpt is string && data.excerpt.size() <= 400)) &&
+        data.content is string && data.content.size() >= 10 && data.content.size() <= 10000 &&
+        data.category is string && data.category.size() >= 2 && data.category.size() <= 80 &&
+        data.author is string && data.author.size() >= 2 && data.author.size() <= 150 &&
+        (!('authorId' in data) || (data.authorId is string && data.authorId.size() <= 128)) &&
+        (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 900000)) &&
+        (!('publishedDate' in data) || (data.publishedDate is string && data.publishedDate.size() <= 30)) &&
+        data.status in ['terbit', 'draf', 'arsip'] &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidActivityLog(data) {
+      return data.keys().hasAll(['userName', 'action', 'target', 'timestamp']) &&
+        data.keys().hasOnly(['id', 'userId', 'userName', 'action', 'target', 'details', 'timestamp']) &&
+        (!('id' in data) || isValidId(data.id)) &&
+        (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+        data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 150 &&
+        data.action is string && data.action.size() >= 1 && data.action.size() <= 100 &&
+        data.target is string && data.target.size() >= 1 && data.target.size() <= 200 &&
+        (!('details' in data) || (data.details is string && data.details.size() <= 500)) &&
+        data.timestamp is string && data.timestamp.size() <= 50;
+    }
+
+    function isValidOrgStructure(data) {
+      return data.keys().hasAll(['role', 'name', 'order']) &&
+        data.keys().hasOnly(['id', 'role', 'name', 'title', 'image', 'order', 'updatedAt']) &&
+        (!('id' in data) || isValidId(data.id)) &&
+        data.role is string && data.role.size() >= 1 && data.role.size() <= 100 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 150 &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 200)) &&
+        (!('image' in data) || (data.image is string && data.image.size() <= 900000)) &&
+        data.order is number && data.order >= 0 && data.order <= 999 &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidOrgSetting(settingId, data) {
+      return (
+        settingId == 'contact_info' &&
+        data.keys().hasAll(['officeName', 'address', 'whatsapp', 'email']) &&
+        data.keys().hasOnly([
+          'officeName', 'subTitle', 'address', 'phone', 'whatsapp', 'email',
+          'operatingHours', 'googleMapsUrl', 'instagram', 'tiktok', 'youtube',
+          'facebook', 'updatedAt'
+        ]) &&
+        data.officeName is string && data.officeName.size() >= 1 && data.officeName.size() <= 150 &&
+        (!('subTitle' in data) || (data.subTitle is string && data.subTitle.size() <= 150)) &&
+        data.address is string && data.address.size() >= 1 && data.address.size() <= 300 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+        data.whatsapp is string && data.whatsapp.size() >= 8 && data.whatsapp.size() <= 30 &&
+        data.email is string && data.email.size() >= 5 && data.email.size() <= 150 &&
+        (!('operatingHours' in data) || (data.operatingHours is string && data.operatingHours.size() <= 100)) &&
+        (!('googleMapsUrl' in data) || (data.googleMapsUrl is string && data.googleMapsUrl.size() <= 500)) &&
+        (!('instagram' in data) || (data.instagram is string && data.instagram.size() <= 200)) &&
+        (!('tiktok' in data) || (data.tiktok is string && data.tiktok.size() <= 200)) &&
+        (!('youtube' in data) || (data.youtube is string && data.youtube.size() <= 200)) &&
+        (!('facebook' in data) || (data.facebook is string && data.facebook.size() <= 200)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50))
+      ) || (
+        settingId == 'vision_mission' &&
+        data.keys().hasAll(['vision', 'missions']) &&
+        data.keys().hasOnly(['vision', 'missions', 'updatedAt']) &&
+        data.vision is string && data.vision.size() >= 5 && data.vision.size() <= 1000 &&
+        data.missions is list && data.missions.size() >= 1 && data.missions.size() <= 20 &&
+        data.missions[0] is string &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50))
       );
     }
 
-    // USERS COLLECTION (Rule 1 & Rule 2: User management & Role immutability)
+    // 4. Collection Security Match Blocks
+    // USERS: PII & Role Immutability (Only Super Admin can assign staff roles)
     match /users/{userId} {
-      allow read: if true;
-      allow create, update: if isSignedIn() && (isSuperAdmin() || request.auth.uid == userId);
-      allow delete: if isSuperAdmin();
+      allow get: if isEmailVerified() && isValidId(userId) && (request.auth.uid == userId || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create: if isEmailVerified() && isValidId(userId) && isValidUser(incoming()) && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId && incoming().uid == request.auth.uid &&
+         incoming().email.lower() == currentUserEmail() && incoming().role == 'member')
+      );
+      allow update: if isEmailVerified() && isValidId(userId) && isValidUser(incoming()) && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId &&
+         incoming().uid == existing().uid &&
+         incoming().email == existing().email &&
+         incoming().role == existing().role &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'kelurahan', 'updatedAt']))
+      );
+      allow delete: if isSuperAdmin() && isValidId(userId);
+    }
+
+    // ADMIN_EMAILS: Server/Admin officer email -> role lookup
+    match /admin_emails/{emailId} {
+      allow get: if isEmailVerified() && isValidEmailId(emailId) && (currentUserEmail() == emailId.lower() || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create, update: if isSuperAdmin() && isValidEmailId(emailId) && isValidAdminEmail(incoming());
+      allow delete: if isSuperAdmin() && isValidEmailId(emailId);
     }
 
     // ADMINS MARKER COLLECTION
     match /admins/{adminUid} {
-      allow read: if isAdminStaff();
-      allow write: if isSuperAdmin();
+      allow get: if isAdminStaff() && isValidId(adminUid);
+      allow list: if isSuperAdmin();
+      allow create, update: if isSuperAdmin() && isValidId(adminUid) && isValidUser(incoming());
+      allow delete: if isSuperAdmin() && isValidId(adminUid);
     }
 
-    // MEMBERS COLLECTION (Direktori UMKM & Pendaftaran Mandiri)
+    // MEMBERS: Public directory visible when isPublicDirectory == true; full list & mutations for Member Admins;
+    // Public self-registration allowed ONLY on create (cannot overwrite/update existing member records)
     match /members/{memberId} {
-      allow read, write: if true;
+      allow get: if isValidId(memberId) && (existing().isPublicDirectory == true || isAdminStaff());
+      allow list: if resource.data.isPublicDirectory == true || isAdminStaff();
+      allow create: if isValidId(memberId) && isValidMember(incoming()) && (
+        isMemberAdmin() ||
+        incoming().status in ['aktif', 'pending']
+      );
+      allow update: if isMemberAdmin() && isValidId(memberId) && isValidMember(incoming());
+      allow delete: if isMemberAdmin() && isValidId(memberId);
     }
 
-    // TRANSACTIONS COLLECTION (Rule 4: STRICT ISOLATION - Financial data strictly hidden from 'member')
+    // TRANSACTIONS: Strict Isolation (Finance Admin & Super Admin only)
     match /transactions/{transactionId} {
-      allow read: if isFinanceAdmin();
-      allow create, update, delete: if isFinanceAdmin();
+      allow get: if isFinanceAdmin() && isValidId(transactionId);
+      allow list: if isFinanceAdmin();
+      allow create, update: if isFinanceAdmin() && isValidId(transactionId) && isValidTransaction(incoming());
+      allow delete: if isFinanceAdmin() && isValidId(transactionId);
     }
 
-    // EVENTS COLLECTION (Publik & Agenda Kegiatan)
+    // EVENTS: Public readable, Info Admin & Super Admin writable
     match /events/{eventId} {
-      allow read, write: if true;
+      allow get: if isValidId(eventId);
+      allow list: if true;
+      allow create, update: if isInfoAdmin() && isValidId(eventId) && isValidEvent(incoming());
+      allow delete: if isInfoAdmin() && isValidId(eventId);
     }
 
-    // ARTICLES COLLECTION (Publik & Kabar Berita)
+    // ARTICLES: Public readable, Info Admin & Super Admin writable
     match /articles/{articleId} {
-      allow read, write: if true;
+      allow get: if isValidId(articleId);
+      allow list: if true;
+      allow create, update: if isInfoAdmin() && isValidId(articleId) && isValidArticle(incoming());
+      allow delete: if isInfoAdmin() && isValidId(articleId);
     }
 
-    // ACTIVITY LOGS (Rule 4: Audit trails protected)
+    // ACTIVITY LOGS: Admin readable, Admin or public-registration log create only, Super Admin modify/delete
     match /activity_logs/{logId} {
-      allow read: if isAdminStaff();
-      allow create: if isSignedIn();
-      allow update, delete: if isSuperAdmin();
+      allow get: if isAdminStaff() && isValidId(logId);
+      allow list: if isAdminStaff();
+      allow create: if isValidId(logId) && isValidActivityLog(incoming()) && (
+        isAdminStaff() ||
+        (incoming().userId == 'publik-online' && incoming().action == 'Pendaftaran Online Mandiri')
+      );
+      allow update, delete: if isSuperAdmin() && isValidId(logId);
     }
 
-    // ORGANIZATION STRUCTURE & SETTINGS (Publik & Admin Website Profile)
+    // ORGANIZATION STRUCTURE: Public readable, Super Admin writable
     match /org_structure/{memberId} {
-      allow read, write: if true;
+      allow get: if isValidId(memberId);
+      allow list: if true;
+      allow create, update: if isSuperAdmin() && isValidId(memberId) && isValidOrgStructure(incoming());
+      allow delete: if isSuperAdmin() && isValidId(memberId);
     }
 
+    // ORGANIZATION SETTINGS (Contact info, Social Media, Vision & Mission): Public readable, Super Admin writable
     match /org_settings/{settingId} {
-      allow read, write: if true;
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create, update: if isSuperAdmin() && isValidId(settingId) && isValidOrgSetting(settingId, incoming());
+      allow delete: if isSuperAdmin() && isValidId(settingId);
     }
   }
 }

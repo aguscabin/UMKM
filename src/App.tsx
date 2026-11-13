@@ -23,7 +23,7 @@ import { AdminSettings } from './pages/admin/AdminSettings';
 import { ShieldAlert, LogIn, Store, X } from 'lucide-react';
 
 function MainApp() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, isAdmin, loading: authLoading } = useAuth();
 
   // Navigation State
   const [currentTab, setCurrentTab] = useState<string>('beranda');
@@ -64,11 +64,11 @@ function MainApp() {
   const loadAllData = async () => {
     try {
       const [m, t, e, a, l] = await Promise.all([
-        dbService.getMembers(),
-        dbService.getTransactions(),
+        dbService.getMembers(isAdmin),
+        isAdmin ? dbService.getTransactions() : Promise.resolve([]),
         dbService.getEvents(),
         dbService.getArticles(),
-        dbService.getLogs(),
+        isAdmin ? dbService.getLogs() : Promise.resolve([]),
       ]);
       setMembers(m || []);
       setTransactions(t);
@@ -83,12 +83,14 @@ function MainApp() {
   };
 
   useEffect(() => {
+    if (authLoading) return;
+
     loadAllData();
 
-    // Realtime Firestore synchronization: instant sync across HP/mobile and desktop
+    // Realtime Firestore synchronization: public users query directory only, admins receive full list
     const unsubscribeMembers = dbService.subscribeMembers((realtimeMembers) => {
       setMembers(realtimeMembers);
-    });
+    }, isAdmin);
 
     const unsubscribeEvents = dbService.subscribeEvents((realtimeEvents) => {
       setEvents(realtimeEvents);
@@ -136,7 +138,7 @@ function MainApp() {
       window.removeEventListener('umkm_events_updated', handleEventsUpdated);
       window.removeEventListener('umkm_articles_updated', handleArticlesUpdated);
     };
-  }, []);
+  }, [isAdmin, authLoading]);
 
   // Public View Render
   if (currentTab !== 'admin') {

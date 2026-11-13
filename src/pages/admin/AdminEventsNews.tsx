@@ -4,6 +4,11 @@ import { dbService } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
 import { compressImage } from '../../utils/image';
 import {
+  validateArticleInput,
+  validateEventInput,
+  validateUploadedFile,
+} from '../../utils/validation';
+import {
   Calendar,
   Newspaper,
   Plus,
@@ -81,10 +86,16 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [isSavingArticle, setIsSavingArticle] = useState(false);
 
-  // Image Upload Handlers with auto-compression (compact 640x480 for fast cloud sync)
+  // Image Upload Handlers with file check & auto-compression (compact 640x480 for fast cloud sync)
   const handleEventPosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      alert(fileCheck.error || 'File gambar poster tidak valid.');
+      if (e.target) e.target.value = '';
+      return;
+    }
     try {
       setIsCompressingEvent(true);
       const compressed = await compressImage(file, 640, 480, 0.70);
@@ -103,6 +114,12 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
   const handleArticleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      alert(fileCheck.error || 'File gambar sampul tidak valid.');
+      if (e.target) e.target.value = '';
+      return;
+    }
     try {
       setIsCompressingArticle(true);
       const compressed = await compressImage(file, 640, 480, 0.70);
@@ -161,12 +178,19 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validation = validateEventInput(eventForm);
+    if (!validation.valid) {
+      alert(validation.errors[0] || 'Data agenda tidak valid.');
+      return;
+    }
+
     try {
       setIsSavingEvent(true);
       const id = editingEvent ? editingEvent.id : 'evt-' + Date.now();
       const eventToSave: ForumEvent = {
+        ...validation.sanitized,
         id,
-        ...eventForm,
+        createdAt: editingEvent ? editingEvent.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -256,12 +280,19 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
   const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validation = validateArticleInput(articleForm);
+    if (!validation.valid) {
+      alert(validation.errors[0] || 'Data artikel berita tidak valid.');
+      return;
+    }
+
     try {
       setIsSavingArticle(true);
       const id = editingArticle ? editingArticle.id : 'art-' + Date.now();
       const articleToSave: Article = {
+        ...validation.sanitized,
         id,
-        ...articleForm,
+        createdAt: editingArticle ? editingArticle.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 

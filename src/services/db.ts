@@ -4,15 +4,25 @@ import {
   getDocs,
   getDoc,
   setDoc,
-  updateDoc,
   deleteDoc,
   query,
   orderBy,
   where,
   onSnapshot,
+  writeBatch,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Member, Transaction, ForumEvent, Article, ActivityLog, UserProfile, OrgStructureMember, OrgVisionMission, OrgContactInfo } from '../types';
+import {
+  validateArticleInput,
+  validateContactInfoInput,
+  validateEventInput,
+  validateMemberInput,
+  validateOrgStructureInput,
+  validateTransactionInput,
+  validateUserProfileInput,
+  validateVisionMissionInput,
+} from '../utils/validation';
 
 // Initial realistic seed data for Forum UMKM KUAT Kecamatan Tangerang - empty by default (no dummy data)
 export const INITIAL_MEMBERS: Member[] = [];
@@ -314,6 +324,48 @@ function setLocalData<T>(key: string, data: T) {
   }
 }
 
+/**
+ * Mengirim mutasi admin terproteksi ke backend (/api/admin/action) dengan Firebase ID Token.
+ * Seluruh pengecekan RBAC, sanitasi XSS, validasi input, rate limit (30 req/mnt), & batas biaya cloud dijalankan di backend.
+ */
+async function callBackendAdminAction<T = any>(
+  action: string,
+  payload: unknown
+): Promise<{ executedOnBackend: boolean; data?: T }> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('Autentikasi diperlukan: Silakan masuk menggunakan akun Google pengurus terlebih dahulu.');
+  }
+
+  const idToken = await currentUser.getIdToken();
+  let res: Response;
+  try {
+    res = await fetch('/api/admin/action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ action, payload }),
+    });
+  } catch {
+    // Hanya fallback jika backend lokal/network sementara tidak dapat dihubungi (bukan error 4xx/5xx)
+    return { executedOnBackend: false };
+  }
+
+  if (res.status === 404) {
+    // Jika environment statis tanpa functions proxy
+    return { executedOnBackend: false };
+  }
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(json?.error || `Aksi backend ditolak (${res.status})`);
+  }
+
+  return { executedOnBackend: true, data: json?.data as T };
+}
+
 // Data service methods
 export const dbService = {
   // Clear all members and transactions completely
@@ -350,10 +402,12 @@ export const dbService = {
     setLocalData('transactions', []);
   },
 
-  // Realtime subscription: ensures mobile phones (HP) and computers instantly sync without refresh
-  subscribeMembers(callback: (members: Member[]) => void): () => void {
+  // Realtime subscription: public users query public directory only, admins receive full list
+  subscribeMembers(callback: (members: Member[]) => void, isAdmin = false): () => void {
     try {
-      const q = collection(db, 'members');
+      const q = isAdmin
+        ? collection(db, 'members')
+        : query(collection(db, 'members'), where('isPublicDirectory', '==', true));
       const unsubscribe = onSnapshot(
         q,
         (snapshot) => {
@@ -375,10 +429,13 @@ export const dbService = {
   },
 
   // MEMBERS
-  async getMembers(): Promise<Member[]> {
+  async getMembers(isAdmin = false): Promise<Member[]> {
     try {
+      const q = isAdmin
+        ? collection(db, 'members')
+        : query(collection(db, 'members'), where('isPublicDirectory', '==', true));
       const snapshot = await Promise.race([
-        getDocs(collection(db, 'members')),
+        getDocs(q),
         new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
       ]);
       if (snapshot) {
@@ -395,54 +452,182 @@ export const dbService = {
     return getLocalData<Member[]>('members', []);
   },
 
-  async saveMember(member: Member): Promise<void> {
-    const cleaned = cleanFirestoreData(member);
-
-    // 1. Immediately update local storage and notify listeners
-    const current = getLocalData<Member[]>('members', []);
-    const idx = current.findIndex((m) => m.id === cleaned.id);
-    if (idx >= 0) {
-      current[idx] = cleaned;
-    } else {
-      current.push(cleaned);
+  async registerPublicMember(member: Member): Promise<Member> {
+    const check = validateMemberInput(member, { requireValidNik: true });
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data pendaftaran tidak valid.');
     }
-    setLocalData('members', current);
+    const cleaned = cleanFirestoreData(check.sanitized);
 
+    try {
+      const res = await fetch('/api/members/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cleaned),
+      });
+      if (res.status !== 404) {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(json?.error || `Pendaftaran ditolak (${res.status})`);
+        }
+        const savedMember: Member = json?.member || cleaned;
+        const current = getLocalData<Member[]>('members', []);
+        current.push(savedMember);
+        setLocalData('members', current);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('umkm_members_updated', { detail: current }));
+        }
+        return savedMember;
+      }
+    } catch (err: any) {
+      if (err?.message && !String(err.message).toLowerCase().includes('fetch')) {
+        throw err;
+      }
+    }
+
+    // Fallback langsung ke Firestore (divalidasi ketat oleh firestore.rules)
+    await setDoc(doc(db, 'members', cleaned.id), cleaned);
+    const current = getLocalData<Member[]>('members', []);
+    current.push(cleaned);
+    setLocalData('members', current);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_members_updated', { detail: current }));
     }
+    return cleaned;
+  },
 
-    // 2. Persist to Firestore
-    try {
-      const writePromise = setDoc(doc(db, 'members', cleaned.id), cleaned);
-      await Promise.race([
-        writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
-      ]);
-    } catch (err) {
-      console.warn('Firestore write failed, stored in local storage:', err);
+  async saveMember(member: Member): Promise<void> {
+    const check = validateMemberInput(member, { requireValidNik: true });
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data anggota tidak valid.');
+    }
+    const cleaned = cleanFirestoreData(check.sanitized);
+
+    // 1. Verifikasi & simpan melalui backend terproteksi (RBAC + Rate Limiter + Validasi Server)
+    const backend = await callBackendAdminAction<Member>('member:save', cleaned);
+    const persisted = backend.data || cleaned;
+
+    // 2. Jika backend proxy tidak tersedia, simpan langsung ke Firestore (dilindungi firestore.rules)
+    if (!backend.executedOnBackend) {
+      try {
+        const writePromise = setDoc(doc(db, 'members', persisted.id), persisted);
+        await Promise.race([
+          writePromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+        ]);
+      } catch (err: any) {
+        if (err?.code === 'permission-denied' || String(err?.message || '').toLowerCase().includes('permission')) {
+          handleFirestoreError(err, OperationType.WRITE, `members/${persisted.id}`);
+        }
+        throw err;
+      }
+    }
+
+    // 3. Perbarui cache lokal dan trigger UI update
+    const current = getLocalData<Member[]>('members', []);
+    const idx = current.findIndex((m) => m.id === persisted.id);
+    if (idx >= 0) {
+      current[idx] = persisted;
+    } else {
+      current.push(persisted);
+    }
+    setLocalData('members', current);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_members_updated', { detail: current }));
+    }
+  },
+
+  async saveMembersBulk(
+    membersToSave: Member[],
+    onProgress?: (saved: number, total: number) => void
+  ): Promise<void> {
+    if (membersToSave.length === 0) return;
+
+    const cleanedList = membersToSave.map((m) => {
+      const check = validateMemberInput(m, { requireValidNik: true });
+      if (!check.valid) {
+        throw new Error(`Data tidak valid (${m.fullName || 'tanpa nama'}): ${check.errors[0]}`);
+      }
+      return cleanFirestoreData(check.sanitized);
+    });
+
+    // Verifikasi RBAC & kuota melalui backend per batch (maks 200 per request agar < 1MB payload)
+    const BACKEND_CHUNK = 100;
+    let saved = 0;
+    let usedBackend = false;
+
+    for (let i = 0; i < cleanedList.length; i += BACKEND_CHUNK) {
+      const chunk = cleanedList.slice(i, i + BACKEND_CHUNK);
+      const backend = await callBackendAdminAction('member:bulk_import', { members: chunk });
+      if (backend.executedOnBackend) {
+        usedBackend = true;
+        saved += chunk.length;
+        onProgress?.(saved, cleanedList.length);
+      } else {
+        break;
+      }
+    }
+
+    if (!usedBackend) {
+      const CHUNK_SIZE = 400;
+      for (let i = 0; i < cleanedList.length; i += CHUNK_SIZE) {
+        const chunk = cleanedList.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+        for (const item of chunk) {
+          batch.set(doc(db, 'members', item.id), item);
+        }
+        try {
+          await Promise.race([
+            batch.commit(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Koneksi Firestore timeout saat menyimpan massal')), 15000)),
+          ]);
+        } catch (err: any) {
+          if (err?.code === 'permission-denied' || String(err?.message || '').toLowerCase().includes('permission')) {
+            handleFirestoreError(err, OperationType.WRITE, 'members');
+          }
+          throw err;
+        }
+        saved += chunk.length;
+        onProgress?.(saved, cleanedList.length);
+      }
+    }
+
+    const current = getLocalData<Member[]>('members', []);
+    const byId = new Map<string, Member>(current.map((m) => [m.id, m]));
+    for (const m of cleanedList) {
+      byId.set(m.id, m);
+    }
+    const merged = Array.from(byId.values());
+    setLocalData('members', merged);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_members_updated', { detail: merged }));
     }
   },
 
   async deleteMember(id: string): Promise<void> {
-    // 1. Immediately update local storage and notify listeners
+    const backend = await callBackendAdminAction('member:delete', { id });
+
+    if (!backend.executedOnBackend) {
+      try {
+        const delPromise = deleteDoc(doc(db, 'members', id));
+        await Promise.race([
+          delPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+        ]);
+      } catch (err: any) {
+        if (err?.code === 'permission-denied' || String(err?.message || '').toLowerCase().includes('permission')) {
+          handleFirestoreError(err, OperationType.DELETE, `members/${id}`);
+        }
+        throw err;
+      }
+    }
+
     const current = getLocalData<Member[]>('members', []);
     const updated = current.filter((m) => m.id !== id);
     setLocalData('members', updated);
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_members_updated', { detail: updated }));
-    }
-
-    // 2. Delete from Firestore
-    try {
-      const delPromise = deleteDoc(doc(db, 'members', id));
-      await Promise.race([
-        delPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
-      ]);
-    } catch (err) {
-      console.warn('Firestore delete failed:', err);
     }
   },
 
@@ -470,34 +655,60 @@ export const dbService = {
   },
 
   async saveTransaction(trx: Transaction): Promise<void> {
-    try {
-      await setDoc(doc(db, 'transactions', trx.id), trx);
-    } catch (err) {
-      console.warn('Firestore saveTransaction failed:', err);
+    const check = validateTransactionInput(trx);
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data transaksi tidak valid.');
     }
-    const current = await this.getTransactions();
-    const idx = current.findIndex((t) => t.id === trx.id);
+    const cleaned = cleanFirestoreData(check.sanitized);
+
+    const backend = await callBackendAdminAction<Transaction>('transaction:save', cleaned);
+    const persisted = backend.data || cleaned;
+
+    if (!backend.executedOnBackend) {
+      try {
+        await setDoc(doc(db, 'transactions', persisted.id), persisted);
+      } catch (err: any) {
+        if (err?.code === 'permission-denied' || String(err?.message || '').toLowerCase().includes('permission')) {
+          handleFirestoreError(err, OperationType.WRITE, `transactions/${persisted.id}`);
+        }
+        throw err;
+      }
+    }
+
+    const current = getLocalData<Transaction[]>('transactions', INITIAL_TRANSACTIONS);
+    const idx = current.findIndex((t) => t.id === persisted.id);
     if (idx >= 0) {
-      current[idx] = trx;
+      current[idx] = persisted;
     } else {
-      current.unshift(trx);
+      current.unshift(persisted);
     }
     setLocalData('transactions', current);
   },
 
   async deleteTransaction(id: string): Promise<void> {
-    try {
-      await deleteDoc(doc(db, 'transactions', id));
-    } catch (err) {
-      console.warn('Firestore deleteTransaction failed:', err);
+    const backend = await callBackendAdminAction('transaction:delete', { id });
+
+    if (!backend.executedOnBackend) {
+      try {
+        await deleteDoc(doc(db, 'transactions', id));
+      } catch (err: any) {
+        if (err?.code === 'permission-denied' || String(err?.message || '').toLowerCase().includes('permission')) {
+          handleFirestoreError(err, OperationType.DELETE, `transactions/${id}`);
+        }
+        throw err;
+      }
     }
-    const current = await this.getTransactions();
+
+    const current = getLocalData<Transaction[]>('transactions', INITIAL_TRANSACTIONS);
     const updated = current.filter((t) => t.id !== id);
     setLocalData('transactions', updated);
   },
 
-  // SEED HELPERS: Ensures Firestore always contains data for all devices
+  // SEED HELPERS: Only authenticated admin writes initial seed if collection is empty
   async seedEventsIfEmpty(): Promise<ForumEvent[]> {
+    if (!auth.currentUser) {
+      return INITIAL_EVENTS;
+    }
     try {
       const snap = await getDocs(collection(db, 'events'));
       if (snap.empty) {
@@ -514,6 +725,9 @@ export const dbService = {
   },
 
   async seedArticlesIfEmpty(): Promise<Article[]> {
+    if (!auth.currentUser) {
+      return INITIAL_ARTICLES;
+    }
     try {
       const snap = await getDocs(collection(db, 'articles'));
       if (snap.empty) {
@@ -588,47 +802,45 @@ export const dbService = {
   },
 
   async saveEvent(event: ForumEvent): Promise<void> {
-    const cleaned = cleanFirestoreData(event);
+    const check = validateEventInput(event);
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data agenda tidak valid.');
+    }
+    const cleaned = cleanFirestoreData(check.sanitized);
 
-    // 1. Immediately update local storage and notify listeners
+    const backend = await callBackendAdminAction<ForumEvent>('event:save', cleaned);
+    const persisted = backend.data || cleaned;
+
+    if (!backend.executedOnBackend) {
+      await setDoc(doc(db, 'events', persisted.id), persisted);
+    }
+
     const current = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
-    const idx = current.findIndex((e) => e.id === cleaned.id);
+    const idx = current.findIndex((e) => e.id === persisted.id);
     if (idx >= 0) {
-      current[idx] = cleaned;
+      current[idx] = persisted;
     } else {
-      current.unshift(cleaned);
+      current.unshift(persisted);
     }
     setLocalData('events', current);
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_events_updated', { detail: current }));
     }
-
-    // 2. Persist to Firestore
-    try {
-      await setDoc(doc(db, 'events', cleaned.id), cleaned);
-    } catch (err) {
-      console.error('Firestore saveEvent failed:', err);
-      throw err;
-    }
   },
 
   async deleteEvent(id: string): Promise<void> {
-    // 1. Immediately update local storage and notify listeners
+    const backend = await callBackendAdminAction('event:delete', { id });
+    if (!backend.executedOnBackend) {
+      await deleteDoc(doc(db, 'events', id));
+    }
+
     const current = getLocalData<ForumEvent[]>('events', INITIAL_EVENTS);
     const updated = current.filter((e) => e.id !== id);
     setLocalData('events', updated);
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_events_updated', { detail: updated }));
-    }
-
-    // 2. Delete from Firestore
-    try {
-      await deleteDoc(doc(db, 'events', id));
-    } catch (err) {
-      console.error('Firestore deleteEvent failed:', err);
-      throw err;
     }
   },
 
@@ -699,47 +911,45 @@ export const dbService = {
   },
 
   async saveArticle(article: Article): Promise<void> {
-    const cleaned = cleanFirestoreData(article);
+    const check = validateArticleInput(article);
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data berita tidak valid.');
+    }
+    const cleaned = cleanFirestoreData(check.sanitized);
 
-    // 1. Immediately update local storage and notify listeners
+    const backend = await callBackendAdminAction<Article>('article:save', cleaned);
+    const persisted = backend.data || cleaned;
+
+    if (!backend.executedOnBackend) {
+      await setDoc(doc(db, 'articles', persisted.id), persisted);
+    }
+
     const current = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
-    const idx = current.findIndex((a) => a.id === cleaned.id);
+    const idx = current.findIndex((a) => a.id === persisted.id);
     if (idx >= 0) {
-      current[idx] = cleaned;
+      current[idx] = persisted;
     } else {
-      current.unshift(cleaned);
+      current.unshift(persisted);
     }
     setLocalData('articles', current);
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_articles_updated', { detail: current }));
     }
-
-    // 2. Persist to Firestore
-    try {
-      await setDoc(doc(db, 'articles', cleaned.id), cleaned);
-    } catch (err) {
-      console.error('Firestore saveArticle failed:', err);
-      throw err;
-    }
   },
 
   async deleteArticle(id: string): Promise<void> {
-    // 1. Immediately update local storage and notify listeners
+    const backend = await callBackendAdminAction('article:delete', { id });
+    if (!backend.executedOnBackend) {
+      await deleteDoc(doc(db, 'articles', id));
+    }
+
     const current = getLocalData<Article[]>('articles', INITIAL_ARTICLES);
     const updated = current.filter((a) => a.id !== id);
     setLocalData('articles', updated);
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_articles_updated', { detail: updated }));
-    }
-
-    // 2. Delete from Firestore
-    try {
-      await deleteDoc(doc(db, 'articles', id));
-    } catch (err) {
-      console.error('Firestore deleteArticle failed:', err);
-      throw err;
     }
   },
 
@@ -803,55 +1013,43 @@ export const dbService = {
   },
 
   async saveOrgStructureMember(member: OrgStructureMember): Promise<void> {
-    const payload: OrgStructureMember = {
-      ...member,
-      updatedAt: new Date().toISOString(),
-    };
+    const check = validateOrgStructureInput(member);
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data struktur pengurus tidak valid.');
+    }
+    const payload = cleanFirestoreData(check.sanitized);
 
-    // 1. Immediately update local storage so data is never lost regardless of network state
+    const backend = await callBackendAdminAction<OrgStructureMember>('org_structure:save', payload);
+    const persisted = backend.data || payload;
+
+    if (!backend.executedOnBackend) {
+      await setDoc(doc(db, 'org_structure', persisted.id), persisted);
+    }
+
     const current = getLocalData<OrgStructureMember[]>('org_structure', INITIAL_ORG_STRUCTURE);
-    const idx = current.findIndex((m) => m.id === member.id);
+    const idx = current.findIndex((m) => m.id === persisted.id);
     if (idx >= 0) {
-      current[idx] = payload;
+      current[idx] = persisted;
     } else {
-      current.push(payload);
+      current.push(persisted);
     }
     current.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
     setLocalData('org_structure', current);
 
-    // Notify all open components and pages immediately
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_org_structure_updated', { detail: current }));
-    }
-
-    // 2. Persist to Firestore with generous timeout
-    try {
-      const writePromise = setDoc(doc(db, 'org_structure', member.id), payload);
-      await Promise.race([
-        writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
-    } catch (err) {
-      console.warn('Firestore saveOrgStructureMember fallback to local:', err);
     }
   },
 
   async deleteOrgStructureMember(id: string): Promise<void> {
-    // 1. Immediately update local storage
+    const backend = await callBackendAdminAction('org_structure:delete', { id });
+    if (!backend.executedOnBackend) {
+      await deleteDoc(doc(db, 'org_structure', id));
+    }
+
     const current = getLocalData<OrgStructureMember[]>('org_structure', INITIAL_ORG_STRUCTURE);
     const updated = current.filter((m) => m.id !== id);
     setLocalData('org_structure', updated);
-
-    // 2. Delete from Firestore
-    try {
-      const delPromise = deleteDoc(doc(db, 'org_structure', id));
-      await Promise.race([
-        delPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
-    } catch (err) {
-      console.warn('Firestore deleteOrgStructureMember fallback to local:', err);
-    }
   },
 
   // USER MANAGEMENT & HAK AKSES (RBAC)
@@ -876,49 +1074,47 @@ export const dbService = {
   },
 
   async saveUserProfile(user: UserProfile): Promise<void> {
-    const payload: UserProfile = {
-      ...user,
-      updatedAt: new Date().toISOString(),
-    };
+    const check = validateUserProfileInput(user);
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data pengguna tidak valid.');
+    }
+    const payload = cleanFirestoreData(check.sanitized);
 
-    // 1. Immediately update local storage
+    const backend = await callBackendAdminAction<UserProfile>('user:save', payload);
+    const persisted = backend.data || payload;
+
+    if (!backend.executedOnBackend) {
+      await setDoc(doc(db, 'users', persisted.uid), persisted);
+      await setDoc(doc(db, 'admin_emails', persisted.email.toLowerCase()), {
+        email: persisted.email.toLowerCase(),
+        role: persisted.role,
+        uid: persisted.uid,
+        updatedAt: persisted.updatedAt,
+      });
+    }
+
     const current = getLocalData<UserProfile[]>('users', INITIAL_USERS);
-    const idx = current.findIndex((u) => u.uid === user.uid || u.email.toLowerCase() === user.email.toLowerCase());
+    const idx = current.findIndex((u) => u.uid === persisted.uid || u.email.toLowerCase() === persisted.email.toLowerCase());
     if (idx >= 0) {
-      current[idx] = payload;
+      current[idx] = persisted;
     } else {
-      current.push(payload);
+      current.push(persisted);
     }
     setLocalData('users', current);
-
-    // 2. Persist to Firestore
-    try {
-      const writePromise = setDoc(doc(db, 'users', user.uid), payload);
-      await Promise.race([
-        writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
-    } catch (err) {
-      console.warn('Firestore saveUserProfile fallback to local:', err);
-    }
   },
 
-  async deleteUserProfile(uid: string): Promise<void> {
-    // 1. Immediately update local storage
+  async deleteUserProfile(uid: string, email?: string): Promise<void> {
+    const backend = await callBackendAdminAction('user:delete', { uid, email });
+    if (!backend.executedOnBackend) {
+      await deleteDoc(doc(db, 'users', uid));
+      if (email && email.includes('@')) {
+        await deleteDoc(doc(db, 'admin_emails', email.trim().toLowerCase())).catch(() => {});
+      }
+    }
+
     const current = getLocalData<UserProfile[]>('users', INITIAL_USERS);
     const updated = current.filter((u) => u.uid !== uid);
     setLocalData('users', updated);
-
-    // 2. Delete from Firestore
-    try {
-      const delPromise = deleteDoc(doc(db, 'users', uid));
-      await Promise.race([
-        delPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]);
-    } catch (err) {
-      console.warn('Firestore deleteUserProfile fallback to local:', err);
-    }
   },
 
   // VISI & MISI ORGANISASI
@@ -945,20 +1141,19 @@ export const dbService = {
   },
 
   async saveVisionMission(data: OrgVisionMission): Promise<void> {
-    const payload: OrgVisionMission = {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-    try {
-      const writePromise = setDoc(doc(db, 'org_settings', 'vision_mission'), payload);
-      await Promise.race([
-        writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500)),
-      ]);
-    } catch (err) {
-      console.warn('Firestore saveVisionMission fallback to local:', err);
+    const check = validateVisionMissionInput(data);
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data visi & misi tidak valid.');
     }
-    setLocalData('vision_mission', payload);
+    const payload = cleanFirestoreData(check.sanitized);
+
+    const backend = await callBackendAdminAction<OrgVisionMission>('settings:save_vision_mission', payload);
+    const persisted = backend.data || payload;
+
+    if (!backend.executedOnBackend) {
+      await setDoc(doc(db, 'org_settings', 'vision_mission'), persisted);
+    }
+    setLocalData('vision_mission', persisted);
   },
 
   // CONTACT & SERVICES SETTINGS
@@ -1005,27 +1200,22 @@ export const dbService = {
   },
 
   async saveContactInfo(data: OrgContactInfo): Promise<void> {
-    const payload: OrgContactInfo = {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-    const cleaned = cleanFirestoreData(payload);
+    const check = validateContactInfoInput(data);
+    if (!check.valid) {
+      throw new Error(check.errors[0] || 'Data kontak tidak valid.');
+    }
+    const cleaned = cleanFirestoreData(check.sanitized);
 
-    // 1. Immediately update local storage and notify listeners
-    setLocalData('contact_info', cleaned);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('umkm_contact_info_updated', { detail: cleaned }));
+    const backend = await callBackendAdminAction<OrgContactInfo>('settings:save_contact', cleaned);
+    const persisted = backend.data || cleaned;
+
+    if (!backend.executedOnBackend) {
+      await setDoc(doc(db, 'org_settings', 'contact_info'), persisted);
     }
 
-    // 2. Persist to Firestore
-    try {
-      const writePromise = setDoc(doc(db, 'org_settings', 'contact_info'), cleaned);
-      await Promise.race([
-        writePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
-      ]);
-    } catch (err) {
-      console.warn('Firestore saveContactInfo fallback to local:', err);
+    setLocalData('contact_info', persisted);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('umkm_contact_info_updated', { detail: persisted }));
     }
   },
 

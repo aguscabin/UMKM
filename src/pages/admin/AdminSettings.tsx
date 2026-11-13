@@ -4,6 +4,13 @@ import { dbService, INITIAL_ORG_STRUCTURE, INITIAL_VISION_MISSION, INITIAL_CONTA
 import { useAuth } from '../../context/AuthContext';
 import { compressImage } from '../../utils/image';
 import {
+  validateContactInfoInput,
+  validateOrgStructureInput,
+  validateUploadedFile,
+  validateUserProfileInput,
+  validateVisionMissionInput,
+} from '../../utils/validation';
+import {
   Settings,
   ShieldCheck,
   UserCheck,
@@ -235,15 +242,20 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
     setIsModalOpen(true);
   };
 
-  // Handle Photo Upload with HTML5 Canvas compression
+  // Handle Photo Upload with validation & HTML5 Canvas compression
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      alert(fileCheck.error || 'File foto pengurus tidak valid.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     setIsCompressingPhoto(true);
     try {
       // Compress to maximum 500x500 at 0.82 quality (~25KB-40KB)
-      // Completely fits in Firestore (1MB limit) and LocalStorage (5MB quota)
       const compressedDataUrl = await compressImage(file, 500, 500, 0.82);
       setEditingMember((prev) => (prev ? { ...prev, image: compressedDataUrl } : null));
     } catch (err: any) {
@@ -263,31 +275,24 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
     }
     if (!editingMember) return;
 
-    const trimmedName = (editingMember.name || '').trim();
-    const trimmedRole = (editingMember.role || '').trim();
-
-    if (!trimmedName) {
-      alert('Mohon isi nama lengkap pengurus.');
-      return;
-    }
-    if (!trimmedRole) {
-      alert('Mohon isi jabatan atau posisi pengurus.');
+    const validation = validateOrgStructureInput({
+      ...editingMember,
+      image: (editingMember.image || '').trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    });
+    if (!validation.valid) {
+      alert(validation.errors[0] || 'Data pengurus tidak valid.');
       return;
     }
 
     setIsSavingOrg(true);
     try {
       const memberToSave: OrgStructureMember = {
-        ...editingMember,
-        name: trimmedName,
-        role: trimmedRole,
-        title: (editingMember.title || '').trim(),
-        image: (editingMember.image || '').trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-        order: Number(editingMember.order) || orgList.length + 1,
+        ...validation.sanitized,
+        id: editingMember.id,
         updatedAt: new Date().toISOString(),
       };
 
-      // 1. Persist to DB service (localStorage + Firestore)
+      // 1. Persist to DB service (backend + Firestore)
       await dbService.saveOrgStructureMember(memberToSave);
 
       // 2. Immediately update local state so UI updates without any flicker or reversion
@@ -348,24 +353,17 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
     }
     if (!editingUser) return;
 
-    const trimmedName = (editingUser.displayName || '').trim();
-    const trimmedEmail = (editingUser.email || '').trim().toLowerCase();
-
-    if (!trimmedName) {
-      alert('Mohon isi nama lengkap pengguna / pengurus.');
-      return;
-    }
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      alert('Mohon masukkan alamat email akun yang valid.');
+    const validation = validateUserProfileInput(editingUser);
+    if (!validation.valid) {
+      alert(validation.errors[0] || 'Data akun pengguna tidak valid.');
       return;
     }
 
     setIsSavingUser(true);
     try {
       const userToSave: UserProfile = {
-        ...editingUser,
-        displayName: trimmedName,
-        email: trimmedEmail,
+        ...validation.sanitized,
+        uid: editingUser.uid,
         updatedAt: new Date().toISOString(),
       };
 
@@ -409,7 +407,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
       return;
     }
     if (confirm(`Apakah Anda yakin ingin menghapus akses akun ${user.displayName} (${user.email})?`)) {
-      await dbService.deleteUserProfile(user.uid);
+      await dbService.deleteUserProfile(user.uid, user.email);
       setUserList((prev) => prev.filter((u) => u.uid !== user.uid));
       await dbService.addLog({
         userId: profile?.uid || 'usr-admin',
@@ -452,23 +450,18 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
 
   // Visi & Misi Handlers
   const handleSaveVisionMission = async () => {
-    const trimmedVision = visionText.trim();
-    if (!trimmedVision) {
-      alert('Visi organisasi tidak boleh kosong. Mohon tuliskan visi organisasi.');
-      return;
-    }
-    const cleanMissions = missionsList.map((m) => m.trim()).filter((m) => m.length > 0);
-    if (cleanMissions.length === 0) {
-      alert('Misi organisasi harus memiliki minimal 1 poin kegiatan/tujuan.');
+    const validation = validateVisionMissionInput({
+      vision: visionText,
+      missions: missionsList,
+    });
+    if (!validation.valid) {
+      alert(validation.errors[0] || 'Visi & Misi tidak valid.');
       return;
     }
 
     setIsSavingVisionMission(true);
     try {
-      const payload: OrgVisionMission = {
-        vision: trimmedVision,
-        missions: cleanMissions,
-      };
+      const payload: OrgVisionMission = validation.sanitized;
 
       await dbService.saveVisionMission(payload);
       await dbService.addLog({
@@ -476,11 +469,11 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
         userName: profile?.displayName || 'Admin',
         action: 'Perbarui Visi & Misi',
         target: 'Profil Organisasi',
-        details: `Memperbarui rumusan visi dan ${cleanMissions.length} poin misi Forum UMKM KUAT`,
+        details: `Memperbarui rumusan visi dan ${payload.missions.length} poin misi Forum UMKM KUAT`,
       });
 
-      setVisionText(trimmedVision);
-      setMissionsList(cleanMissions);
+      setVisionText(payload.vision);
+      setMissionsList(payload.missions);
       onRefreshAll();
       setVisionMissionSuccess('Visi dan Misi organisasi berhasil disimpan dan diperbarui di website publik!');
       setTimeout(() => setVisionMissionSuccess(null), 4000);
@@ -556,24 +549,22 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
   // Contact Handlers
   const handleSaveContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactForm.address.trim()) {
-      alert('Mohon isi alamat lengkap kantor sekretariat.');
-      return;
-    }
-    if (!contactForm.whatsapp.trim()) {
-      alert('Mohon isi nomor WhatsApp hotline.');
+    const validation = validateContactInfoInput(contactForm);
+    if (!validation.valid) {
+      alert(validation.errors[0] || 'Data kontak tidak valid.');
       return;
     }
 
     setIsSavingContact(true);
     try {
-      await dbService.saveContactInfo(contactForm);
+      await dbService.saveContactInfo(validation.sanitized);
+      setContactForm(validation.sanitized);
       await dbService.addLog({
         userId: profile?.uid || 'usr-admin',
         userName: profile?.displayName || 'Admin',
         action: 'Perbarui Informasi Kontak',
         target: 'Kontak & Sekretariat',
-        details: `Memperbarui data kontak: WA ${contactForm.whatsapp}, Telp ${contactForm.phone}, Kantor ${contactForm.officeName}`,
+        details: `Memperbarui data kontak: WA ${validation.sanitized.whatsapp}, Telp ${validation.sanitized.phone}, Kantor ${validation.sanitized.officeName}`,
       });
       onRefreshAll();
       setContactSuccess('Informasi kontak sekretariat & layanan UMKM berhasil disimpan!');
@@ -629,10 +620,20 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ logs, onRefreshAll
     }
   };
 
-  // Restore data from JSON
+  // Restore data from JSON (capped at 5MB)
   const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      alert('File cadangan harus berformat .json.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran file cadangan maksimal 5 MB.');
+      e.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = async (event) => {

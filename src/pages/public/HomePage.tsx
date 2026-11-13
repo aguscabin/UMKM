@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Member, ForumEvent, Article, KELURAHAN_LIST } from '../../types';
+import { DEFAULT_PRODUCT_PHOTO_PLACEHOLDER } from '../../utils/excelImport';
 import {
   Users,
   Store,
@@ -282,9 +283,9 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* FEATURED UMKM DIRECTORY PREVIEW */}
-      <section id="sorotan-umkm" className="w-full bg-slate-100/60 py-16 md:py-20 border-y border-slate-200/80 block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+      <section id="sorotan-umkm" className="w-full bg-slate-100/60 py-14 sm:py-16 md:py-20 border-y border-slate-200/80 block">
+        <div className="max-w-3xl mx-auto px-3 lg:max-w-7xl lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 sm:mb-10">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-amber-700">
                 Produk Unggulan Binaan
@@ -308,7 +309,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             </button>
           </div>
 
-          {/* Dynamic Grid: Empty State or Responsive Mobile/Desktop Cards */}
+          {/* Dynamic Grid: Empty State or Mobile/Tablet E-Commerce Grid (2-col HP, 3-col Tablet, 4-col Desktop) */}
           {featuredMembers.length === 0 ? (
             <div className="bg-white rounded-3xl p-8 sm:p-14 text-center border border-slate-200/90 shadow-sm space-y-5 max-w-2xl mx-auto">
               <div className="h-16 w-16 mx-auto rounded-2xl bg-teal-50 border border-teal-200/70 flex items-center justify-center text-teal-700 shadow-2xs">
@@ -346,67 +347,75 @@ export const HomePage: React.FC<HomePageProps> = ({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-6 w-full">
               {featuredMembers.map((item) => {
                 const waNumber = item.businessPhone ? item.businessPhone.replace(/\D/g, '').replace(/^0/, '62') : '';
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-3xl overflow-hidden border border-slate-200/90 shadow-2xs hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 group flex flex-col justify-between h-full min-w-0"
+                    className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col justify-between h-full min-w-0"
                   >
                     <div className="flex-1 flex flex-col">
-                      <div className="relative h-48 sm:h-52 w-full bg-slate-100 overflow-hidden flex-shrink-0">
+                      <div className="relative aspect-square w-full bg-slate-100 overflow-hidden flex-shrink-0">
                         <img
-                          src={item.productPhoto || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=600&q=80'}
+                          src={item.productPhoto || DEFAULT_PRODUCT_PHOTO_PLACEHOLDER}
                           alt={item.businessName}
                           loading="lazy"
+                          referrerPolicy="no-referrer"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=600&q=80';
+                            (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_PHOTO_PLACEHOLDER;
                           }}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
-                        <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-md">
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent pointer-events-none" />
+                        <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 max-w-[68%] truncate bg-slate-950/80 backdrop-blur-xs text-white text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md">
                           {item.category}
                         </div>
-                        <div className="absolute top-3 right-3 bg-teal-700/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-amber-300" />
-                          <span>Terverifikasi</span>
+                        <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 bg-teal-700/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded shadow-xs flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-amber-300 flex-shrink-0" />
+                          <span className="hidden sm:inline">Terverifikasi</span>
                         </div>
                       </div>
 
-                      <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
-                        <div className="space-y-1.5">
-                          <div className="text-xs font-semibold text-teal-700 flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-teal-600" />
-                            <span>Kelurahan {item.kelurahan}</span>
+                      <div className="p-2.5 sm:p-3 lg:p-4 flex-1 flex flex-col justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="text-[11px] font-medium text-teal-700 flex items-center gap-1 min-w-0">
+                            <MapPin className="w-3 h-3 flex-shrink-0 text-teal-600" />
+                            <span className="truncate">Kelurahan {item.kelurahan}</span>
                           </div>
-                          <h3 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-teal-700 transition-colors" title={item.businessName}>
+                          <h3
+                            className="font-bold text-sm sm:text-base text-slate-900 line-clamp-1 group-hover:text-teal-700 transition-colors leading-snug"
+                            title={item.businessName}
+                          >
                             {item.businessName}
                           </h3>
-                          <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                          <p className="text-xs text-slate-600 line-clamp-2 sm:line-clamp-3 leading-relaxed">
                             <strong className="text-slate-800 font-semibold">Produk:</strong> {item.topProduct}
                           </p>
                         </div>
 
                         {item.legalities && (
-                          <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 font-medium truncate">
-                            <span className="text-teal-700 font-semibold">Legalitas:</span> {item.legalities}
+                          <div className="pt-1.5 mt-auto border-t border-gray-100">
+                            <span
+                              className="inline-block max-w-full truncate text-[10px] sm:text-[11px] bg-teal-50/80 text-teal-800 border border-teal-100/80 px-2 py-0.5 rounded-md font-medium"
+                              title={`Legalitas: ${item.legalities}`}
+                            >
+                              <strong className="font-semibold text-teal-700">Legalitas:</strong> {item.legalities}
+                            </span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto bg-slate-50/50">
-                      <span className="text-[11px] font-mono text-slate-400 truncate">
+                    <div className="px-2.5 pb-2.5 pt-2 sm:px-3 sm:pb-3 lg:px-4 lg:pb-4 border-t border-gray-100 flex items-center justify-between gap-2 bg-slate-50/50">
+                      <span className="hidden sm:inline text-[10px] lg:text-[11px] font-mono text-slate-400 truncate">
                         {item.memberNumber}
                       </span>
                       <a
                         href={waNumber ? `https://wa.me/${waNumber}?text=Halo%20${encodeURIComponent(item.businessName)},%20saya%20melihat%20produk%20Anda%20di%20Portal%20UMKM%20KUAT%20Kecamatan%20Tangerang` : '#'}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-700 hover:bg-teal-600 text-white text-[11px] sm:text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
                       >
                         <span>Hubungi WA</span>
                         <ExternalLink className="w-3 h-3" />

@@ -3,6 +3,8 @@ import { Member, KELURAHAN_LIST } from '../../types';
 import { dbService } from '../../services/db';
 import { OFFICIAL_LOGO_URL } from '../../components/UmkmKuatLogo';
 import { MemberCardModal } from '../../components/MemberCardModal';
+import { compressImage } from '../../utils/image';
+import { validateMemberInput, validateUploadedFile } from '../../utils/validation';
 import {
   Sparkles,
   Camera,
@@ -58,46 +60,81 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     isPublicDirectory: true,
   });
 
-  const handleMemberPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMemberPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      setDuplicationWarning(fileCheck.error || 'File pas foto tidak valid.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+    try {
+      const compressed = await compressImage(file, 500, 500, 0.82);
+      setDuplicationWarning(null);
       setFormData((prev) => ({
         ...prev,
-        memberPhoto: event.target?.result as string,
+        memberPhoto: compressed,
       }));
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setDuplicationWarning('Gagal memproses pas foto: ' + (err?.message || 'Format tidak didukung'));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
   };
 
-  const handleProductPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
+    const fileCheck = validateUploadedFile(file, 'image');
+    if (!fileCheck.valid) {
+      setDuplicationWarning(fileCheck.error || 'File foto produk tidak valid.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+    try {
+      const compressed = await compressImage(file, 600, 600, 0.82);
+      setDuplicationWarning(null);
       setFormData((prev) => ({
         ...prev,
-        productPhoto: event.target?.result as string,
+        productPhoto: compressed,
       }));
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setDuplicationWarning('Gagal memproses foto produk: ' + (err?.message || 'Format tidak didukung'));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setDuplicationWarning(null);
 
-    // Duplication check
-    const duplicateNik = members.find((m) => m.nik === formData.nik);
-    if (duplicateNik) {
-      setDuplicationWarning(`NIK ${formData.nik} sudah terdaftar dengan nama ${duplicateNik.fullName}`);
+    const validation = validateMemberInput(
+      {
+        ...formData,
+        status: 'aktif',
+      },
+      { requireValidNik: true }
+    );
+    if (!validation.valid) {
+      setDuplicationWarning(validation.errors[0] || 'Mohon periksa kembali data formulir Anda.');
       return;
     }
 
-    const duplicatePhone = members.find((m) => m.phone === formData.phone);
+    const sanitized = validation.sanitized;
+
+    // Duplication check
+    const duplicateNik = members.find((m) => m.nik === sanitized.nik);
+    if (duplicateNik) {
+      setDuplicationWarning(`NIK ${sanitized.nik} sudah terdaftar dengan nama ${duplicateNik.fullName}`);
+      return;
+    }
+
+    const normalizedPhone = sanitized.phone.replace(/\D/g, '');
+    const duplicatePhone = members.find((m) => m.phone.replace(/\D/g, '') === normalizedPhone);
     if (duplicatePhone) {
-      setDuplicationWarning(`No. WhatsApp ${formData.phone} sudah terdaftar di sistem.`);
+      setDuplicationWarning(`No. WhatsApp ${sanitized.phone} sudah terdaftar di sistem.`);
       return;
     }
 
@@ -105,43 +142,26 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     try {
       const memberNumber = generateMemberNumber();
       const newMember: Member = {
+        ...sanitized,
         id: 'mem-' + Date.now(),
         memberNumber,
-        fullName: formData.fullName,
-        nik: formData.nik,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        kelurahan: formData.kelurahan,
         status: 'aktif',
         joinDate: new Date().toISOString().split('T')[0],
-        businessName: formData.businessName,
-        category: formData.category,
-        topProduct: formData.topProduct,
-        businessAddress: formData.businessAddress || formData.address,
-        businessPhone: formData.businessPhone || formData.phone,
-        memberPhoto: formData.memberPhoto,
-        productPhoto: formData.productPhoto,
-        legalities: formData.legalities,
-        isPublicDirectory: formData.isPublicDirectory,
+        businessAddress: sanitized.businessAddress || sanitized.address,
+        businessPhone: sanitized.businessPhone || sanitized.phone,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      await dbService.saveMember(newMember);
-      await dbService.addLog({
-        userId: 'publik-online',
-        userName: formData.fullName,
-        action: 'Pendaftaran Online Mandiri',
-        target: newMember.memberNumber,
-        details: `Pendaftaran UMKM mandiri melalui link publik (Kel. ${newMember.kelurahan})`,
-      });
+      const savedMember = await dbService.registerPublicMember(newMember);
 
       onRegistrationSuccess();
-      setCreatedMember(newMember);
-    } catch (err) {
+      setCreatedMember(savedMember);
+    } catch (err: any) {
       console.error(err);
-      alert('Terjadi kendala saat menyimpan pendaftaran. Silakan coba kembali.');
+      setDuplicationWarning(
+        err?.message || 'Terjadi kendala saat menyimpan pendaftaran. Silakan coba kembali.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -250,12 +270,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   required
                   maxLength={16}
                   value={formData.nik}
                   onChange={(e) => {
                     setDuplicationWarning(null);
-                    setFormData({ ...formData, nik: e.target.value });
+                    setFormData({ ...formData, nik: e.target.value.replace(/\D/g, '') });
                   }}
                   placeholder="367101..."
                   className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-teal-500 font-mono"

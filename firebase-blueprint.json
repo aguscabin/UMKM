@@ -2,7 +2,7 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "Admin or officer user with role-based access control.",
+      "description": "User account with role-based access control (default 'member', staff roles assigned by Super Admin).",
       "type": "object",
       "properties": {
         "uid": { "type": "string", "maxLength": 128 },
@@ -10,47 +10,65 @@
         "displayName": { "type": "string", "maxLength": 150 },
         "role": {
           "type": "string",
-          "enum": ["super_admin", "pengurus_kecamatan", "admin_keanggotaan", "bendahara", "admin_informasi", "pengurus_kelurahan"]
+          "enum": ["super_admin", "pengurus_kecamatan", "admin_keanggotaan", "bendahara", "admin_informasi", "pengurus_kelurahan", "member"]
         },
         "kelurahan": { "type": "string", "maxLength": 100 },
+        "photoURL": { "type": "string", "maxLength": 500 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "email", "role"]
+      "required": ["uid", "email", "displayName", "role"]
+    },
+    "AdminEmail": {
+      "title": "AdminEmail",
+      "description": "Server-validated officer email to RBAC role lookup document keyed by lowercase email.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 150 },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "pengurus_kecamatan", "admin_keanggotaan", "bendahara", "admin_informasi", "pengurus_kelurahan", "member"]
+        },
+        "uid": { "type": "string", "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "uid"]
     },
     "Member": {
       "title": "Member",
-      "description": "Registered UMKM member with business and contact profile.",
+      "description": "Registered UMKM member with validated 16-digit NIK, business, and contact profile.",
       "type": "object",
       "properties": {
+        "id": { "type": "string", "maxLength": 128 },
         "memberNumber": { "type": "string", "maxLength": 50 },
-        "fullName": { "type": "string", "maxLength": 150 },
-        "nik": { "type": "string", "maxLength": 20 },
-        "phone": { "type": "string", "maxLength": 30 },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 150 },
+        "nik": { "type": "string", "minLength": 16, "maxLength": 16, "pattern": "^[0-9]{16}$" },
+        "phone": { "type": "string", "minLength": 8, "maxLength": 30 },
         "email": { "type": "string", "maxLength": 150 },
         "address": { "type": "string", "maxLength": 300 },
         "kelurahan": { "type": "string", "maxLength": 100 },
         "status": { "type": "string", "enum": ["aktif", "nonaktif", "pending"] },
         "joinDate": { "type": "string", "maxLength": 30 },
-        "businessName": { "type": "string", "maxLength": 150 },
+        "businessName": { "type": "string", "minLength": 2, "maxLength": 150 },
         "category": { "type": "string", "maxLength": 80 },
         "topProduct": { "type": "string", "maxLength": 150 },
         "businessAddress": { "type": "string", "maxLength": 300 },
         "businessPhone": { "type": "string", "maxLength": 30 },
-        "memberPhoto": { "type": "string" },
-        "productPhoto": { "type": "string" },
+        "memberPhoto": { "type": "string", "maxLength": 900000 },
+        "productPhoto": { "type": "string", "maxLength": 900000 },
         "legalities": { "type": "string", "maxLength": 300 },
         "isPublicDirectory": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["memberNumber", "fullName", "kelurahan", "businessName", "category", "status", "isPublicDirectory"]
+      "required": ["memberNumber", "fullName", "nik", "phone", "kelurahan", "businessName", "category", "status", "isPublicDirectory"]
     },
     "Transaction": {
       "title": "Transaction",
       "description": "Financial cashbook entry for income, expense, and dues.",
       "type": "object",
       "properties": {
+        "id": { "type": "string", "maxLength": 128 },
         "transactionNumber": { "type": "string", "maxLength": 50 },
         "type": { "type": "string", "enum": ["pemasukan", "pengeluaran"] },
         "category": { "type": "string", "maxLength": 100 },
@@ -61,7 +79,7 @@
         "recorderId": { "type": "string", "maxLength": 128 },
         "approvalStatus": { "type": "string", "enum": ["disetujui", "menunggu", "ditolak"] },
         "approvedBy": { "type": "string", "maxLength": 150 },
-        "proofUrl": { "type": "string", "maxLength": 500 },
+        "proofUrl": { "type": "string", "maxLength": 900000 },
         "notes": { "type": "string", "maxLength": 500 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
@@ -73,13 +91,14 @@
       "description": "Forum event, training, bazaar, or exhibition.",
       "type": "object",
       "properties": {
+        "id": { "type": "string", "maxLength": 128 },
         "title": { "type": "string", "maxLength": 200 },
         "description": { "type": "string", "maxLength": 3000 },
         "date": { "type": "string", "maxLength": 30 },
         "time": { "type": "string", "maxLength": 50 },
         "location": { "type": "string", "maxLength": 250 },
         "organizer": { "type": "string", "maxLength": 150 },
-        "posterUrl": { "type": "string", "maxLength": 500 },
+        "posterUrl": { "type": "string", "maxLength": 900000 },
         "documentationUrls": { "type": "string", "maxLength": 1000 },
         "status": { "type": "string", "enum": ["terbit", "draf", "arsip", "selesai"] },
         "targetAudience": { "type": "string", "maxLength": 150 },
@@ -87,20 +106,21 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "date", "location", "status"]
+      "required": ["title", "description", "date", "location", "status"]
     },
     "Article": {
       "title": "Article",
       "description": "News and educational article published by the forum.",
       "type": "object",
       "properties": {
+        "id": { "type": "string", "maxLength": 128 },
         "title": { "type": "string", "maxLength": 250 },
         "excerpt": { "type": "string", "maxLength": 400 },
         "content": { "type": "string", "maxLength": 10000 },
         "category": { "type": "string", "maxLength": 80 },
         "author": { "type": "string", "maxLength": 150 },
         "authorId": { "type": "string", "maxLength": 128 },
-        "imageUrl": { "type": "string", "maxLength": 500 },
+        "imageUrl": { "type": "string", "maxLength": 900000 },
         "publishedDate": { "type": "string", "maxLength": 30 },
         "status": { "type": "string", "enum": ["terbit", "draf", "arsip"] },
         "createdAt": { "type": "string", "format": "date-time" },
@@ -113,6 +133,7 @@
       "description": "Audit trail log of administrative activities.",
       "type": "object",
       "properties": {
+        "id": { "type": "string", "maxLength": 128 },
         "userId": { "type": "string", "maxLength": 128 },
         "userName": { "type": "string", "maxLength": 150 },
         "action": { "type": "string", "maxLength": 100 },
@@ -127,10 +148,11 @@
       "description": "Leadership and officer structure for Forum UMKM KUAT.",
       "type": "object",
       "properties": {
+        "id": { "type": "string", "maxLength": 128 },
         "role": { "type": "string", "maxLength": 100 },
         "name": { "type": "string", "maxLength": 150 },
         "title": { "type": "string", "maxLength": 200 },
-        "image": { "type": "string" },
+        "image": { "type": "string", "maxLength": 900000 },
         "order": { "type": "number" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -163,6 +185,10 @@
       "schema": { "$ref": "#/entities/User" },
       "description": "System admin users and role profiles."
     },
+    "/admin_emails/{emailId}": {
+      "schema": { "$ref": "#/entities/AdminEmail" },
+      "description": "Authoritative officer email to role index for RBAC."
+    },
     "/admins/{adminUid}": {
       "schema": { "$ref": "#/entities/User" },
       "description": "Admin privilege marker document."
@@ -193,7 +219,7 @@
     },
     "/org_settings/{settingId}": {
       "schema": { "$ref": "#/entities/OrgContactInfo" },
-      "description": "General forum organization configuration including contact info and social media."
+      "description": "General forum organization configuration including contact info, vision/mission, and social media."
     }
   }
 }

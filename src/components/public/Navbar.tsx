@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [contactInfo, setContactInfo] = useState<OrgContactInfo>(INITIAL_CONTACT_INFO);
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
 
   useEffect(() => {
     const loadContact = async () => {
@@ -194,7 +194,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Action / Admin Button */}
           <div className="hidden lg:flex items-center gap-3">
-            {profile ? (
+            {isAdmin && profile ? (
               <button
                 onClick={() => setCurrentTab('admin')}
                 className="flex items-center gap-2 bg-slate-950 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 cursor-pointer border border-slate-800 hover:border-slate-700 hover:shadow-md"
@@ -218,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile & Tablet Menu Button */}
           <div className="flex lg:hidden items-center gap-2">
-            {profile && (
+            {isAdmin && (
               <button
                 onClick={() => handleNavClick('admin')}
                 className="p-2 text-teal-700 bg-teal-50 rounded-lg"
@@ -261,7 +261,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-            {profile ? (
+            {isAdmin ? (
               <button
                 onClick={() => handleNavClick('admin')}
                 className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-xl font-semibold text-sm shadow-sm"

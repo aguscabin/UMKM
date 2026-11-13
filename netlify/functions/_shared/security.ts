@@ -42,21 +42,22 @@ export function getFirebaseServerConfig(): FirebaseAppletConfig {
 /**
  * Daftar email Super Admin resmi disimpan hanya di server (env SUPER_ADMIN_EMAILS atau default organisasi).
  */
+const DEFAULT_SUPER_ADMIN_EMAILS = [
+  'agus.cabin@gmail.com',
+  'umkmkectangerang@gmail.com',
+  'ketua.umkm@tangerangkota.go.id',
+  'keanggotaan@umkmkuat-tangerang.org',
+  'sekretaris@umkmkuat-tangerang.org',
+  'bendahara@umkmkuat-tangerang.org',
+];
+
 export function getServerSuperAdminEmails(): string[] {
   const fromEnv = (process.env.SUPER_ADMIN_EMAILS || '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  if (fromEnv.length > 0) return fromEnv;
 
-  return [
-    'agus.cabin@gmail.com',
-    'umkmkectangerang@gmail.com',
-    'ketua.umkm@tangerangkota.go.id',
-    'keanggotaan@umkmkuat-tangerang.org',
-    'sekretaris@umkmkuat-tangerang.org',
-    'bendahara@umkmkuat-tangerang.org',
-  ];
+  return Array.from(new Set([...DEFAULT_SUPER_ADMIN_EMAILS, ...fromEnv]));
 }
 
 // =====================================================================

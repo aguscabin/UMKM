@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as FirebaseUser, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import {
+  User as FirebaseUser,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+} from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../lib/firebase';
 import { UserProfile, UserRole } from '../types';
@@ -11,7 +18,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isMember: boolean;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: () => Promise<UserProfile>;
+  loginWithGoogleRedirect: () => Promise<void>;
   logout: () => Promise<void>;
   simulateRole: (role: UserRole) => void;
   // Permissions
@@ -56,18 +64,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Fallback baca Firestore terproteksi hanya jika backend sementara tidak terjangkau.
    */
   const resolveAuthoritativeProfile = async (fbUser: FirebaseUser): Promise<UserProfile> => {
-    const emailLower = (fbUser.email || '').trim().toLowerCase();
+    const rawEmail = fbUser.email || fbUser.providerData?.[0]?.email || '';
+    const emailLower = rawEmail.trim().toLowerCase();
     let authoritativeRole: UserRole = 'member';
 
     try {
       const idToken = await fbUser.getIdToken();
-      const res = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      let res: Response;
+      try {
+        res = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (res.ok) {
         const data = await res.json();
@@ -84,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fallback baca langsung dokumen terproteksi Firestore untuk user terautentikasi
       if (fbUser.emailVerified && REGISTERED_SUPER_ADMIN_EMAILS.includes(emailLower)) {
         authoritativeRole = 'super_admin';
-      } else if (fbUser.emailVerified) {
+      } else if (fbUser.emailVerified && emailLower) {
         try {
           const emailSnap = await getDoc(doc(db, 'admin_emails', emailLower));
           if (emailSnap.exists()) {
@@ -122,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return {
       uid: fbUser.uid,
-      email: fbUser.email || '',
+      email: rawEmail,
       displayName: fbUser.displayName || (effectiveRole === 'member' ? 'Anggota UMKM' : 'Pengurus Forum'),
       role: effectiveRole,
       photoURL: fbUser.photoURL || undefined,
@@ -132,6 +149,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let active = true;
+
+    // Tangani hasil redirect jika fallback redirect digunakan
+    getRedirectResult(auth).catch((err) => {
+      console.warn('Redirect auth result notice:', err);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (!active) return;
       setUser(fbUser);
@@ -152,19 +175,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (): Promise<UserProfile> => {
     setLoading(true);
+    sessionStorage.removeItem(ROLE_STORAGE_KEY);
     try {
       const res = await signInWithPopup(auth, googleProvider);
       setUser(res.user);
       const resolved = await resolveAuthoritativeProfile(res.user);
       setProfile(resolved);
+      return resolved;
     } catch (err: unknown) {
       console.error('Google Sign-in failed:', err);
       throw err;
     } finally {
       setLoading(false);
     }
+  };
+
+  const loginWithGoogleRedirect = async (): Promise<void> => {
+    sessionStorage.removeItem(ROLE_STORAGE_KEY);
+    await signInWithRedirect(auth, googleProvider);
   };
 
   const logout = async () => {
@@ -215,6 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSuperAdmin,
         isMember,
         loginWithGoogle,
+        loginWithGoogleRedirect,
         logout,
         simulateRole,
         canManageMembers,

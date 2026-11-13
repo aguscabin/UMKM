@@ -23,7 +23,7 @@ import { AdminSettings } from './pages/admin/AdminSettings';
 import { ShieldAlert, LogIn, Store, X } from 'lucide-react';
 
 function MainApp() {
-  const { profile, isAdmin, loading: authLoading } = useAuth();
+  const { profile, isAdmin, loading: authLoading, logout } = useAuth();
 
   // Navigation State
   const [currentTab, setCurrentTab] = useState<string>('beranda');
@@ -139,6 +139,15 @@ function MainApp() {
       window.removeEventListener('umkm_articles_updated', handleArticlesUpdated);
     };
   }, [isAdmin, authLoading]);
+
+  // Jika user baru kembali dari fallback Google redirect login dan terverifikasi admin, langsung buka dashboard
+  useEffect(() => {
+    if (!authLoading && isAdmin && sessionStorage.getItem('umkm_pending_admin_redirect') === '1') {
+      sessionStorage.removeItem('umkm_pending_admin_redirect');
+      setCurrentTab('admin');
+      setAdminMenu('dashboard');
+    }
+  }, [authLoading, isAdmin]);
 
   // Public View Render
   if (currentTab !== 'admin') {
@@ -270,7 +279,7 @@ function MainApp() {
               Hak Akses Administratif Dibatasi
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Akun Anda terautentikasi dengan peran <strong className="text-slate-900">Member / Pendaftar</strong>. Sesuai prinsip <em>Least Privilege & Strict Isolation</em>, akun pendaftar tidak diizinkan masuk ke panel administrasi internal Forum UMKM KUAT.
+              Akun Anda (<strong className="text-slate-900">{profile.email}</strong>) terautentikasi dengan peran <strong className="text-slate-900">Member / Pendaftar</strong>. Sesuai prinsip <em>Least Privilege & Strict Isolation</em>, akun pendaftar tidak diizinkan masuk ke panel administrasi internal Forum UMKM KUAT.
             </p>
           </div>
 
@@ -293,6 +302,16 @@ function MainApp() {
           </div>
 
           <div className="space-y-2.5 pt-2">
+            <button
+              onClick={async () => {
+                await logout();
+                setLoginModalOpen(true);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-colors cursor-pointer"
+            >
+              <LogIn className="w-4 h-4 text-teal-400" />
+              <span>Ganti Akun Pengurus (Login Ulang)</span>
+            </button>
             <button
               onClick={() => setCurrentTab('daftar')}
               className="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-colors cursor-pointer"

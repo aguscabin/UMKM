@@ -5,6 +5,7 @@ import {
   X,
   ShieldCheck,
   AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 
 interface LoginModalProps {
@@ -13,21 +14,94 @@ interface LoginModalProps {
   onSuccess: () => void;
 }
 
+function formatFirebaseAuthError(err: unknown): { message: string; isPopupBlocked: boolean } {
+  const code = (err as { code?: string })?.code || '';
+  const rawMsg = err instanceof Error ? err.message : String(err || '');
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+
+  if (code === 'auth/popup-blocked') {
+    return {
+      isPopupBlocked: true,
+      message:
+        'Pop-up login Google diblokir oleh browser Anda. Izinkan pop-up untuk situs ini atau gunakan tombol "Login Alternatif (Redirect)" di bawah.',
+    };
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return {
+      isPopupBlocked: false,
+      message:
+        'Jendela login Google ditutup sebelum selesai. Silakan klik kembali "Masuk dengan Google" dan pilih akun pengurus.',
+    };
+  }
+  if (code === 'auth/unauthorized-domain') {
+    return {
+      isPopupBlocked: false,
+      message: `Domain "${hostname}" belum terdaftar di Firebase Authorized Domains. Tambahkan domain ini di Firebase Console → Authentication → Settings → Authorized domains.`,
+    };
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return {
+      isPopupBlocked: false,
+      message:
+        'Metode Login Google belum diaktifkan di Firebase Console → Authentication → Sign-in method.',
+    };
+  }
+  if (code === 'auth/network-request-failed') {
+    return {
+      isPopupBlocked: false,
+      message:
+        'Koneksi ke layanan autentikasi Google gagal. Periksa koneksi internet Anda lalu coba lagi.',
+    };
+  }
+  if (code === 'auth/user-disabled') {
+    return {
+      isPopupBlocked: false,
+      message: 'Akun Google ini dinonaktifkan di Firebase Authentication.',
+    };
+  }
+  return {
+    isPopupBlocked: false,
+    message: `Gagal masuk dengan Google${code ? ` (${code})` : ''}. ${rawMsg || 'Silakan coba lagi.'}`,
+  };
+}
+
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { loginWithGoogle, loading } = useAuth();
+  const { loginWithGoogle, loginWithGoogleRedirect, profile, logout, loading } = useAuth();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showRedirectFallback, setShowRedirectFallback] = useState(false);
 
   if (!isOpen) return null;
 
   const handleGoogleLogin = async () => {
     setErrorMsg(null);
+    setShowRedirectFallback(false);
     try {
-      await loginWithGoogle();
+      const resolved = await loginWithGoogle();
+      if (resolved.role === 'member') {
+        setErrorMsg(
+          `Email ${resolved.email} belum terdaftar sebagai Pengurus/Admin (saat ini hanya memiliki akses Member). Silakan pilih akun pengurus seperti umkmkectangerang@gmail.com atau minta Super Admin menambahkannya di menu Pengaturan RBAC.`
+        );
+        return;
+      }
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      console.error(err);
-      setErrorMsg('Gagal masuk dengan Google. Pastikan Anda menggunakan akun email pengurus terdaftar Forum UMKM KUAT.');
+      console.error('LoginModal Google error:', err);
+      const formatted = formatFirebaseAuthError(err);
+      setErrorMsg(formatted.message);
+      setShowRedirectFallback(formatted.isPopupBlocked);
+    }
+  };
+
+  const handleRedirectFallback = async () => {
+    setErrorMsg(null);
+    try {
+      sessionStorage.setItem('umkm_pending_admin_redirect', '1');
+      await loginWithGoogleRedirect();
+    } catch (err: unknown) {
+      sessionStorage.removeItem('umkm_pending_admin_redirect');
+      const formatted = formatFirebaseAuthError(err);
+      setErrorMsg(formatted.message);
     }
   };
 
@@ -55,10 +129,37 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
 
         {/* Content */}
         <div className="p-6 space-y-5">
+          {profile && profile.role === 'member' && (
+            <div className="p-3 bg-amber-50 text-amber-800 text-xs rounded-xl border border-amber-200 space-y-1.5">
+              <div>
+                Saat ini Anda masuk sebagai <strong>{profile.email}</strong> (akses Member). Klik tombol di bawah untuk memilih akun Google pengurus.
+              </div>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="text-amber-900 underline font-bold cursor-pointer"
+              >
+                Keluar dari akun ini dulu
+              </button>
+            </div>
+          )}
+
           {errorMsg && (
-            <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl flex items-center gap-2 border border-red-200">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errorMsg}</span>
+            <div className="p-3.5 bg-red-50 text-red-700 text-xs rounded-xl flex flex-col gap-2 border border-red-200">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{errorMsg}</span>
+              </div>
+              {showRedirectFallback && (
+                <button
+                  type="button"
+                  onClick={handleRedirectFallback}
+                  className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Login Alternatif (Redirect)</span>
+                </button>
+              )}
             </div>
           )}
 

@@ -85,6 +85,9 @@ export interface Transaction {
   recorderId: string;
   approvalStatus: 'disetujui' | 'menunggu' | 'ditolak';
   approvedBy?: string;
+  memberId?: string;
+  memberName?: string;
+  memberNumber?: string;
   proofUrl?: string;
   notes?: string;
   history?: Array<{

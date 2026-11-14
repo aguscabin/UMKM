@@ -1,42 +1,51 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Transaction, TransactionType } from '../../types';
+import { Member, Transaction, TransactionType } from '../../types';
 import { dbService } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
 import { OFFICIAL_LOGO_URL } from '../../components/UmkmKuatLogo';
 import { compressImage } from '../../utils/image';
 import { validateTransactionInput, validateUploadedFile } from '../../utils/validation';
 import {
+  MONTH_OPTIONS,
+  getMonthLabel,
+  getAvailableYears,
+  filterDuesTransactions,
+  resolveTransactionMember,
+  buildMemberDuesSummary,
+  exportDuesExcel,
+  exportDuesOfficialPdf,
+} from '../../utils/duesReport';
+import { InlineShimmer } from '../../components/common/Skeleton';
+import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
   Plus,
   Search,
-  Filter,
   Download,
   Printer,
   CheckCircle2,
-  Clock,
-  XCircle,
-  FileText,
   Paperclip,
-  Check,
   X,
-  AlertCircle,
-  History,
-  Upload,
-  Image as ImageIcon,
   Camera,
   Trash2,
+  User,
+  FileSpreadsheet,
+  FileText,
+  Calendar,
+  Users,
 } from 'lucide-react';
 
 interface AdminFinancesProps {
   transactions: Transaction[];
+  members?: Member[];
   onRefresh: () => void;
   openAddModalInitially?: boolean;
 }
 
 export const AdminFinances: React.FC<AdminFinancesProps> = ({
   transactions,
+  members = [],
   onRefresh,
   openAddModalInitially = false,
 }) => {
@@ -47,6 +56,18 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
   const [modalOpen, setModalOpen] = useState(openAddModalInitially);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [printModalOpen, setPrintModalOpen] = useState(false);
+
+  // Member selector search state inside Catat Transaksi modal
+  const [memberPickerSearch, setMemberPickerSearch] = useState('');
+
+  // Rekap Iuran Anggota state (Pilihan Bulan & Tahun + Export)
+  const nowDate = new Date();
+  const [duesMonth, setDuesMonth] = useState<string>(String(nowDate.getMonth() + 1).padStart(2, '0'));
+  const [duesYear, setDuesYear] = useState<string>(String(nowDate.getFullYear()));
+  const [duesSearch, setDuesSearch] = useState('');
+  const [duesViewMode, setDuesViewMode] = useState<'transaksi' | 'status_anggota'>('transaksi');
+  const [isExportingDuesPdf, setIsExportingDuesPdf] = useState(false);
+  const [duesPrintModalOpen, setDuesPrintModalOpen] = useState(false);
 
   // File input ref for proof upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +84,9 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
     recorderId: profile?.uid || 'usr-bendahara',
     approvalStatus: 'disetujui',
     approvedBy: profile?.displayName || 'Ketua Forum UMKM KUAT',
+    memberId: '',
+    memberName: '',
+    memberNumber: '',
     proofUrl: '',
     notes: '',
     createdAt: new Date().toISOString(),
@@ -78,14 +102,80 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
     return `TRX-${year}-${String(count).padStart(3, '0')}`;
   };
 
-  const handleOpenAdd = (type: TransactionType = 'pemasukan') => {
+  const formatPeriodFromDate = (isoDate: string) => {
+    const m = isoDate.slice(5, 7);
+    const y = isoDate.slice(0, 4);
+    const label = MONTH_OPTIONS.find((opt) => opt.value === m)?.label;
+    return label && y ? `${label} ${y}` : isoDate;
+  };
+
+  const handleOpenAdd = (type: TransactionType = 'pemasukan', presetCategory?: string) => {
+    setMemberPickerSearch('');
     setFormData({
       ...initialForm,
       type,
-      category: type === 'pemasukan' ? 'Iuran Anggota' : 'Operasional Sekretariat',
+      category: presetCategory || (type === 'pemasukan' ? 'Iuran Anggota' : 'Operasional Sekretariat'),
       transactionNumber: generateTrxNumber(),
+      memberId: '',
+      memberName: '',
+      memberNumber: '',
     });
     setModalOpen(true);
+  };
+
+  const handleOpenAddForMember = (member: Member) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const targetMonth = duesMonth !== 'all' ? duesMonth : todayStr.slice(5, 7);
+    const targetYear = duesYear !== 'all' ? duesYear : todayStr.slice(0, 4);
+    const txDate =
+      duesMonth !== 'all' && duesYear !== 'all'
+        ? `${targetYear}-${targetMonth}-01`
+        : todayStr;
+    const periodLabel = `${getMonthLabel(targetMonth)} ${targetYear}`;
+
+    setMemberPickerSearch('');
+    setFormData({
+      ...initialForm,
+      type: 'pemasukan',
+      category: 'Iuran Anggota',
+      date: txDate,
+      transactionNumber: generateTrxNumber(),
+      memberId: member.id,
+      memberName: member.fullName,
+      memberNumber: member.memberNumber,
+      description: `Iuran Anggota (${periodLabel}) - ${member.fullName} (${member.businessName})`,
+    });
+    setModalOpen(true);
+  };
+
+  const handleSelectMemberInForm = (selectedId: string) => {
+    if (!selectedId) {
+      setFormData((prev) => ({
+        ...prev,
+        memberId: '',
+        memberName: '',
+        memberNumber: '',
+      }));
+      return;
+    }
+    const found = members.find((m) => m.id === selectedId);
+    if (!found) return;
+
+    setFormData((prev) => {
+      const shouldAutoDesc =
+        prev.category === 'Iuran Anggota' &&
+        (!prev.description.trim() || prev.description.startsWith('Iuran Anggota'));
+      const periodText = formatPeriodFromDate(prev.date);
+      return {
+        ...prev,
+        memberId: found.id,
+        memberName: found.fullName,
+        memberNumber: found.memberNumber,
+        description: shouldAutoDesc
+          ? `Iuran Anggota (${periodText}) - ${found.fullName} (${found.businessName})`
+          : prev.description,
+      };
+    });
   };
 
   // Image Upload handler with validation & compression
@@ -193,6 +283,28 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
     return withRunning.reverse();
   }, [transactions]);
 
+  // Sorted & filtered members for transaction form picker
+  const sortedMembers = useMemo(() => {
+    return [...members].sort((a, b) => a.fullName.localeCompare(b.fullName));
+  }, [members]);
+
+  const pickerFilteredMembers = useMemo(() => {
+    const q = memberPickerSearch.trim().toLowerCase();
+    if (!q) return sortedMembers;
+    return sortedMembers.filter(
+      (m) =>
+        m.fullName.toLowerCase().includes(q) ||
+        m.businessName.toLowerCase().includes(q) ||
+        (m.memberNumber || '').toLowerCase().includes(q) ||
+        (m.kelurahan || '').toLowerCase().includes(q)
+    );
+  }, [sortedMembers, memberPickerSearch]);
+
+  const selectedFormMember = useMemo(() => {
+    if (!formData.memberId) return undefined;
+    return members.find((m) => m.id === formData.memberId);
+  }, [members, formData.memberId]);
+
   // Filtered transactions based on tab and inputs
   const displayedTransactions = useMemo(() => {
     return runningCashBook.filter((t) => {
@@ -200,17 +312,83 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
       if (activeTab === 'pengeluaran' && t.type !== 'pengeluaran') return false;
       if (activeTab === 'rekap_iuran' && t.category !== 'Iuran Anggota') return false;
 
+      const q = search.toLowerCase();
       const matchSearch =
         search === '' ||
-        t.transactionNumber.toLowerCase().includes(search.toLowerCase()) ||
-        t.description.toLowerCase().includes(search.toLowerCase()) ||
-        t.category.toLowerCase().includes(search.toLowerCase());
+        t.transactionNumber.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.category.toLowerCase().includes(q) ||
+        (t.memberName || '').toLowerCase().includes(q) ||
+        (t.memberNumber || '').toLowerCase().includes(q);
 
       const matchCategory = filterCategory === 'all' || t.category === filterCategory;
 
       return matchSearch && matchCategory;
     });
   }, [runningCashBook, activeTab, search, filterCategory]);
+
+  // Rekap Iuran Anggota computations (Month & Year filtering)
+  const availableDuesYears = useMemo(() => getAvailableYears(transactions), [transactions]);
+
+  const periodDuesTransactions = useMemo(
+    () => filterDuesTransactions(transactions, duesMonth, duesYear),
+    [transactions, duesMonth, duesYear]
+  );
+
+  const memberDuesStatuses = useMemo(
+    () => buildMemberDuesSummary(members, periodDuesTransactions),
+    [members, periodDuesTransactions]
+  );
+
+  const displayedDuesTransactions = useMemo(() => {
+    const q = duesSearch.trim().toLowerCase();
+    if (!q) return periodDuesTransactions;
+    return periodDuesTransactions.filter((tx) => {
+      const matched = resolveTransactionMember(tx, members);
+      return (
+        tx.transactionNumber.toLowerCase().includes(q) ||
+        tx.description.toLowerCase().includes(q) ||
+        (tx.memberName || '').toLowerCase().includes(q) ||
+        (tx.memberNumber || '').toLowerCase().includes(q) ||
+        (matched?.businessName || '').toLowerCase().includes(q) ||
+        (matched?.kelurahan || '').toLowerCase().includes(q)
+      );
+    });
+  }, [periodDuesTransactions, duesSearch, members]);
+
+  const displayedMemberDues = useMemo(() => {
+    const q = duesSearch.trim().toLowerCase();
+    if (!q) return memberDuesStatuses;
+    return memberDuesStatuses.filter(
+      (row) =>
+        row.member.fullName.toLowerCase().includes(q) ||
+        row.member.businessName.toLowerCase().includes(q) ||
+        (row.member.memberNumber || '').toLowerCase().includes(q) ||
+        (row.member.kelurahan || '').toLowerCase().includes(q)
+    );
+  }, [memberDuesStatuses, duesSearch]);
+
+  const duesPeriodApprovedTotal = useMemo(() => {
+    return periodDuesTransactions
+      .filter((t) => t.approvalStatus === 'disetujui')
+      .reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  }, [periodDuesTransactions]);
+
+  const duesActiveMembersCount = useMemo(
+    () => memberDuesStatuses.filter((r) => r.member.status === 'aktif').length,
+    [memberDuesStatuses]
+  );
+
+  const duesPaidActiveCount = useMemo(
+    () => memberDuesStatuses.filter((r) => r.member.status === 'aktif' && r.isPaid).length,
+    [memberDuesStatuses]
+  );
+
+  const duesPeriodLabel = useMemo(() => {
+    const mLabel = getMonthLabel(duesMonth);
+    const yLabel = duesYear === 'all' ? 'Semua Tahun' : duesYear;
+    return `${mLabel} ${yLabel}`;
+  }, [duesMonth, duesYear]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -221,12 +399,13 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
   };
 
   const handleExportCSV = () => {
-    const headers = ['No. Transaksi', 'Tanggal', 'Tipe', 'Kategori', 'Uraian', 'Pemasukan', 'Pengeluaran', 'Pencatat', 'Status'];
+    const headers = ['No. Transaksi', 'Tanggal', 'Tipe', 'Kategori', 'Anggota', 'Uraian', 'Pemasukan', 'Pengeluaran', 'Pencatat', 'Status'];
     const rows = displayedTransactions.map((t) => [
       `"${t.transactionNumber}"`,
       `"${t.date}"`,
       `"${t.type}"`,
       `"${t.category}"`,
+      `"${(t.memberName || '-').replace(/"/g, '""')}"`,
       `"${t.description.replace(/"/g, '""')}"`,
       t.type === 'pemasukan' ? t.amount : 0,
       t.type === 'pengeluaran' ? t.amount : 0,
@@ -241,6 +420,39 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleExportDuesExcel = () => {
+    try {
+      exportDuesExcel({
+        transactions: periodDuesTransactions,
+        members,
+        memberStatuses: memberDuesStatuses,
+        month: duesMonth,
+        year: duesYear,
+        viewMode: duesViewMode,
+      });
+    } catch (err: any) {
+      alert('Gagal mengekspor Excel rekap iuran: ' + (err?.message || 'Terjadi kesalahan'));
+    }
+  };
+
+  const handleExportDuesPdf = async () => {
+    try {
+      setIsExportingDuesPdf(true);
+      await exportDuesOfficialPdf({
+        transactions: periodDuesTransactions,
+        members,
+        memberStatuses: memberDuesStatuses,
+        month: duesMonth,
+        year: duesYear,
+        viewMode: duesViewMode,
+      });
+    } catch (err: any) {
+      alert('Gagal membuat PDF resmi rekap iuran: ' + (err?.message || 'Terjadi kesalahan'));
+    } finally {
+      setIsExportingDuesPdf(false);
+    }
   };
 
   const triggerPrintDocument = () => {
@@ -412,128 +624,594 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
         </button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari uraian atau nomor transaksi..."
-            className="w-full pl-9 pr-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
-          />
-        </div>
+      {activeTab === 'rekap_iuran' ? (
+        <div className="space-y-4">
+          {/* Rekap Iuran Anggota Controls & Export Bar */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-extrabold text-stone-900">
+                  Rekapitulasi Transaksi Iuran Anggota
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Pilih bulan dan tahun untuk melihat rekap iuran anggota serta mengunduh laporan Excel atau PDF resmi.
+                </p>
+              </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full sm:w-auto px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-700 font-medium"
-          >
-            <option value="all">Semua Kategori</option>
-            <option value="Iuran Anggota">Iuran Anggota</option>
-            <option value="Bantuan & Hibah">Bantuan & Hibah</option>
-            <option value="Sponsor & Donasi">Sponsor & Donasi</option>
-            <option value="Operasional Sekretariat">Operasional Sekretariat</option>
-            <option value="Kegiatan & Bazar">Kegiatan & Bazar</option>
-            <option value="Pelatihan & Pembinaan">Pelatihan & Pembinaan</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Transactions Table */}
-      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3.5">No. Transaksi</th>
-                <th className="px-4 py-3.5">Tanggal</th>
-                <th className="px-4 py-3.5">Kategori & Uraian</th>
-                <th className="px-4 py-3.5 text-right text-teal-800">Masuk (Debit)</th>
-                <th className="px-4 py-3.5 text-right text-red-700">Keluar (Kredit)</th>
-                <th className="px-4 py-3.5 text-right font-extrabold text-stone-900">Saldo</th>
-                <th className="px-4 py-3.5 text-center">Bukti Nota</th>
-                <th className="px-4 py-3.5 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {displayedTransactions.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
-                    <div className="max-w-xs mx-auto space-y-2.5">
-                      <div className="h-12 w-12 mx-auto rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
-                        <Wallet className="w-6 h-6" />
-                      </div>
-                      <div className="font-bold text-stone-800 text-sm">Belum Ada Catatan Kas</div>
-                      <p className="text-xs text-stone-500">
-                        {transactions.length === 0
-                          ? 'Buku kas masih kosong dengan saldo Rp 0. Silakan catat transaksi kas atau iuran pertama.'
-                          : 'Tidak ada catatan transaksi yang sesuai filter.'}
-                      </p>
-                      {transactions.length === 0 && (
-                        <div className="pt-2">
-                          <button
-                            onClick={() => handleOpenAdd()}
-                            className="px-4 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Catat Transaksi Pertama</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                displayedTransactions.map((tx: any) => (
-                  <tr key={tx.id} className="hover:bg-stone-50/80 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
-                      {tx.transactionNumber}
-                    </td>
-                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap tabular-nums">{tx.date}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-bold text-stone-800">{tx.category}</div>
-                      <div className="text-[11px] text-stone-500 line-clamp-1">{tx.description}</div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-teal-700 whitespace-nowrap tabular-nums">
-                      {tx.type === 'pemasukan' ? formatRupiah(tx.amount) : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-red-700 whitespace-nowrap tabular-nums">
-                      {tx.type === 'pengeluaran' ? formatRupiah(tx.amount) : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
-                      {formatRupiah(tx.runningBalance)}
-                    </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      {tx.proofUrl ? (
-                        <button
-                          onClick={() => setSelectedTx(tx)}
-                          className="inline-flex items-center gap-1 text-[11px] bg-teal-50 text-teal-800 font-bold px-2.5 py-1 rounded-md border border-teal-200 hover:bg-teal-100 cursor-pointer"
-                        >
-                          <Paperclip className="w-3 h-3" />
-                          <span>Ada Bukti</span>
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-stone-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => setSelectedTx(tx)}
-                        className="text-xs text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
-                      >
-                        Lihat Rincian
-                      </button>
-                    </td>
-                  </tr>
-                ))
+              {canManageFinances && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenAdd('pemasukan', 'Iuran Anggota')}
+                  className="btn-micro inline-flex items-center justify-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2.5 min-h-[42px] rounded-xl text-xs font-bold cursor-pointer self-start lg:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Catat Iuran Anggota</span>
+                </button>
               )}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Period Filters (Bulan, Tahun) + Search + View Switcher */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-1">
+              <div className="lg:col-span-3">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+                  Pilihan Bulan
+                </label>
+                <div className="relative">
+                  <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                  <select
+                    value={duesMonth}
+                    onChange={(e) => setDuesMonth(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800 font-semibold"
+                  >
+                    {MONTH_OPTIONS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+                  Pilihan Tahun
+                </label>
+                <select
+                  value={duesYear}
+                  onChange={(e) => setDuesYear(e.target.value)}
+                  className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800 font-semibold tabular-nums"
+                >
+                  <option value="all">Semua Tahun</option>
+                  {availableDuesYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="lg:col-span-4">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+                  Cari Anggota / No. Transaksi
+                </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="text"
+                    value={duesSearch}
+                    onChange={(e) => setDuesSearch(e.target.value)}
+                    placeholder="Nama anggota, usaha, no. anggota, kelurahan..."
+                    className="w-full pl-9 pr-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
+                  />
+                </div>
+              </div>
+
+              <div className="lg:col-span-3">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+                  Mode Tampilan Rekap
+                </label>
+                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-stone-100 border border-stone-200 min-h-[42px]">
+                  <button
+                    type="button"
+                    onClick={() => setDuesViewMode('transaksi')}
+                    className={`rounded-lg px-2 py-1.5 text-[11px] font-bold transition-colors cursor-pointer ${
+                      duesViewMode === 'transaksi'
+                        ? 'bg-[#121918] text-white'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Transaksi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDuesViewMode('status_anggota')}
+                    className={`rounded-lg px-2 py-1.5 text-[11px] font-bold transition-colors cursor-pointer ${
+                      duesViewMode === 'status_anggota'
+                        ? 'bg-[#121918] text-white'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Per Anggota
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Download Excel & Official PDF Bar */}
+            <div className="pt-3 border-t border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-xs text-stone-600">
+                Periode aktif:{' '}
+                <span className="font-bold text-stone-900">{duesPeriodLabel}</span>
+                <span className="mx-1.5 text-stone-300">|</span>
+                <span className="tabular-nums font-medium text-stone-500">
+                  {periodDuesTransactions.length} transaksi tercatat
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportDuesExcel}
+                  className="btn-micro inline-flex items-center gap-1.5 bg-white hover:bg-stone-50 text-stone-800 px-3.5 py-2.5 min-h-[42px] rounded-xl border border-stone-200 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-teal-700" />
+                  <span>Download Excel (.xlsx)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDuesPrintModalOpen(true)}
+                  className="btn-micro inline-flex items-center gap-1.5 bg-white hover:bg-stone-50 text-stone-800 px-3.5 py-2.5 min-h-[42px] rounded-xl border border-stone-200 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-stone-700" />
+                  <span>Pratinjau Kop Surat</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isExportingDuesPdf}
+                  onClick={handleExportDuesPdf}
+                  className="btn-micro inline-flex items-center gap-1.5 bg-[#121918] hover:bg-stone-800 text-white px-4 py-2.5 min-h-[42px] rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-70"
+                >
+                  <FileText className="w-4 h-4 text-teal-400" />
+                  {isExportingDuesPdf ? (
+                    <InlineShimmer variant="dark" label="Membuat PDF Resmi" widthClass="w-24" />
+                  ) : (
+                    <span>Download PDF Resmi</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Summary Cards for Selected Month/Year */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                Penerimaan Iuran ({duesPeriodLabel})
+              </span>
+              <div className="text-2xl font-extrabold text-teal-700 tabular-nums tracking-tight">
+                {formatRupiah(duesPeriodApprovedTotal)}
+              </div>
+              <div className="text-[11px] text-stone-500">
+                Total iuran anggota berstatus disetujui
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                Jumlah Transaksi Iuran
+              </span>
+              <div className="text-2xl font-extrabold text-stone-900 tabular-nums tracking-tight">
+                {periodDuesTransactions.length} Transaksi
+              </div>
+              <div className="text-[11px] text-stone-500">
+                Catatan masuk kategori Iuran Anggota
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                Partisipasi Anggota Aktif
+              </span>
+              <div className="text-2xl font-extrabold text-amber-700 tabular-nums tracking-tight">
+                {duesPaidActiveCount} / {duesActiveMembersCount} Anggota
+              </div>
+              <div className="text-[11px] text-stone-500 tabular-nums">
+                {Math.max(0, duesActiveMembersCount - duesPaidActiveCount)} anggota aktif belum tercatat bayar
+              </div>
+            </div>
+          </div>
+
+          {/* Rekap Table: Transaction Log vs Per-Member Status */}
+          <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+            {duesViewMode === 'transaksi' ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3.5">No. Transaksi</th>
+                      <th className="px-4 py-3.5">Tanggal</th>
+                      <th className="px-4 py-3.5">Anggota Pembayar</th>
+                      <th className="px-4 py-3.5">Uraian Keterangan</th>
+                      <th className="px-4 py-3.5 text-right text-teal-800">Nominal (Rp)</th>
+                      <th className="px-4 py-3.5 text-center">Status</th>
+                      <th className="px-4 py-3.5 text-center">Bukti</th>
+                      <th className="px-4 py-3.5 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {displayedDuesTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
+                          <div className="max-w-sm mx-auto space-y-2.5">
+                            <div className="h-12 w-12 mx-auto rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
+                              <Wallet className="w-6 h-6" />
+                            </div>
+                            <div className="font-bold text-stone-800 text-sm">
+                              Belum Ada Transaksi Iuran pada {duesPeriodLabel}
+                            </div>
+                            <p className="text-xs text-stone-500">
+                              Pilih bulan/tahun lain atau catat transaksi iuran anggota baru pada periode ini.
+                            </p>
+                            {canManageFinances && (
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAdd('pemasukan', 'Iuran Anggota')}
+                                  className="px-4 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  <span>Catat Iuran Anggota</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      displayedDuesTransactions.map((tx) => {
+                        const matched = resolveTransactionMember(tx, members);
+                        const displayName = tx.memberName || matched?.fullName;
+                        const displayNumber = tx.memberNumber || matched?.memberNumber;
+                        return (
+                          <tr key={tx.id} className="hover:bg-stone-50/80 transition-colors">
+                            <td className="px-4 py-3 font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
+                              {tx.transactionNumber}
+                            </td>
+                            <td className="px-4 py-3 text-stone-600 whitespace-nowrap tabular-nums">
+                              {tx.date}
+                            </td>
+                            <td className="px-4 py-3">
+                              {displayName ? (
+                                <div>
+                                  <div className="font-bold text-stone-900 flex items-center gap-1.5">
+                                    <User className="w-3.5 h-3.5 text-teal-700 flex-shrink-0" />
+                                    <span>{displayName}</span>
+                                  </div>
+                                  <div className="text-[11px] text-stone-500 font-mono tabular-nums">
+                                    {displayNumber || '-'}
+                                    {matched?.businessName ? ` • ${matched.businessName}` : ''}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-stone-400 italic">Tidak ditautkan ke anggota</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-stone-700 max-w-xs">
+                              <div className="line-clamp-2">{tx.description}</div>
+                            </td>
+                            <td className="px-4 py-3 text-right font-bold text-teal-700 whitespace-nowrap tabular-nums">
+                              {formatRupiah(tx.amount)}
+                            </td>
+                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                                  tx.approvalStatus === 'disetujui'
+                                    ? 'bg-teal-50 text-teal-800 border-teal-200'
+                                    : tx.approvalStatus === 'menunggu'
+                                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                      : 'bg-red-50 text-red-700 border-red-200'
+                                }`}
+                              >
+                                {tx.approvalStatus === 'disetujui'
+                                  ? 'Disetujui'
+                                  : tx.approvalStatus === 'menunggu'
+                                    ? 'Menunggu'
+                                    : 'Ditolak'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                              {tx.proofUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTx(tx)}
+                                  className="inline-flex items-center gap-1 text-[11px] bg-teal-50 text-teal-800 font-bold px-2.5 py-1 rounded-md border border-teal-200 hover:bg-teal-100 cursor-pointer"
+                                >
+                                  <Paperclip className="w-3 h-3" />
+                                  <span>Ada Bukti</span>
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-stone-400">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTx(tx)}
+                                className="text-xs text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
+                              >
+                                Lihat Rincian
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                  {displayedDuesTransactions.length > 0 && (
+                    <tfoot className="bg-stone-50 border-t border-stone-200 font-bold">
+                      <tr>
+                        <td colSpan={4} className="px-4 py-3 text-right text-stone-700">
+                          Total Iuran Disetujui ({duesPeriodLabel}):
+                        </td>
+                        <td className="px-4 py-3 text-right text-teal-800 font-extrabold tabular-nums">
+                          {formatRupiah(
+                            displayedDuesTransactions
+                              .filter((t) => t.approvalStatus === 'disetujui')
+                              .reduce((acc, t) => acc + Number(t.amount || 0), 0)
+                          )}
+                        </td>
+                        <td colSpan={3} />
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3.5">No. Anggota</th>
+                      <th className="px-4 py-3.5">Nama Anggota &amp; Usaha</th>
+                      <th className="px-4 py-3.5">Kelurahan</th>
+                      <th className="px-4 py-3.5">Tgl Bayar</th>
+                      <th className="px-4 py-3.5">No. Bukti</th>
+                      <th className="px-4 py-3.5 text-right">Total Iuran</th>
+                      <th className="px-4 py-3.5 text-center">Status ({duesPeriodLabel})</th>
+                      <th className="px-4 py-3.5 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {displayedMemberDues.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
+                          <div className="max-w-xs mx-auto space-y-2">
+                            <div className="h-12 w-12 mx-auto rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
+                              <Users className="w-6 h-6" />
+                            </div>
+                            <div className="font-bold text-stone-800 text-sm">
+                              Data Anggota Tidak Ditemukan
+                            </div>
+                            <p className="text-xs text-stone-500">
+                              {members.length === 0
+                                ? 'Belum ada anggota terdaftar di direktori keanggotaan.'
+                                : 'Tidak ada anggota yang sesuai dengan kata kunci pencarian.'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      displayedMemberDues.map((row) => (
+                        <tr key={row.member.id} className="hover:bg-stone-50/80 transition-colors">
+                          <td className="px-4 py-3 font-mono font-bold text-stone-800 whitespace-nowrap tabular-nums">
+                            {row.member.memberNumber}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="font-bold text-stone-900">{row.member.fullName}</div>
+                            <div className="text-[11px] text-stone-500">{row.member.businessName}</div>
+                          </td>
+                          <td className="px-4 py-3 text-stone-600 whitespace-nowrap">
+                            {row.member.kelurahan}
+                          </td>
+                          <td className="px-4 py-3 text-stone-600 whitespace-nowrap tabular-nums">
+                            {row.lastPaymentDate}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-stone-700 whitespace-nowrap tabular-nums">
+                            {row.lastTransactionNumber}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-stone-900 whitespace-nowrap tabular-nums">
+                            {row.totalAmount > 0 ? formatRupiah(row.totalAmount) : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            {row.isPaid ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>Lunas ({row.paidCount}x)</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                Belum Bayar
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            {row.transactions[0] ? (
+                              <div className="inline-flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTx(row.transactions[0])}
+                                  className="text-xs text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
+                                >
+                                  Rincian
+                                </button>
+                                {canManageFinances && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenAddForMember(row.member)}
+                                    className="text-xs text-stone-600 hover:text-stone-900 font-semibold hover:underline cursor-pointer"
+                                  >
+                                    + Catat
+                                  </button>
+                                )}
+                              </div>
+                            ) : canManageFinances ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAddForMember(row.member)}
+                                className="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Catat Iuran</span>
+                              </button>
+                            ) : (
+                              <span className="text-stone-400">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Filter and Search Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari uraian, anggota, atau no. transaksi..."
+                className="w-full pl-9 pr-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="w-full sm:w-auto px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-700 font-medium"
+              >
+                <option value="all">Semua Kategori</option>
+                <option value="Iuran Anggota">Iuran Anggota</option>
+                <option value="Bantuan & Hibah">Bantuan &amp; Hibah</option>
+                <option value="Sponsor & Donasi">Sponsor &amp; Donasi</option>
+                <option value="Operasional Sekretariat">Operasional Sekretariat</option>
+                <option value="Kegiatan & Bazar">Kegiatan &amp; Bazar</option>
+                <option value="Pelatihan & Pembinaan">Pelatihan &amp; Pembinaan</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Transactions Table */}
+          <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3.5">No. Transaksi</th>
+                    <th className="px-4 py-3.5">Tanggal</th>
+                    <th className="px-4 py-3.5">Kategori &amp; Uraian</th>
+                    <th className="px-4 py-3.5 text-right text-teal-800">Masuk (Debit)</th>
+                    <th className="px-4 py-3.5 text-right text-red-700">Keluar (Kredit)</th>
+                    <th className="px-4 py-3.5 text-right font-extrabold text-stone-900">Saldo</th>
+                    <th className="px-4 py-3.5 text-center">Bukti Nota</th>
+                    <th className="px-4 py-3.5 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {displayedTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
+                        <div className="max-w-xs mx-auto space-y-2.5">
+                          <div className="h-12 w-12 mx-auto rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
+                            <Wallet className="w-6 h-6" />
+                          </div>
+                          <div className="font-bold text-stone-800 text-sm">Belum Ada Catatan Kas</div>
+                          <p className="text-xs text-stone-500">
+                            {transactions.length === 0
+                              ? 'Buku kas masih kosong dengan saldo Rp 0. Silakan catat transaksi kas atau iuran pertama.'
+                              : 'Tidak ada catatan transaksi yang sesuai filter.'}
+                          </p>
+                          {transactions.length === 0 && (
+                            <div className="pt-2">
+                              <button
+                                onClick={() => handleOpenAdd()}
+                                className="px-4 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                                <span>Catat Transaksi Pertama</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    displayedTransactions.map((tx: any) => (
+                      <tr key={tx.id} className="hover:bg-stone-50/80 transition-colors">
+                        <td className="px-4 py-3 font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
+                          {tx.transactionNumber}
+                        </td>
+                        <td className="px-4 py-3 text-stone-600 whitespace-nowrap tabular-nums">{tx.date}</td>
+                        <td className="px-4 py-3">
+                          <div className="font-bold text-stone-800 flex flex-wrap items-center gap-1.5">
+                            <span>{tx.category}</span>
+                            {tx.memberName && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 rounded-md">
+                                <User className="w-2.5 h-2.5" />
+                                {tx.memberName}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-stone-500 line-clamp-1">{tx.description}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-teal-700 whitespace-nowrap tabular-nums">
+                          {tx.type === 'pemasukan' ? formatRupiah(tx.amount) : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-red-700 whitespace-nowrap tabular-nums">
+                          {tx.type === 'pengeluaran' ? formatRupiah(tx.amount) : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
+                          {formatRupiah(tx.runningBalance)}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {tx.proofUrl ? (
+                            <button
+                              onClick={() => setSelectedTx(tx)}
+                              className="inline-flex items-center gap-1 text-[11px] bg-teal-50 text-teal-800 font-bold px-2.5 py-1 rounded-md border border-teal-200 hover:bg-teal-100 cursor-pointer"
+                            >
+                              <Paperclip className="w-3 h-3" />
+                              <span>Ada Bukti</span>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-stone-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <button
+                            onClick={() => setSelectedTx(tx)}
+                            className="text-xs text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
+                          >
+                            Lihat Rincian
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* MODAL CATAT TRANSAKSI DENGAN UPLOAD BUKTI TRANSFER LANGSUNG */}
       {modalOpen && (
@@ -567,6 +1245,9 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                         ...formData,
                         type: t,
                         category: t === 'pemasukan' ? 'Iuran Anggota' : 'Operasional Sekretariat',
+                        ...(t === 'pengeluaran'
+                          ? { memberId: '', memberName: '', memberNumber: '' }
+                          : {}),
                       });
                     }}
                     className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-bold text-stone-900"
@@ -603,18 +1284,18 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                     {formData.type === 'pemasukan' ? (
                       <>
                         <option value="Iuran Anggota">Iuran Anggota</option>
-                        <option value="Bantuan & Hibah">Bantuan & Hibah</option>
-                        <option value="Sponsor & Donasi">Sponsor & Donasi</option>
+                        <option value="Bantuan & Hibah">Bantuan &amp; Hibah</option>
+                        <option value="Sponsor & Donasi">Sponsor &amp; Donasi</option>
                         <option value="Pendapatan Bazar / Acara">Pendapatan Bazar / Acara</option>
                         <option value="Lainnya">Lainnya</option>
                       </>
                     ) : (
                       <>
                         <option value="Operasional Sekretariat">Operasional Sekretariat</option>
-                        <option value="Kegiatan & Bazar">Kegiatan & Bazar</option>
-                        <option value="Pelatihan & Pembinaan">Pelatihan & Pembinaan</option>
-                        <option value="Konsumsi & Rapat">Konsumsi & Rapat</option>
-                        <option value="Pengadaan & Sarana">Pengadaan & Sarana</option>
+                        <option value="Kegiatan & Bazar">Kegiatan &amp; Bazar</option>
+                        <option value="Pelatihan & Pembinaan">Pelatihan &amp; Pembinaan</option>
+                        <option value="Konsumsi & Rapat">Konsumsi &amp; Rapat</option>
+                        <option value="Pengadaan & Sarana">Pengadaan &amp; Sarana</option>
                         <option value="Lainnya">Lainnya</option>
                       </>
                     )}
@@ -631,11 +1312,85 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                     min={1}
                     value={formData.amount || ''}
                     onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                    placeholder="Contoh: 500000"
+                    placeholder="Contoh: 50000"
                     className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-mono font-bold text-stone-900 tabular-nums"
                   />
                 </div>
               </div>
+
+              {/* Pilihan Nama Anggota (ditampilkan pada transaksi Pemasukan) */}
+              {formData.type === 'pemasukan' && (
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-3.5 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-teal-700" />
+                      <span>Nama Anggota UMKM</span>
+                    </label>
+                    <span className="text-[11px] font-semibold text-stone-500">
+                      {formData.category === 'Iuran Anggota'
+                        ? 'Disarankan untuk rekap iuran anggota'
+                        : 'Opsional'}
+                    </span>
+                  </div>
+
+                  {members.length === 0 ? (
+                    <p className="text-[11px] text-stone-500">
+                      Belum ada data anggota terdaftar. Anda tetap dapat menyimpan transaksi pemasukan ini secara umum.
+                    </p>
+                  ) : (
+                    <>
+                      {members.length > 6 && (
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                          <input
+                            type="text"
+                            value={memberPickerSearch}
+                            onChange={(e) => setMemberPickerSearch(e.target.value)}
+                            placeholder="Filter cepat nama anggota, usaha, atau nomor anggota..."
+                            className="w-full pl-8 pr-3 py-1.5 min-h-[38px] text-xs rounded-lg border border-stone-200 bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
+                          />
+                        </div>
+                      )}
+
+                      <select
+                        value={formData.memberId || ''}
+                        onChange={(e) => handleSelectMemberInForm(e.target.value)}
+                        className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-white focus:outline-hidden focus:border-teal-600 font-medium text-stone-900"
+                      >
+                        <option value="">-- Pilih Nama Anggota (Opsional / Umum) --</option>
+                        {pickerFilteredMembers.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.fullName} — {m.businessName} ({m.memberNumber})
+                          </option>
+                        ))}
+                      </select>
+
+                      {formData.memberName && (
+                        <div className="flex items-center justify-between gap-2 bg-teal-50/70 border border-teal-200 rounded-lg px-3 py-2">
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-teal-900 truncate">
+                              {formData.memberName}
+                            </div>
+                            <div className="text-[11px] text-teal-700 font-mono truncate tabular-nums">
+                              {formData.memberNumber || '-'}
+                              {selectedFormMember
+                                ? ` • ${selectedFormMember.businessName} (Kel. ${selectedFormMember.kelurahan})`
+                                : ''}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectMemberInForm('')}
+                            className="text-[11px] font-bold text-stone-600 hover:text-red-700 px-2 py-1 rounded-md hover:bg-white transition-colors cursor-pointer flex-shrink-0"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-stone-700 mb-1">
@@ -772,6 +1527,19 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
               </div>
 
               <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 text-xs space-y-2.5">
+                {selectedTx.memberName && (
+                  <div>
+                    <span className="text-stone-400 font-semibold">Anggota Pembayar:</span>
+                    <div className="font-bold text-teal-800">
+                      {selectedTx.memberName}
+                      {selectedTx.memberNumber ? (
+                        <span className="ml-1.5 font-mono text-[11px] text-stone-600 tabular-nums">
+                          ({selectedTx.memberNumber})
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <span className="text-stone-400 font-semibold">Uraian:</span>
                   <div className="font-semibold text-stone-800">{selectedTx.description}</div>
@@ -977,6 +1745,288 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
               >
                 <Printer className="w-4 h-4" />
                 <span>Cetak / Cetak ke PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PRATINJAU & CETAK PDF RESMI REKAP IURAN ANGGOTA */}
+      {duesPrintModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden border border-stone-200 max-h-[92vh] flex flex-col">
+            <div className="p-4 bg-[#121918] text-white flex flex-wrap items-center justify-between gap-2 border-b border-stone-800">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-teal-400" />
+                <span className="font-bold text-sm">
+                  Pratinjau Laporan Resmi Rekap Iuran ({duesPeriodLabel})
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isExportingDuesPdf}
+                  onClick={handleExportDuesPdf}
+                  className="bg-teal-700 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-70"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {isExportingDuesPdf ? (
+                    <InlineShimmer variant="dark" label="Membuat PDF Resmi" widthClass="w-24" />
+                  ) : (
+                    <span>Download PDF Resmi</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={triggerPrintDocument}
+                  className="bg-stone-800 hover:bg-stone-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-stone-700 cursor-pointer transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Cetak</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDuesPrintModalOpen(false)}
+                  className="text-stone-400 hover:text-white p-1.5 rounded-lg hover:bg-stone-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Official Letterhead Preview */}
+            <div className="p-6 sm:p-10 overflow-y-auto space-y-6 print:p-0">
+              <div className="border-b-4 border-double border-slate-900 pb-4 text-center relative flex items-center justify-center gap-4">
+                <img
+                  src={OFFICIAL_LOGO_URL}
+                  alt="Logo UMKM KUAT"
+                  className="w-20 h-20 rounded-full border border-slate-300 object-cover"
+                />
+                <div>
+                  <h3 className="text-xs uppercase font-extrabold tracking-wider text-slate-800">
+                    Pemerintah Kota Tangerang &bull; Kecamatan Tangerang
+                  </h3>
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    FORUM UMKM KUAT KECAMATAN TANGERANG
+                  </h1>
+                  <p className="text-[11px] text-slate-600">
+                    Sekretariat: Gedung Kantor Kecamatan Tangerang, Jl. Daan Mogot No. 5, Kota Tangerang. Telp: (021) 5523456 / WA +62 82258570582
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center space-y-1">
+                <h2 className="text-lg font-black text-slate-900 uppercase underline decoration-2 underline-offset-4">
+                  {duesViewMode === 'status_anggota'
+                    ? 'LAPORAN REKAPITULASI STATUS IURAN PER ANGGOTA'
+                    : 'LAPORAN REKAPITULASI TRANSAKSI IURAN ANGGOTA'}
+                </h2>
+                <div className="text-xs text-slate-600 font-semibold">
+                  Periode: {duesPeriodLabel} &bull; Dicetak pada:{' '}
+                  {new Date().toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-300 text-xs">
+                <div>
+                  <span className="text-slate-500">Total Penerimaan Iuran:</span>
+                  <div className="text-sm font-black text-teal-700 tabular-nums">
+                    {formatRupiah(duesPeriodApprovedTotal)}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Jumlah Transaksi Iuran:</span>
+                  <div className="text-sm font-black text-slate-900 tabular-nums">
+                    {periodDuesTransactions.length} Transaksi
+                  </div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Partisipasi Anggota Aktif:</span>
+                  <div className="text-sm font-black text-slate-900 tabular-nums">
+                    {duesPaidActiveCount} / {duesActiveMembersCount} Anggota
+                  </div>
+                </div>
+              </div>
+
+              {duesViewMode === 'status_anggota' ? (
+                <table className="w-full text-left text-[11px] border border-slate-300">
+                  <thead className="bg-slate-100 font-bold border-b border-slate-300">
+                    <tr>
+                      <th className="p-2 border-r border-slate-300 text-center">No.</th>
+                      <th className="p-2 border-r border-slate-300">No. Anggota</th>
+                      <th className="p-2 border-r border-slate-300">Nama Anggota</th>
+                      <th className="p-2 border-r border-slate-300">Nama Usaha</th>
+                      <th className="p-2 border-r border-slate-300">Kelurahan</th>
+                      <th className="p-2 border-r border-slate-300 text-center">Tgl Bayar</th>
+                      <th className="p-2 border-r border-slate-300 text-center">Status</th>
+                      <th className="p-2 text-right">Iuran (Rp)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {memberDuesStatuses.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="p-4 text-center text-slate-500 italic">
+                          Belum ada data anggota terdaftar.
+                        </td>
+                      </tr>
+                    ) : (
+                      memberDuesStatuses.map((row, idx) => (
+                        <tr key={row.member.id}>
+                          <td className="p-2 border-r border-slate-200 text-center tabular-nums">{idx + 1}</td>
+                          <td className="p-2 border-r border-slate-200 font-mono font-bold tabular-nums">
+                            {row.member.memberNumber}
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-semibold">{row.member.fullName}</td>
+                          <td className="p-2 border-r border-slate-200">{row.member.businessName}</td>
+                          <td className="p-2 border-r border-slate-200">{row.member.kelurahan}</td>
+                          <td className="p-2 border-r border-slate-200 text-center whitespace-nowrap tabular-nums">
+                            {row.lastPaymentDate}
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-center font-bold">
+                            <span className={row.isPaid ? 'text-teal-700' : 'text-amber-700'}>
+                              {row.isPaid ? 'Lunas' : 'Belum'}
+                            </span>
+                          </td>
+                          <td className="p-2 text-right font-bold tabular-nums">
+                            {row.totalAmount > 0 ? row.totalAmount.toLocaleString('id-ID') : '0'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                  <tfoot className="bg-slate-100 font-bold border-t border-slate-300">
+                    <tr>
+                      <td colSpan={7} className="p-2 border-r border-slate-300 text-right">
+                        TOTAL PENERIMAAN IURAN PERIODE INI
+                      </td>
+                      <td className="p-2 text-right text-teal-800 tabular-nums">
+                        {formatRupiah(duesPeriodApprovedTotal)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              ) : (
+                <table className="w-full text-left text-[11px] border border-slate-300">
+                  <thead className="bg-slate-100 font-bold border-b border-slate-300">
+                    <tr>
+                      <th className="p-2 border-r border-slate-300 text-center">No.</th>
+                      <th className="p-2 border-r border-slate-300">No. Bukti</th>
+                      <th className="p-2 border-r border-slate-300 text-center">Tanggal</th>
+                      <th className="p-2 border-r border-slate-300">Nama Anggota / Usaha</th>
+                      <th className="p-2 border-r border-slate-300">Keterangan</th>
+                      <th className="p-2 border-r border-slate-300 text-center">Status</th>
+                      <th className="p-2 text-right">Nominal (Rp)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {periodDuesTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-4 text-center text-slate-500 italic">
+                          Tidak ada transaksi iuran anggota untuk periode {duesPeriodLabel}.
+                        </td>
+                      </tr>
+                    ) : (
+                      periodDuesTransactions.map((tx, idx) => {
+                        const matched = resolveTransactionMember(tx, members);
+                        const memberDisplay = tx.memberName
+                          ? `${tx.memberName}${matched?.businessName ? ` (${matched.businessName})` : ''}`
+                          : matched
+                            ? `${matched.fullName} (${matched.businessName})`
+                            : '-';
+                        return (
+                          <tr key={tx.id}>
+                            <td className="p-2 border-r border-slate-200 text-center tabular-nums">{idx + 1}</td>
+                            <td className="p-2 border-r border-slate-200 font-mono font-bold tabular-nums">
+                              {tx.transactionNumber}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 text-center whitespace-nowrap tabular-nums">
+                              {tx.date}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-semibold">{memberDisplay}</td>
+                            <td className="p-2 border-r border-slate-200">{tx.description}</td>
+                            <td className="p-2 border-r border-slate-200 text-center capitalize">
+                              {tx.approvalStatus}
+                            </td>
+                            <td className="p-2 text-right font-bold text-teal-700 tabular-nums">
+                              {Number(tx.amount).toLocaleString('id-ID')}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                  <tfoot className="bg-slate-100 font-bold border-t border-slate-300">
+                    <tr>
+                      <td colSpan={6} className="p-2 border-r border-slate-300 text-right">
+                        TOTAL PENERIMAAN IURAN PERIODE INI
+                      </td>
+                      <td className="p-2 text-right text-teal-800 tabular-nums">
+                        {formatRupiah(duesPeriodApprovedTotal)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+
+              {/* Signatures */}
+              <div className="pt-8 grid grid-cols-2 text-center text-xs">
+                <div className="space-y-16">
+                  <div>
+                    <span>Mengetahui,</span>
+                    <div className="font-bold">Ketua Forum UMKM KUAT</div>
+                  </div>
+                  <div className="font-bold underline">Emus Muslihant</div>
+                </div>
+
+                <div className="space-y-16">
+                  <div>
+                    <span>
+                      Kota Tangerang,{' '}
+                      {new Date().toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <div className="font-bold">Bendahara Forum</div>
+                  </div>
+                  <div className="font-bold underline">Peni Martin</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDuesPrintModalOpen(false)}
+                className="px-4 py-2.5 min-h-[42px] text-xs font-semibold text-stone-600 hover:bg-stone-200 rounded-xl cursor-pointer transition-colors"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={triggerPrintDocument}
+                className="bg-stone-200 hover:bg-stone-300 text-stone-800 px-4 py-2.5 min-h-[42px] rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Cetak</span>
+              </button>
+              <button
+                type="button"
+                disabled={isExportingDuesPdf}
+                onClick={handleExportDuesPdf}
+                className="bg-teal-700 hover:bg-teal-800 text-white px-5 py-2.5 min-h-[42px] rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors disabled:opacity-70"
+              >
+                <Download className="w-4 h-4" />
+                {isExportingDuesPdf ? (
+                  <InlineShimmer variant="dark" label="Membuat PDF Resmi" widthClass="w-24" />
+                ) : (
+                  <span>Download PDF Resmi</span>
+                )}
               </button>
             </div>
           </div>

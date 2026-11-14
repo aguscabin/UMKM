@@ -463,6 +463,9 @@ export function validateTransactionInput(input: Partial<Transaction>): {
     input.approvalStatus === 'menunggu' || input.approvalStatus === 'ditolak'
       ? input.approvalStatus
       : 'disetujui';
+  const memberId = type === 'pemasukan' ? sanitizeText(input.memberId || '', 128) : '';
+  const memberName = type === 'pemasukan' ? sanitizeText(input.memberName || '', 150) : '';
+  const memberNumber = type === 'pemasukan' ? sanitizeText(input.memberNumber || '', 50) : '';
   const nowIso = new Date().toISOString();
 
   return {
@@ -480,6 +483,9 @@ export function validateTransactionInput(input: Partial<Transaction>): {
       recorderId: sanitizeText(input.recorderId || 'usr-bendahara', 128),
       approvalStatus,
       approvedBy: sanitizeText(input.approvedBy || '', 150),
+      memberId: memberId || undefined,
+      memberName: memberName || undefined,
+      memberNumber: memberNumber || undefined,
       proofUrl: proofRes.value,
       notes: sanitizeText(input.notes || '', 500),
       history: Array.isArray(input.history)

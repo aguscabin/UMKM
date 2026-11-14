@@ -191,8 +191,9 @@ service cloud.firestore {
         ]) &&
         data.keys().hasOnly([
           'id', 'transactionNumber', 'type', 'category', 'date', 'amount', 'description',
-          'recorderName', 'recorderId', 'approvalStatus', 'approvedBy', 'proofUrl',
-          'notes', 'history', 'createdAt', 'updatedAt'
+          'recorderName', 'recorderId', 'approvalStatus', 'approvedBy',
+          'memberId', 'memberName', 'memberNumber',
+          'proofUrl', 'notes', 'history', 'createdAt', 'updatedAt'
         ]) &&
         (!('id' in data) || isValidId(data.id)) &&
         data.transactionNumber is string && data.transactionNumber.size() <= 50 &&
@@ -205,6 +206,9 @@ service cloud.firestore {
         (!('recorderId' in data) || (data.recorderId is string && data.recorderId.size() <= 128)) &&
         data.approvalStatus in ['disetujui', 'menunggu', 'ditolak'] &&
         (!('approvedBy' in data) || (data.approvedBy is string && data.approvedBy.size() <= 150)) &&
+        (!('memberId' in data) || (data.memberId is string && data.memberId.size() <= 128)) &&
+        (!('memberName' in data) || (data.memberName is string && data.memberName.size() <= 150)) &&
+        (!('memberNumber' in data) || (data.memberNumber is string && data.memberNumber.size() <= 50)) &&
         (!('proofUrl' in data) || (data.proofUrl is string && data.proofUrl.size() <= 900000)) &&
         (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
         (!('history' in data) || (data.history is list && data.history.size() <= 20)) &&

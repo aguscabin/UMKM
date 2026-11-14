@@ -428,6 +428,7 @@ function MainApp() {
           {adminMenu === 'keuangan' && (
             <AdminFinances
               transactions={transactions}
+              members={members}
               onRefresh={loadAllData}
               openAddModalInitially={openAddTx}
             />

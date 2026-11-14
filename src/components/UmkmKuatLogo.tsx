@@ -28,7 +28,7 @@ export const UmkmKuatLogo: React.FC<UmkmKuatLogoProps> = ({
     <div className={`flex items-center gap-3 select-none ${className}`}>
       {/* Official Logo Image uploaded by user */}
       <div
-        className="relative flex-shrink-0 rounded-full overflow-hidden shadow-xs border-2 border-slate-200/80 bg-white transition-transform hover:scale-105 duration-200"
+        className="relative flex-shrink-0 rounded-full overflow-hidden border border-stone-200 bg-white transition-transform hover:scale-105 duration-200"
         style={{ width: icon, height: icon }}
       >
         <img
@@ -43,24 +43,24 @@ export const UmkmKuatLogo: React.FC<UmkmKuatLogoProps> = ({
         <div className="flex flex-col justify-center leading-tight">
           <div className="flex items-center gap-1.5">
             <span
-              className={`font-black tracking-tight font-sans ${text} ${
-                theme === 'light' ? 'text-white' : 'text-slate-900'
+              className={`font-extrabold tracking-tight font-sans ${text} ${
+                theme === 'light' ? 'text-white' : 'text-stone-900'
               }`}
             >
-              UMKM <span className="text-teal-600 dark:text-teal-400">KUAT</span>
+              UMKM <span className={theme === 'light' ? 'text-teal-400' : 'text-teal-700'}>KUAT</span>
             </span>
-            <span className="inline-block bg-orange-500 text-white font-bold text-[9px] uppercase px-1.5 py-0.5 rounded tracking-wider shadow-xs">
+            <span className="inline-block bg-amber-500 text-white font-bold text-[9px] uppercase px-1.5 py-0.5 rounded tracking-wider">
               FORUM
             </span>
           </div>
           <span
             className={`font-semibold tracking-wider uppercase ${subtext} ${
-              theme === 'light' ? 'text-slate-300' : 'text-slate-500'
+              theme === 'light' ? 'text-stone-300' : 'text-stone-500'
             }`}
           >
             Kecamatan Tangerang
           </span>
-          <span className="text-[8px] text-teal-600 font-bold tracking-tighter uppercase hidden sm:block">
+          <span className={`text-[8px] font-bold tracking-tight uppercase hidden sm:block ${theme === 'light' ? 'text-teal-400' : 'text-teal-700'}`}>
             Kreatif &bull; Unggul &bull; Aktif &bull; Teladan
           </span>
         </div>

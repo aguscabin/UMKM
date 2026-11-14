@@ -42,16 +42,16 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
   }, []);
 
   return (
-    <footer className="bg-slate-950 text-slate-300 pt-20 pb-12 border-t border-slate-800/80">
+    <footer className="bg-[#121918] text-stone-300 pt-20 pb-12 border-t border-stone-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-14">
           {/* Col 1: Brand & About & Social Media Icons */}
           <div className="space-y-4">
             <UmkmKuatLogo size="lg" variant="full" theme="light" />
-            <p className="text-sm text-slate-400 leading-relaxed font-normal">
+            <p className="text-sm text-stone-400 leading-relaxed font-normal">
               Wadah kolaborasi, pembinaan, legalitas usaha, dan pemasaran produk Usaha Mikro, Kecil, dan Menengah binaan Kecamatan Tangerang, Kota Tangerang.
             </p>
-            <div className="inline-flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 text-xs text-teal-300">
+            <div className="inline-flex items-center gap-2 bg-stone-900 px-3 py-1.5 rounded-lg border border-stone-800 text-xs text-teal-300">
               <ShieldCheck className="w-4 h-4 text-teal-400" />
               <span>Mitra Resmi Kecamatan Tangerang</span>
             </div>
@@ -59,60 +59,56 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
             {/* Social Media Icons (Instagram, TikTok, YouTube, Facebook) */}
             {(contactInfo.instagram || contactInfo.tiktok || contactInfo.youtube || contactInfo.facebook) && (
               <div className="pt-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
-                  Media Sosial Resmi:
+                <div className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">
+                  Media Sosial Resmi
                 </div>
                 <div className="flex items-center gap-2.5">
-                  {/* Instagram */}
                   {contactInfo.instagram && (
                     <a
                       href={formatSocialUrl(contactInfo.instagram, 'instagram')}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Instagram Forum UMKM KUAT"
-                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 transition-all hover:scale-105 shadow-xs"
+                      className="w-9 h-9 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white flex items-center justify-center border border-stone-800 hover:border-stone-700 transition-colors"
                       title={`Instagram: ${contactInfo.instagram}`}
                     >
                       <Instagram className="w-4 h-4" />
                     </a>
                   )}
 
-                  {/* TikTok */}
                   {contactInfo.tiktok && (
                     <a
                       href={formatSocialUrl(contactInfo.tiktok, 'tiktok')}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="TikTok Forum UMKM KUAT"
-                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 hover:border-slate-700 transition-all hover:scale-105 shadow-xs"
+                      className="w-9 h-9 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white flex items-center justify-center border border-stone-800 hover:border-stone-700 transition-colors"
                       title={`TikTok: ${contactInfo.tiktok}`}
                     >
                       <TikTokIcon className="w-4 h-4" />
                     </a>
                   )}
 
-                  {/* YouTube */}
                   {contactInfo.youtube && (
                     <a
                       href={formatSocialUrl(contactInfo.youtube, 'youtube')}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="YouTube Forum UMKM KUAT"
-                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-red-600 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 transition-all hover:scale-105 shadow-xs"
+                      className="w-9 h-9 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white flex items-center justify-center border border-stone-800 hover:border-stone-700 transition-colors"
                       title={`YouTube: ${contactInfo.youtube}`}
                     >
                       <Youtube className="w-4 h-4" />
                     </a>
                   )}
 
-                  {/* Facebook */}
                   {contactInfo.facebook && (
                     <a
                       href={formatSocialUrl(contactInfo.facebook, 'facebook')}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Facebook Forum UMKM KUAT"
-                      className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-blue-600 text-slate-300 hover:text-white flex items-center justify-center border border-slate-800 transition-all hover:scale-105 shadow-xs"
+                      className="w-9 h-9 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white flex items-center justify-center border border-stone-800 hover:border-stone-700 transition-colors"
                       title={`Facebook: ${contactInfo.facebook}`}
                     >
                       <Facebook className="w-4 h-4" />
@@ -125,8 +121,7 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
 
           {/* Col 2: 8 Kelurahan Binaan */}
           <div>
-            <h4 className="text-white font-black text-xs tracking-widest uppercase mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            <h4 className="text-white font-bold text-xs tracking-widest uppercase mb-4">
               8 Kelurahan Binaan
             </h4>
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -137,22 +132,20 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
                     setCurrentTab('direktori');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="text-left text-slate-400 hover:text-teal-300 transition-colors py-1 flex items-center gap-1.5 group cursor-pointer"
+                  className="text-left text-stone-400 hover:text-teal-300 transition-colors py-1 cursor-pointer"
                 >
-                  <span className="w-1 h-1 rounded-full bg-slate-700 group-hover:bg-teal-400 transition-colors"></span>
-                  <span>{kel}</span>
+                  {kel}
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-500 mt-4 leading-relaxed font-normal">
-              Menjangkau seluruh pelaku usaha mikro & kecil se-Kecamatan Tangerang.
+            <p className="text-[11px] text-stone-500 mt-4 leading-relaxed font-normal">
+              Menjangkau seluruh pelaku usaha mikro dan kecil se-Kecamatan Tangerang.
             </p>
           </div>
 
           {/* Col 3: Navigasi Cepat */}
           <div>
-            <h4 className="text-white font-black text-xs tracking-widest uppercase mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+            <h4 className="text-white font-bold text-xs tracking-widest uppercase mb-4">
               Layanan Publik
             </h4>
             <ul className="space-y-2.5 text-sm">

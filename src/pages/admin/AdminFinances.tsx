@@ -252,10 +252,10 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
       {/* Title & Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
             Buku Kas & Manajemen Keuangan
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
             Pencatatan kas internal, iuran anggota, donasi, bantuan pemerintah, dan pengeluaran kegiatan.
           </p>
         </div>
@@ -263,17 +263,17 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 bg-white hover:bg-stone-50 text-stone-700 px-3.5 py-2.5 min-h-[42px] rounded-xl border border-stone-200 text-xs font-bold transition-colors cursor-pointer"
           >
-            <Download className="w-4 h-4 text-teal-600" />
+            <Download className="w-4 h-4 text-teal-700" />
             <span>Ekspor Buku Kas</span>
           </button>
 
           <button
             onClick={() => setPrintModalOpen(true)}
-            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 bg-white hover:bg-stone-50 text-stone-700 px-3.5 py-2.5 min-h-[42px] rounded-xl border border-stone-200 text-xs font-bold transition-colors cursor-pointer"
           >
-            <Printer className="w-4 h-4 text-teal-600" />
+            <Printer className="w-4 h-4 text-teal-700" />
             <span>Cetak PDF Resmi</span>
           </button>
 
@@ -281,17 +281,17 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => handleOpenAdd('pemasukan')}
-                className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                className="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2.5 min-h-[42px] rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Pemasukan</span>
+                <span>Pemasukan</span>
               </button>
               <button
                 onClick={() => handleOpenAdd('pengeluaran')}
-                className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                className="flex items-center gap-1.5 bg-red-700 hover:bg-red-800 text-white px-3.5 py-2.5 min-h-[42px] rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Pengeluaran</span>
+                <span>Pengeluaran</span>
               </button>
             </div>
           )}
@@ -301,111 +301,111 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
       {/* 4 Financial Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Saldo Akhir */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 border border-slate-700 shadow-md space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-teal-300">
+        <div className="bg-[#121918] text-white rounded-2xl p-5 border border-stone-800 space-y-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-teal-400">
             Saldo Kas Berjalan
           </span>
-          <div className="text-2xl sm:text-3xl font-black text-white">
+          <div className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">
             {formatRupiah(saldoKas)}
           </div>
-          <div className="text-[10px] text-slate-400 pt-1">
-            Dihitung otomatis dari seluruh transaksi disetujui
+          <div className="text-[11px] text-stone-400 pt-0.5">
+            Dihitung otomatis dari transaksi disetujui
           </div>
         </div>
 
         {/* Total Pemasukan */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-1">
+        <div className="bg-white rounded-2xl p-5 border border-stone-200 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
               Total Pemasukan
             </span>
-            <div className="h-7 w-7 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
+            <div className="h-8 w-8 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
               <ArrowDownRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-teal-600">
+          <div className="text-2xl font-extrabold text-teal-700 tabular-nums tracking-tight">
             {formatRupiah(totalPemasukan)}
           </div>
-          <div className="text-[10px] text-slate-400">
+          <div className="text-[11px] text-stone-500">
             Iuran, bantuan, donasi, sponsorship
           </div>
         </div>
 
         {/* Total Pengeluaran */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-1">
+        <div className="bg-white rounded-2xl p-5 border border-stone-200 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
               Total Pengeluaran
             </span>
-            <div className="h-7 w-7 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+            <div className="h-8 w-8 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-700">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-red-500">
+          <div className="text-2xl font-extrabold text-red-700 tabular-nums tracking-tight">
             {formatRupiah(totalPengeluaran)}
           </div>
-          <div className="text-[10px] text-slate-400">
+          <div className="text-[11px] text-stone-500">
             Operasional, sewa bazar, narasumber
           </div>
         </div>
 
         {/* Rekap Iuran */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-1">
+        <div className="bg-white rounded-2xl p-5 border border-stone-200 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
               Penerimaan Iuran
             </span>
-            <div className="h-7 w-7 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+            <div className="h-8 w-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-orange-600">
+          <div className="text-2xl font-extrabold text-amber-700 tabular-nums tracking-tight">
             {formatRupiah(totalIuran)}
           </div>
-          <div className="text-[10px] text-slate-400">
+          <div className="text-[11px] text-stone-500">
             Kontribusi iuran rutin bulanan anggota
           </div>
         </div>
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-stone-200 pb-2.5">
         <button
           onClick={() => setActiveTab('buku_kas')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-colors cursor-pointer ${
             activeTab === 'buku_kas'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-[#121918] text-white'
+              : 'text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200'
           }`}
         >
           Buku Kas Umum (Semua)
         </button>
         <button
           onClick={() => setActiveTab('pemasukan')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-colors cursor-pointer ${
             activeTab === 'pemasukan'
-              ? 'bg-teal-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-teal-700 text-white'
+              : 'text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200'
           }`}
         >
           Pemasukan Kas
         </button>
         <button
           onClick={() => setActiveTab('pengeluaran')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-colors cursor-pointer ${
             activeTab === 'pengeluaran'
-              ? 'bg-red-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-red-700 text-white'
+              : 'text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200'
           }`}
         >
           Pengeluaran Kas
         </button>
         <button
           onClick={() => setActiveTab('rekap_iuran')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-colors cursor-pointer ${
             activeTab === 'rekap_iuran'
-              ? 'bg-orange-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-amber-600 text-white'
+              : 'text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200'
           }`}
         >
           Rekap Iuran Anggota
@@ -413,15 +413,15 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari uraian atau nomor transaksi..."
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+            className="w-full pl-9 pr-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
           />
         </div>
 
@@ -429,7 +429,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-slate-700 font-medium"
+            className="w-full sm:w-auto px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-700 font-medium"
           >
             <option value="all">Semua Kategori</option>
             <option value="Iuran Anggota">Iuran Anggota</option>
@@ -443,31 +443,31 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold uppercase tracking-wider">
+            <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3.5">No. Transaksi</th>
                 <th className="px-4 py-3.5">Tanggal</th>
                 <th className="px-4 py-3.5">Kategori & Uraian</th>
-                <th className="px-4 py-3.5 text-right text-teal-700">Masuk (Debit)</th>
-                <th className="px-4 py-3.5 text-right text-red-600">Keluar (Kredit)</th>
-                <th className="px-4 py-3.5 text-right font-black">Saldo</th>
+                <th className="px-4 py-3.5 text-right text-teal-800">Masuk (Debit)</th>
+                <th className="px-4 py-3.5 text-right text-red-700">Keluar (Kredit)</th>
+                <th className="px-4 py-3.5 text-right font-extrabold text-stone-900">Saldo</th>
                 <th className="px-4 py-3.5 text-center">Bukti Nota</th>
                 <th className="px-4 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-stone-100">
               {displayedTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
                     <div className="max-w-xs mx-auto space-y-2.5">
-                      <div className="h-12 w-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                      <div className="h-12 w-12 mx-auto rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
                         <Wallet className="w-6 h-6" />
                       </div>
-                      <div className="font-bold text-slate-800 text-sm">Belum Ada Catatan Kas</div>
-                      <p className="text-xs text-slate-500">
+                      <div className="font-bold text-stone-800 text-sm">Belum Ada Catatan Kas</div>
+                      <p className="text-xs text-stone-500">
                         {transactions.length === 0
                           ? 'Buku kas masih kosong dengan saldo Rp 0. Silakan catat transaksi kas atau iuran pertama.'
                           : 'Tidak ada catatan transaksi yang sesuai filter.'}
@@ -476,7 +476,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                         <div className="pt-2">
                           <button
                             onClick={() => handleOpenAdd()}
-                            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+                            className="px-4 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                           >
                             <Plus className="w-4 h-4" />
                             <span>Catat Transaksi Pertama</span>
@@ -488,35 +488,35 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                 </tr>
               ) : (
                 displayedTransactions.map((tx: any) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  <tr key={tx.id} className="hover:bg-stone-50/80 transition-colors">
+                    <td className="px-4 py-3 font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
                       {tx.transactionNumber}
                     </td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{tx.date}</td>
+                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap tabular-nums">{tx.date}</td>
                     <td className="px-4 py-3">
-                      <div className="font-bold text-slate-800">{tx.category}</div>
-                      <div className="text-[11px] text-slate-500 line-clamp-1">{tx.description}</div>
+                      <div className="font-bold text-stone-800">{tx.category}</div>
+                      <div className="text-[11px] text-stone-500 line-clamp-1">{tx.description}</div>
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-teal-600 whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-bold text-teal-700 whitespace-nowrap tabular-nums">
                       {tx.type === 'pemasukan' ? formatRupiah(tx.amount) : '-'}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-red-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-bold text-red-700 whitespace-nowrap tabular-nums">
                       {tx.type === 'pengeluaran' ? formatRupiah(tx.amount) : '-'}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
                       {formatRupiah(tx.runningBalance)}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       {tx.proofUrl ? (
                         <button
                           onClick={() => setSelectedTx(tx)}
-                          className="inline-flex items-center gap-1 text-[11px] bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded border border-teal-200 hover:bg-teal-100 cursor-pointer"
+                          className="inline-flex items-center gap-1 text-[11px] bg-teal-50 text-teal-800 font-bold px-2.5 py-1 rounded-md border border-teal-200 hover:bg-teal-100 cursor-pointer"
                         >
                           <Paperclip className="w-3 h-3" />
                           <span>Ada Bukti</span>
                         </button>
                       ) : (
-                        <span className="text-[10px] text-slate-400">-</span>
+                        <span className="text-[10px] text-stone-400">-</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -537,26 +537,26 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
 
       {/* MODAL CATAT TRANSAKSI DENGAN UPLOAD BUKTI TRANSFER LANGSUNG */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-xl rounded-2xl overflow-hidden border border-stone-200 max-h-[92vh] flex flex-col">
+            <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
               <div>
-                <h3 className="font-black text-slate-900 text-lg">
+                <h3 className="font-extrabold text-stone-900 text-lg">
                   Catat Transaksi Kas Baru
                 </h3>
-                <span className="text-xs font-mono font-bold text-teal-700">
+                <span className="text-xs font-mono font-bold text-teal-700 tabular-nums">
                   {formData.transactionNumber}
                 </span>
               </div>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={() => setModalOpen(false)} className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-200/70 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Jenis Transaksi <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -569,7 +569,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                         category: t === 'pemasukan' ? 'Iuran Anggota' : 'Operasional Sekretariat',
                       });
                     }}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold"
+                    className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-bold text-stone-900"
                   >
                     <option value="pemasukan">Pemasukan (Debit)</option>
                     <option value="pengeluaran">Pengeluaran (Kredit)</option>
@@ -577,7 +577,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Tanggal Transaksi <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -585,20 +585,20 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                     required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-medium"
+                    className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-medium tabular-nums"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Kategori <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-medium"
+                    className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-medium text-stone-900"
                   >
                     {formData.type === 'pemasukan' ? (
                       <>
@@ -622,7 +622,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Nominal (Rp) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -632,13 +632,13 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                     value={formData.amount || ''}
                     onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
                     placeholder="Contoh: 500000"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-slate-900"
+                    className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-mono font-bold text-stone-900 tabular-nums"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Uraian Keterangan Transaksi <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -647,36 +647,36 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Penjelasan rinci peruntukan dana atau sumber penerimaan..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
                 />
               </div>
 
               {/* UPLOAD BUKTI TRANSFER / NOTA LANGSUNG (GAMBAR / FOTO / SCREENSHOT) */}
-              <div className="space-y-2 pt-2 border-t border-slate-200">
-                <label className="block text-xs font-bold text-slate-800">
+              <div className="space-y-2.5 pt-3 border-t border-stone-200">
+                <label className="block text-xs font-bold text-stone-800">
                   Bukti Transfer / Nota / Tangkapan Layar
                 </label>
 
                 {formData.proofUrl ? (
-                  <div className="relative rounded-2xl overflow-hidden border-2 border-teal-400 bg-slate-50 p-2 flex items-center justify-between">
+                  <div className="relative rounded-xl overflow-hidden border border-teal-500 bg-stone-50 p-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <img
                         src={formData.proofUrl}
                         alt="Bukti Transfer"
-                        className="h-16 w-16 object-cover rounded-xl border border-slate-300"
+                        className="h-16 w-16 object-cover rounded-lg border border-stone-300"
                       />
                       <div>
                         <div className="text-xs font-bold text-teal-800 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-700" />
                           <span>Bukti Gambar Terlampir</span>
                         </div>
-                        <span className="text-[11px] text-slate-400">Siap disimpan bersama transaksi</span>
+                        <span className="text-[11px] text-stone-500">Siap disimpan bersama transaksi</span>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, proofUrl: '' })}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-xl cursor-pointer"
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
                       title="Hapus Bukti"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -686,7 +686,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                   <div className="space-y-2">
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-teal-300 hover:border-teal-500 bg-teal-50/40 hover:bg-teal-50/70 p-4 rounded-2xl text-center cursor-pointer transition-colors"
+                      className="border border-dashed border-stone-300 hover:border-teal-600 bg-stone-50 hover:bg-teal-50/40 p-4 rounded-xl text-center cursor-pointer transition-colors"
                     >
                       <input
                         ref={fileInputRef}
@@ -696,20 +696,20 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                         onChange={handleProofImageUpload}
                         className="hidden"
                       />
-                      <div className="flex flex-col items-center justify-center space-y-1">
-                        <div className="h-10 w-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center">
+                      <div className="flex flex-col items-center justify-center space-y-1.5">
+                        <div className="h-10 w-10 rounded-full bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center">
                           <Camera className="w-5 h-5" />
                         </div>
                         <div className="text-xs font-bold text-teal-800">
                           Klik untuk Upload Foto / Tangkapan Layar (Screenshot) Bukti Transfer
                         </div>
-                        <div className="text-[10px] text-slate-500">
+                        <div className="text-[11px] text-stone-500">
                           Mendukung kamera HP langsung, file JPG, PNG, atau screenshot m-Banking
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-2 text-[11px] text-stone-500">
                       <span>atau masukkan URL gambar eksternal jika ada:</span>
                     </div>
                     <input
@@ -717,23 +717,23 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                       value={formData.proofUrl}
                       onChange={(e) => setFormData({ ...formData, proofUrl: e.target.value })}
                       placeholder="https://..."
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                      className="w-full px-3 py-2 min-h-[40px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600"
                     />
                   </div>
                 )}
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
+              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-stone-200">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2.5 min-h-[42px] text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl cursor-pointer transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                  className="px-6 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
                 >
                   Simpan Transaksi Kas
                 </button>
@@ -745,64 +745,64 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
 
       {/* DETAIL TRANSAKSI & PREVIEW BUKTI GAMBAR */}
       {selectedTx && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <span className="font-mono font-bold text-teal-700 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-stone-200 max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+              <span className="font-mono font-bold text-teal-700 text-xs tabular-nums">
                 {selectedTx.transactionNumber}
               </span>
-              <button onClick={() => setSelectedTx(null)} className="text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={() => setSelectedTx(null)} className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-200/70 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4 overflow-y-auto">
               <div className="text-center py-2 space-y-1">
-                <span className="text-xs uppercase font-bold text-slate-400">
+                <span className="text-xs uppercase font-bold text-stone-400">
                   {selectedTx.type.toUpperCase()} &bull; {selectedTx.category}
                 </span>
                 <div
-                  className={`text-2xl font-black ${
-                    selectedTx.type === 'pemasukan' ? 'text-teal-600' : 'text-red-500'
+                  className={`text-2xl font-extrabold tabular-nums ${
+                    selectedTx.type === 'pemasukan' ? 'text-teal-700' : 'text-red-700'
                   }`}
                 >
                   {selectedTx.type === 'pemasukan' ? '+' : '-'} {formatRupiah(selectedTx.amount)}
                 </div>
-                <div className="text-xs text-slate-500">{selectedTx.date}</div>
+                <div className="text-xs text-stone-500 tabular-nums">{selectedTx.date}</div>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
+              <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 text-xs space-y-2.5">
                 <div>
-                  <span className="text-slate-400 font-semibold">Uraian:</span>
-                  <div className="font-semibold text-slate-800">{selectedTx.description}</div>
+                  <span className="text-stone-400 font-semibold">Uraian:</span>
+                  <div className="font-semibold text-stone-800">{selectedTx.description}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold">Pencatat / Pemohon:</span>
-                  <div className="text-slate-700">{selectedTx.recorderName}</div>
+                  <span className="text-stone-400 font-semibold">Pencatat / Pemohon:</span>
+                  <div className="text-stone-700">{selectedTx.recorderName}</div>
                 </div>
                 {selectedTx.approvedBy && (
                   <div>
-                    <span className="text-slate-400 font-semibold">Disetujui Oleh:</span>
-                    <div className="text-slate-700 font-medium">{selectedTx.approvedBy}</div>
+                    <span className="text-stone-400 font-semibold">Disetujui Oleh:</span>
+                    <div className="text-stone-700 font-medium">{selectedTx.approvedBy}</div>
                   </div>
                 )}
               </div>
 
               {selectedTx.proofUrl ? (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-stone-700">
                     <span>Lampiran Bukti Nota / Transfer:</span>
                     <a
                       href={selectedTx.proofUrl}
                       download={`Bukti_${selectedTx.transactionNumber}.png`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-teal-600 hover:underline"
+                      className="text-teal-700 hover:underline"
                     >
                       Buka Gambar Asli
                     </a>
                   </div>
-                  <div className="rounded-xl overflow-hidden border border-slate-200 max-h-72 bg-slate-100 flex items-center justify-center">
+                  <div className="rounded-xl overflow-hidden border border-stone-200 max-h-72 bg-stone-100 flex items-center justify-center">
                     <img
                       src={selectedTx.proofUrl}
                       alt="Bukti Transaksi"
@@ -811,16 +811,16 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="text-center p-4 bg-slate-50 rounded-xl text-xs text-slate-400">
+                <div className="text-center p-4 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-500">
                   Tidak ada lampiran bukti nota pada transaksi ini.
                 </div>
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-end">
               <button
                 onClick={() => setSelectedTx(null)}
-                className="bg-slate-800 text-white px-5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                className="bg-[#121918] hover:bg-stone-800 text-white px-5 py-2.5 min-h-[42px] rounded-xl text-xs font-bold cursor-pointer transition-colors"
               >
                 Tutup
               </button>
@@ -831,9 +831,9 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
 
       {/* DEDICATED MODAL CETAK PDF RESMI BUKU KAS UMUM */}
       {printModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
-            <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden border border-stone-200 max-h-[92vh] flex flex-col">
+            <div className="p-4 bg-[#121918] text-white flex items-center justify-between border-b border-stone-800">
               <div className="flex items-center gap-2">
                 <Printer className="w-4 h-4 text-teal-400" />
                 <span className="font-bold text-sm">Pratinjau Cetak PDF Buku Kas Umum</span>
@@ -841,14 +841,14 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={triggerPrintDocument}
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="bg-teal-700 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>Cetak / Simpan PDF Sekarang</span>
                 </button>
                 <button
                   onClick={() => setPrintModalOpen(false)}
-                  className="text-slate-400 hover:text-white p-1"
+                  className="text-stone-400 hover:text-white p-1.5 rounded-lg hover:bg-stone-800 transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -964,16 +964,16 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-end gap-2">
               <button
                 onClick={() => setPrintModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
+                className="px-4 py-2.5 min-h-[42px] text-xs font-semibold text-stone-600 hover:bg-stone-200 rounded-xl cursor-pointer transition-colors"
               >
                 Tutup
               </button>
               <button
                 onClick={triggerPrintDocument}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md flex items-center gap-2 cursor-pointer"
+                className="bg-teal-700 hover:bg-teal-800 text-white px-5 py-2.5 min-h-[42px] rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <Printer className="w-4 h-4" />
                 <span>Cetak / Cetak ke PDF</span>

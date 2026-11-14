@@ -8,6 +8,7 @@ import {
   validateEventInput,
   validateUploadedFile,
 } from '../../utils/validation';
+import { SkeletonBox, InlineShimmer } from '../../components/common/Skeleton';
 import {
   Calendar,
   Newspaper,
@@ -348,10 +349,10 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
       {/* Top Header & Tab Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
             Publikasi Event & Kabar Berita
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
             Hanya konten berstatus <strong>Terbit</strong> yang akan ditampilkan kepada masyarakat di portal publik.
           </p>
         </div>
@@ -360,31 +361,31 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
           {section === 'events' ? (
             <button
               onClick={handleOpenAddEvent}
-              className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+              className="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2.5 min-h-[42px] rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Buat Kegiatan Baru</span>
+              <span>Buat Kegiatan Baru</span>
             </button>
           ) : (
             <button
               onClick={handleOpenAddArticle}
-              className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+              className="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2.5 min-h-[42px] rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Tulis Berita Baru</span>
+              <span>Tulis Berita Baru</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Segmented Control */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-stone-200 pb-2.5">
         <button
           onClick={() => setSection('events')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-colors cursor-pointer tabular-nums ${
             section === 'events'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-[#121918] text-white'
+              : 'text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -393,10 +394,10 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
         <button
           onClick={() => setSection('articles')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-colors cursor-pointer tabular-nums ${
             section === 'articles'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-[#121918] text-white'
+              : 'text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200'
           }`}
         >
           <Newspaper className="w-4 h-4" />
@@ -406,10 +407,10 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
       {/* SECTION 1: EVENTS LIST */}
       {section === 'events' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold uppercase tracking-wider">
+              <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3.5">Nama Kegiatan</th>
                   <th className="px-4 py-3.5">Jadwal & Waktu</th>
@@ -419,38 +420,38 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   <th className="px-4 py-3.5 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-stone-100">
                 {events.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400">
+                    <td colSpan={6} className="p-8 text-center text-stone-400">
                       Belum ada agenda kegiatan yang dibuat.
                     </td>
                   </tr>
                 ) : (
                   events.map((evt) => (
-                    <tr key={evt.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={evt.id} className="hover:bg-stone-50/80 transition-colors">
                       <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900">{evt.title}</div>
-                        <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                        <div className="font-bold text-stone-900">{evt.title}</div>
+                        <div className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
                           {evt.description}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="font-semibold text-slate-800">{evt.date}</div>
-                        <div className="text-[11px] text-slate-400">{evt.time}</div>
+                        <div className="font-semibold text-stone-800 tabular-nums">{evt.date}</div>
+                        <div className="text-[11px] text-stone-500 tabular-nums">{evt.time}</div>
                       </td>
-                      <td className="px-4 py-3 text-slate-700">{evt.location}</td>
-                      <td className="px-4 py-3 text-slate-600">{evt.organizer}</td>
+                      <td className="px-4 py-3 text-stone-700">{evt.location}</td>
+                      <td className="px-4 py-3 text-stone-600">{evt.organizer}</td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded capitalize ${
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border capitalize ${
                             evt.status === 'terbit'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : evt.status === 'selesai'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? 'bg-sky-50 text-sky-800 border-sky-200'
                               : evt.status === 'draf'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-slate-100 text-slate-600'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-stone-100 text-stone-600 border-stone-200'
                           }`}
                         >
                           {evt.status}
@@ -460,14 +461,14 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleOpenEditEvent(evt)}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                            className="p-2 text-stone-500 hover:text-teal-700 rounded-lg hover:bg-teal-50 transition-colors cursor-pointer"
                             title="Ubah"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteEvent(evt)}
-                            className="p-1.5 text-slate-500 hover:text-red-600 rounded-lg hover:bg-red-50"
+                            className="p-2 text-stone-500 hover:text-red-700 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                             title="Hapus"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -485,10 +486,10 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
       {/* SECTION 2: ARTICLES LIST */}
       {section === 'articles' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold uppercase tracking-wider">
+              <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3.5">Judul Artikel Berita</th>
                   <th className="px-4 py-3.5">Kategori</th>
@@ -498,37 +499,37 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   <th className="px-4 py-3.5 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-stone-100">
                 {articles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400">
+                    <td colSpan={6} className="p-8 text-center text-stone-400">
                       Belum ada kabar berita yang diterbitkan.
                     </td>
                   </tr>
                 ) : (
                   articles.map((art) => (
-                    <tr key={art.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={art.id} className="hover:bg-stone-50/80 transition-colors">
                       <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900">{art.title}</div>
-                        <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                        <div className="font-bold text-stone-900">{art.title}</div>
+                        <div className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
                           {art.excerpt}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium text-[11px]">
+                        <span className="bg-stone-100 text-stone-700 border border-stone-200 px-2 py-0.5 rounded-md font-medium text-[11px]">
                           {art.category}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{art.author}</td>
-                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{art.publishedDate}</td>
+                      <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{art.author}</td>
+                      <td className="px-4 py-3 text-stone-500 whitespace-nowrap tabular-nums">{art.publishedDate}</td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded capitalize ${
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border capitalize ${
                             art.status === 'terbit'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : art.status === 'draf'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-slate-100 text-slate-600'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-stone-100 text-stone-600 border-stone-200'
                           }`}
                         >
                           {art.status}
@@ -538,14 +539,14 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleOpenEditArticle(art)}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                            className="p-2 text-stone-500 hover:text-teal-700 rounded-lg hover:bg-teal-50 transition-colors cursor-pointer"
                             title="Ubah"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteArticle(art)}
-                            className="p-1.5 text-slate-500 hover:text-red-600 rounded-lg hover:bg-red-50"
+                            className="p-2 text-stone-500 hover:text-red-700 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                             title="Hapus"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -563,20 +564,20 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
       {/* MODAL EVENT */}
       {eventModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <h3 className="font-black text-slate-900 text-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden border border-stone-200 max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+              <h3 className="font-extrabold text-stone-900 text-lg">
                 {editingEvent ? 'Ubah Agenda Kegiatan' : 'Buat Agenda Kegiatan Baru'}
               </h3>
-              <button onClick={() => setEventModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={() => setEventModalOpen(false)} className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-200/70 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveEvent} className="p-6 overflow-y-auto space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Nama / Judul Kegiatan <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -585,13 +586,13 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   value={eventForm.title}
                   onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                   placeholder="Contoh: Bazar Ramadhan Cisadane 2026"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Tanggal Pelaksanaan <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -599,12 +600,12 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                     required
                     value={eventForm.date}
                     onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 tabular-nums"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Waktu <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -613,13 +614,13 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                     value={eventForm.time}
                     onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
                     placeholder="08.30 - 15.00 WIB"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 tabular-nums"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Lokasi Tempat Acara <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -628,12 +629,12 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   value={eventForm.location}
                   onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
                   placeholder="Aula Kantor Kecamatan / Bantaran Cisadane"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Deskripsi Lengkap Kegiatan <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -642,14 +643,14 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   value={eventForm.description}
                   onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                   placeholder="Rincian acara, susunan agenda, benefit peserta..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600"
                 />
               </div>
 
               {/* GAMBAR POSTER / SAMPUL KEGIATAN */}
-              <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <div className="space-y-2.5 bg-stone-50 p-4 rounded-xl border border-stone-200">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-800">
+                  <label className="block text-xs font-bold text-stone-800">
                     Foto / Gambar Poster Kegiatan
                   </label>
                   {eventForm.posterUrl && (
@@ -665,7 +666,7 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5">
                   {/* Thumbnail Preview */}
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs relative group">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl border border-dashed border-stone-300 bg-white flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
                     {eventForm.posterUrl ? (
                       <img
                         src={eventForm.posterUrl}
@@ -673,15 +674,13 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-center p-2 text-slate-400">
-                        <ImageIcon className="w-7 h-7 mx-auto mb-1 text-slate-300" />
+                      <div className="text-center p-2 text-stone-400">
+                        <ImageIcon className="w-7 h-7 mx-auto mb-1 text-stone-300" />
                         <span className="text-[10px] block leading-tight font-medium">Belum ada foto</span>
                       </div>
                     )}
                     {isCompressingEvent && (
-                      <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white text-[10px] font-bold">
-                        Memproses...
-                      </div>
+                      <SkeletonBox className="absolute inset-0 z-10" />
                     )}
                   </div>
 
@@ -692,10 +691,14 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         type="button"
                         disabled={isCompressingEvent}
                         onClick={() => eventPosterRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                        className="btn-micro inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-70"
                       >
                         <Upload className="w-3.5 h-3.5" />
-                        <span>{isCompressingEvent ? 'Mengompres Foto...' : eventForm.posterUrl ? 'Ganti Foto' : 'Upload Foto Poster'}</span>
+                        {isCompressingEvent ? (
+                          <InlineShimmer variant="dark" label="Mengompres foto poster" widthClass="w-24" />
+                        ) : (
+                          <span>{eventForm.posterUrl ? 'Ganti Foto' : 'Upload Foto Poster'}</span>
+                        )}
                       </button>
                       <input
                         ref={eventPosterRef}
@@ -704,23 +707,23 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         onChange={handleEventPosterUpload}
                         className="hidden"
                       />
-                      <span className="text-[11px] text-slate-500 font-medium">
+                      <span className="text-[11px] text-stone-500 font-medium">
                         JPG, PNG, WebP (otomatis dikompres)
                       </span>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">
                         Atau Masukkan / Edit URL Gambar:
                       </label>
                       <div className="relative">
-                        <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                         <input
                           type="text"
                           value={eventForm.posterUrl}
                           onChange={(e) => setEventForm({ ...eventForm, posterUrl: e.target.value })}
                           placeholder="https://contoh-gambar.com/poster.jpg atau unggah foto"
-                          className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-teal-500"
+                          className="w-full pl-8 pr-3 py-2 min-h-[40px] text-xs rounded-xl border border-stone-200 bg-white text-stone-800 placeholder:text-stone-400 focus:outline-hidden focus:border-teal-600"
                         />
                       </div>
                     </div>
@@ -729,13 +732,13 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Status Publikasi
                 </label>
                 <select
                   value={eventForm.status}
                   onChange={(e) => setEventForm({ ...eventForm, status: e.target.value as any })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-bold"
                 >
                   <option value="terbit">Terbit (Muncul di Website Publik)</option>
                   <option value="draf">Draf (Hanya Admin)</option>
@@ -744,25 +747,22 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                 </select>
               </div>
 
-              <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-slate-200">
+              <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-stone-200">
                 <button
                   type="button"
                   disabled={isSavingEvent}
                   onClick={() => setEventModalOpen(false)}
-                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl cursor-pointer disabled:opacity-50 transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingEvent || isCompressingEvent}
-                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingEvent ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Menyimpan ke Cloud...</span>
-                    </>
+                    <InlineShimmer variant="dark" label="Menyimpan Agenda ke Cloud" widthClass="w-28" />
                   ) : (
                     <span>Simpan Agenda</span>
                   )}
@@ -775,20 +775,20 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
       {/* MODAL ARTICLE */}
       {articleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <h3 className="font-black text-slate-900 text-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden border border-stone-200 max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+              <h3 className="font-extrabold text-stone-900 text-lg">
                 {editingArticle ? 'Ubah Artikel Berita' : 'Tulis Artikel Berita Baru'}
               </h3>
-              <button onClick={() => setArticleModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={() => setArticleModalOpen(false)} className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-200/70 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveArticle} className="p-6 overflow-y-auto space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Judul Berita / Publikasi <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -797,19 +797,19 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   value={articleForm.title}
                   onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
                   placeholder="Contoh: Sosialisasi NIB OSS di Kantor Kecamatan..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Kategori Berita <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={articleForm.category}
                     onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-medium"
+                    className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-medium"
                   >
                     <option value="Kabar Kecamatan">Kabar Kecamatan</option>
                     <option value="Edukasi Bisnis">Edukasi Bisnis</option>
@@ -819,20 +819,20 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
                     Penulis
                   </label>
                   <input
                     type="text"
                     value={articleForm.author}
                     onChange={(e) => setArticleForm({ ...articleForm, author: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Ringkasan Singkat (Excerpt) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -841,12 +841,12 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   value={articleForm.excerpt}
                   onChange={(e) => setArticleForm({ ...articleForm, excerpt: e.target.value })}
                   placeholder="Ringkasan 1-2 kalimat..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Isi Lengkap Berita <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -855,14 +855,14 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                   value={articleForm.content}
                   onChange={(e) => setArticleForm({ ...articleForm, content: e.target.value })}
                   placeholder="Tuliskan berita lengkap di sini..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600"
                 />
               </div>
 
               {/* GAMBAR SAMPUL ARTIKEL BERITA */}
-              <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <div className="space-y-2.5 bg-stone-50 p-4 rounded-xl border border-stone-200">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-800">
+                  <label className="block text-xs font-bold text-stone-800">
                     Foto / Gambar Sampul Artikel
                   </label>
                   {articleForm.imageUrl && (
@@ -878,7 +878,7 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5">
                   {/* Thumbnail Preview */}
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs relative group">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl border border-dashed border-stone-300 bg-white flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
                     {articleForm.imageUrl ? (
                       <img
                         src={articleForm.imageUrl}
@@ -886,15 +886,13 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-center p-2 text-slate-400">
-                        <ImageIcon className="w-7 h-7 mx-auto mb-1 text-slate-300" />
+                      <div className="text-center p-2 text-stone-400">
+                        <ImageIcon className="w-7 h-7 mx-auto mb-1 text-stone-300" />
                         <span className="text-[10px] block leading-tight font-medium">Belum ada foto</span>
                       </div>
                     )}
                     {isCompressingArticle && (
-                      <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white text-[10px] font-bold">
-                        Memproses...
-                      </div>
+                      <SkeletonBox className="absolute inset-0 z-10" />
                     )}
                   </div>
 
@@ -905,10 +903,14 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         type="button"
                         disabled={isCompressingArticle}
                         onClick={() => articleImageRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                        className="btn-micro inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-70"
                       >
                         <Upload className="w-3.5 h-3.5" />
-                        <span>{isCompressingArticle ? 'Mengompres Foto...' : articleForm.imageUrl ? 'Ganti Foto' : 'Upload Foto Sampul'}</span>
+                        {isCompressingArticle ? (
+                          <InlineShimmer variant="dark" label="Mengompres foto sampul" widthClass="w-24" />
+                        ) : (
+                          <span>{articleForm.imageUrl ? 'Ganti Foto' : 'Upload Foto Sampul'}</span>
+                        )}
                       </button>
                       <input
                         ref={articleImageRef}
@@ -917,23 +919,23 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                         onChange={handleArticleImageUpload}
                         className="hidden"
                       />
-                      <span className="text-[11px] text-slate-500 font-medium">
+                      <span className="text-[11px] text-stone-500 font-medium">
                         JPG, PNG, WebP (otomatis dikompres)
                       </span>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">
                         Atau Masukkan / Edit URL Gambar:
                       </label>
                       <div className="relative">
-                        <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                         <input
                           type="text"
                           value={articleForm.imageUrl}
                           onChange={(e) => setArticleForm({ ...articleForm, imageUrl: e.target.value })}
                           placeholder="https://contoh-gambar.com/sampul-berita.jpg atau unggah foto"
-                          className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-teal-500"
+                          className="w-full pl-8 pr-3 py-2 min-h-[40px] text-xs rounded-xl border border-stone-200 bg-white text-stone-800 placeholder:text-stone-400 focus:outline-hidden focus:border-teal-600"
                         />
                       </div>
                     </div>
@@ -942,13 +944,13 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
                   Status Publikasi
                 </label>
                 <select
                   value={articleForm.status}
                   onChange={(e) => setArticleForm({ ...articleForm, status: e.target.value as any })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-bold"
                 >
                   <option value="terbit">Terbit (Tampil di Publik)</option>
                   <option value="draf">Draf (Hanya Admin)</option>
@@ -956,25 +958,22 @@ export const AdminEventsNews: React.FC<AdminEventsNewsProps> = ({
                 </select>
               </div>
 
-              <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-slate-200">
+              <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-stone-200">
                 <button
                   type="button"
                   disabled={isSavingArticle}
                   onClick={() => setArticleModalOpen(false)}
-                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl cursor-pointer disabled:opacity-50 transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingArticle || isCompressingArticle}
-                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingArticle ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Menyimpan ke Cloud...</span>
-                    </>
+                    <InlineShimmer variant="dark" label="Menyimpan Berita ke Cloud" widthClass="w-28" />
                   ) : (
                     <span>Simpan & Terbitkan</span>
                   )}

@@ -13,7 +13,6 @@ import {
   LogOut,
   Shield,
   ChevronDown,
-  Sparkles,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -95,17 +94,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 select-none h-screen sticky top-0">
+    <aside className="w-64 bg-[#121918] text-stone-300 flex flex-col justify-between border-r border-stone-800 select-none h-screen sticky top-0">
       {/* Brand & Logo Header */}
       <div>
-        <div className="p-5 border-b border-slate-800">
+        <div className="p-5 border-b border-stone-800">
           <UmkmKuatLogo size="md" variant="full" theme="light" />
         </div>
 
         {/* Current User & Active Role Switcher */}
-        <div className="p-4 bg-slate-950/60 border-b border-slate-800/80">
+        <div className="p-4 bg-stone-950/60 border-b border-stone-800">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-black text-sm shadow-sm">
+            <div className="h-9 w-9 rounded-xl bg-teal-700 border border-teal-600 flex items-center justify-center text-white font-extrabold text-sm">
               {profile?.displayName?.charAt(0) || 'A'}
             </div>
             <div className="min-w-0 flex-1">
@@ -120,14 +119,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
           {/* Quick Role Simulation Selector - Only accessible for Super Admin */}
           {isSuperAdmin && (
-            <div className="mt-3 pt-2.5 border-t border-slate-800/80">
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+            <div className="mt-3 pt-2.5 border-t border-stone-800">
+              <div className="flex items-center justify-between text-[10px] text-stone-400 mb-1">
                 <span className="font-semibold uppercase tracking-wider">Peran Aktif (RBAC):</span>
               </div>
               <select
                 value={profile?.role || 'super_admin'}
                 onChange={(e) => simulateRole(e.target.value as UserRole)}
-                className="w-full bg-slate-800 border border-slate-700 text-teal-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-teal-500 font-semibold cursor-pointer"
+                className="w-full bg-stone-900 border border-stone-700 text-teal-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 font-semibold cursor-pointer"
               >
                 <option value="super_admin">Super Admin</option>
                 <option value="pengurus_kecamatan">Pengurus Kecamatan</option>
@@ -142,7 +141,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
         {/* Navigation Menus */}
         <nav className="p-3 space-y-1">
-          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-400">
             Menu Manajemen
           </div>
           {menuItems.map((item) => {
@@ -153,22 +152,22 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveMenu(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                className={`group btn-micro w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
+                    ? 'bg-teal-700 text-white'
+                    : 'text-stone-400 hover:text-white hover:bg-stone-800/80'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white' : 'text-stone-400 group-hover:text-teal-400'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                    className={`text-[10px] px-2 py-0.5 rounded font-bold transition-colors ${
                       isActive
-                        ? 'bg-white/20 text-white'
-                        : 'bg-slate-800 text-teal-400'
+                        ? 'bg-teal-800 text-teal-100'
+                        : 'bg-stone-800 text-teal-400'
                     }`}
                   >
                     {item.badge}
@@ -181,12 +180,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
 
       {/* Footer Bottom Controls */}
-      <div className="p-3 border-t border-slate-800 space-y-2">
+      <div className="p-3 border-t border-stone-800 space-y-2">
         <button
           onClick={onExitToPublic}
-          className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+          className="group btn-micro w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-stone-300 hover:text-white hover:bg-stone-800 cursor-pointer"
         >
-          <Globe className="w-4 h-4 text-teal-400" />
+          <Globe className="w-4 h-4 text-teal-400 group-hover:rotate-12 transition-transform duration-200" />
           <span>Lihat Website Publik</span>
         </button>
 
@@ -195,9 +194,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             logout();
             onExitToPublic();
           }}
-          className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
+          className="group btn-micro w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
           <span>Keluar dari Akun</span>
         </button>
       </div>

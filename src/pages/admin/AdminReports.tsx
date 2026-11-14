@@ -86,12 +86,12 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header and Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
             Laporan Eksekutif & Statistik
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-stone-500">
             Rekapitulasi data keanggotaan, sebaran kelurahan, dan arus kas keuangan siap cetak.
           </p>
         </div>
@@ -99,15 +99,15 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 bg-white hover:bg-stone-50 text-stone-800 px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-bold transition-colors cursor-pointer"
           >
-            <Download className="w-4 h-4 text-teal-600" />
+            <Download className="w-4 h-4 text-teal-700" />
             <span>Ekspor CSV</span>
           </button>
 
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Cetak Dokumen Resmi</span>
@@ -116,15 +116,15 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
       </div>
 
       {/* Selectors */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 grid grid-cols-1 md:grid-cols-3 gap-3 print:hidden">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
+          <label className="block text-xs font-bold text-stone-700 mb-1.5">
             Jenis Laporan
           </label>
           <select
             value={reportType}
             onChange={(e) => setReportType(e.target.value as any)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800"
+            className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 font-bold text-stone-800 focus:bg-white focus:outline-none focus:border-teal-600"
           >
             <option value="keanggotaan">1. Laporan Keanggotaan Lengkap</option>
             <option value="kelurahan">2. Laporan Anggota per Kelurahan</option>
@@ -138,13 +138,13 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
+          <label className="block text-xs font-bold text-stone-700 mb-1.5">
             Tahun Laporan
           </label>
           <select
             value={periodYear}
             onChange={(e) => setPeriodYear(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-medium"
+            className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 font-medium text-stone-800 tabular-nums focus:bg-white focus:outline-none focus:border-teal-600"
           >
             <option value="2026">Tahun 2026</option>
             <option value="2025">Tahun 2025</option>
@@ -152,13 +152,13 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
+          <label className="block text-xs font-bold text-stone-700 mb-1.5">
             Bulan
           </label>
           <select
             value={periodMonth}
             onChange={(e) => setPeriodMonth(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-medium"
+            className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 font-medium text-stone-800 focus:bg-white focus:outline-none focus:border-teal-600"
           >
             <option value="all">Semua Bulan (Tahunan)</option>
             <option value="01">Januari</option>
@@ -170,19 +170,19 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
       </div>
 
       {/* DOCUMENT PREVIEW BOX (PRINTABLE VIEW WITH LETTERHEAD) */}
-      <div className="bg-white rounded-3xl border border-slate-300 shadow-md p-8 sm:p-12 space-y-8 print:p-0 print:border-none print:shadow-none">
+      <div className="bg-white rounded-2xl border border-stone-300 p-8 sm:p-12 space-y-8 print:p-0 print:border-none">
         {/* Official Letterhead (Kop Surat) */}
-        <div className="border-b-4 border-double border-slate-900 pb-6 text-center space-y-2 relative">
+        <div className="border-b-4 border-double border-stone-900 pb-6 text-center space-y-2 relative">
           <div className="flex items-center justify-center gap-4">
             <UmkmKuatLogo size="lg" variant="icon" theme="dark" />
             <div className="text-center">
-              <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900">
+              <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wider text-stone-900">
                 Pemerintah Kota Tangerang &bull; Kecamatan Tangerang
               </h2>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
                 FORUM UMKM KUAT KECAMATAN TANGERANG
               </h1>
-              <p className="text-xs text-slate-600 max-w-xl mx-auto">
+              <p className="text-xs text-stone-600 max-w-xl mx-auto">
                 Sekretariat: Gedung Kantor Kecamatan Tangerang, Jl. Daan Mogot No. 5, Kota Tangerang. Telp/WA: +62 82258570582 | Email: umkmkectangerang@gmail.com
               </p>
             </div>
@@ -191,7 +191,7 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
 
         {/* Report Document Title */}
         <div className="text-center space-y-1">
-          <h3 className="text-lg sm:text-xl font-black text-slate-900 uppercase underline decoration-2 underline-offset-4">
+          <h3 className="text-lg sm:text-xl font-extrabold text-stone-900 uppercase underline decoration-2 underline-offset-4">
             {reportType === 'keanggotaan' && 'LAPORAN REKAPITULASI KEANGGOTAAN UMKM'}
             {reportType === 'kelurahan' && 'LAPORAN SEBARAN PELAKU USAHA PER KELURAHAN'}
             {reportType === 'kategori' && 'LAPORAN DISTRIBUSI SEKTOR KATEGORI USAHA'}
@@ -201,7 +201,7 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
             {reportType === 'iuran' && 'REKAPITULASI PENERIMAAN IURAN ANGGOTA'}
             {reportType === 'kegiatan' && 'LAPORAN AGENDA BAZAR & PELATIHAN KEWIRAUSAHAAN'}
           </h3>
-          <p className="text-xs font-semibold text-slate-500">
+          <p className="text-xs font-semibold text-stone-500 tabular-nums">
             Periode: {periodMonth === 'all' ? 'Tahun ' + periodYear : `Bulan ${periodMonth} - Tahun ${periodYear}`}
           </p>
         </div>
@@ -209,28 +209,28 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
         {/* Report Content Table */}
         <div className="overflow-x-auto">
           {reportType === 'keanggotaan' && (
-            <table className="w-full text-left text-xs border border-slate-300">
-              <thead className="bg-slate-100 font-bold border-b border-slate-300">
+            <table className="w-full text-left text-xs border border-stone-300 tabular-nums">
+              <thead className="bg-stone-100 font-bold border-b border-stone-300">
                 <tr>
-                  <th className="p-2 border-r border-slate-300">No.</th>
-                  <th className="p-2 border-r border-slate-300">No. Anggota</th>
-                  <th className="p-2 border-r border-slate-300">Nama Lengkap</th>
-                  <th className="p-2 border-r border-slate-300">Kelurahan</th>
-                  <th className="p-2 border-r border-slate-300">Nama Usaha</th>
-                  <th className="p-2 border-r border-slate-300">Kategori</th>
-                  <th className="p-2 text-center">Status</th>
+                  <th className="p-2.5 border-r border-stone-300">No.</th>
+                  <th className="p-2.5 border-r border-stone-300">No. Anggota</th>
+                  <th className="p-2.5 border-r border-stone-300">Nama Lengkap</th>
+                  <th className="p-2.5 border-r border-stone-300">Kelurahan</th>
+                  <th className="p-2.5 border-r border-stone-300">Nama Usaha</th>
+                  <th className="p-2.5 border-r border-stone-300">Kategori</th>
+                  <th className="p-2.5 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-stone-200">
                 {members.map((m, idx) => (
                   <tr key={m.id}>
-                    <td className="p-2 border-r border-slate-200 text-center">{idx + 1}</td>
-                    <td className="p-2 border-r border-slate-200 font-mono font-bold">{m.memberNumber}</td>
-                    <td className="p-2 border-r border-slate-200 font-semibold">{m.fullName}</td>
-                    <td className="p-2 border-r border-slate-200">Kel. {m.kelurahan}</td>
-                    <td className="p-2 border-r border-slate-200">{m.businessName}</td>
-                    <td className="p-2 border-r border-slate-200">{m.category}</td>
-                    <td className="p-2 text-center font-bold text-teal-700 capitalize">{m.status}</td>
+                    <td className="p-2.5 border-r border-stone-200 text-center">{idx + 1}</td>
+                    <td className="p-2.5 border-r border-stone-200 font-mono font-bold">{m.memberNumber}</td>
+                    <td className="p-2.5 border-r border-stone-200 font-semibold">{m.fullName}</td>
+                    <td className="p-2.5 border-r border-stone-200">Kel. {m.kelurahan}</td>
+                    <td className="p-2.5 border-r border-stone-200">{m.businessName}</td>
+                    <td className="p-2.5 border-r border-stone-200">{m.category}</td>
+                    <td className="p-2.5 text-center font-bold text-teal-700 capitalize">{m.status}</td>
                   </tr>
                 ))}
               </tbody>
@@ -238,27 +238,27 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
           )}
 
           {reportType === 'kelurahan' && (
-            <table className="w-full text-left text-xs border border-slate-300">
-              <thead className="bg-slate-100 font-bold border-b border-slate-300">
+            <table className="w-full text-left text-xs border border-stone-300 tabular-nums">
+              <thead className="bg-stone-100 font-bold border-b border-stone-300">
                 <tr>
-                  <th className="p-2 border-r border-slate-300">No.</th>
-                  <th className="p-2 border-r border-slate-300">Nama Kelurahan</th>
-                  <th className="p-2 border-r border-slate-300 text-right">Jumlah UMKM</th>
-                  <th className="p-2 border-r border-slate-300 text-right">Persentase</th>
-                  <th className="p-2 text-center">Status Kemitraan</th>
+                  <th className="p-2.5 border-r border-stone-300">No.</th>
+                  <th className="p-2.5 border-r border-stone-300">Nama Kelurahan</th>
+                  <th className="p-2.5 border-r border-stone-300 text-right">Jumlah UMKM</th>
+                  <th className="p-2.5 border-r border-stone-300 text-right">Persentase</th>
+                  <th className="p-2.5 text-center">Status Kemitraan</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-stone-200">
                 {KELURAHAN_LIST.map((kel, idx) => {
                   const cnt = members.filter((m) => m.kelurahan === kel).length;
                   const pct = ((cnt / (members.length || 1)) * 100).toFixed(1);
                   return (
                     <tr key={kel}>
-                      <td className="p-2 border-r border-slate-200 text-center">{idx + 1}</td>
-                      <td className="p-2 border-r border-slate-200 font-bold">Kelurahan {kel}</td>
-                      <td className="p-2 border-r border-slate-200 text-right font-black">{cnt} Pelaku Usaha</td>
-                      <td className="p-2 border-r border-slate-200 text-right">{pct}%</td>
-                      <td className="p-2 text-center text-teal-700 font-semibold">Aktif & Dibina</td>
+                      <td className="p-2.5 border-r border-stone-200 text-center">{idx + 1}</td>
+                      <td className="p-2.5 border-r border-stone-200 font-bold">Kelurahan {kel}</td>
+                      <td className="p-2.5 border-r border-stone-200 text-right font-extrabold">{cnt} Pelaku Usaha</td>
+                      <td className="p-2.5 border-r border-stone-200 text-right">{pct}%</td>
+                      <td className="p-2.5 text-center text-teal-700 font-semibold">Aktif & Dibina</td>
                     </tr>
                   );
                 })}
@@ -267,30 +267,30 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
           )}
 
           {(reportType === 'keuangan' || reportType === 'buku_kas') && (
-            <table className="w-full text-left text-xs border border-slate-300">
-              <thead className="bg-slate-100 font-bold border-b border-slate-300">
+            <table className="w-full text-left text-xs border border-stone-300 tabular-nums">
+              <thead className="bg-stone-100 font-bold border-b border-stone-300">
                 <tr>
-                  <th className="p-2 border-r border-slate-300">No.</th>
-                  <th className="p-2 border-r border-slate-300">No. TRX</th>
-                  <th className="p-2 border-r border-slate-300">Tanggal</th>
-                  <th className="p-2 border-r border-slate-300">Kategori & Uraian</th>
-                  <th className="p-2 border-r border-slate-300 text-right text-teal-700">Masuk (Debit)</th>
-                  <th className="p-2 text-right text-red-600">Keluar (Kredit)</th>
+                  <th className="p-2.5 border-r border-stone-300">No.</th>
+                  <th className="p-2.5 border-r border-stone-300">No. TRX</th>
+                  <th className="p-2.5 border-r border-stone-300">Tanggal</th>
+                  <th className="p-2.5 border-r border-stone-300">Kategori & Uraian</th>
+                  <th className="p-2.5 border-r border-stone-300 text-right text-teal-700">Masuk (Debit)</th>
+                  <th className="p-2.5 text-right text-red-600">Keluar (Kredit)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-stone-200">
                 {transactions.map((t, idx) => (
                   <tr key={t.id}>
-                    <td className="p-2 border-r border-slate-200 text-center">{idx + 1}</td>
-                    <td className="p-2 border-r border-slate-200 font-mono font-bold">{t.transactionNumber}</td>
-                    <td className="p-2 border-r border-slate-200">{t.date}</td>
-                    <td className="p-2 border-r border-slate-200">
+                    <td className="p-2.5 border-r border-stone-200 text-center">{idx + 1}</td>
+                    <td className="p-2.5 border-r border-stone-200 font-mono font-bold">{t.transactionNumber}</td>
+                    <td className="p-2.5 border-r border-stone-200">{t.date}</td>
+                    <td className="p-2.5 border-r border-stone-200">
                       <strong>{t.category}</strong> - {t.description}
                     </td>
-                    <td className="p-2 border-r border-slate-200 text-right font-bold text-teal-700">
+                    <td className="p-2.5 border-r border-stone-200 text-right font-bold text-teal-700">
                       {t.type === 'pemasukan' ? formatRupiah(t.amount) : '-'}
                     </td>
-                    <td className="p-2 text-right font-bold text-red-600">
+                    <td className="p-2.5 text-right font-bold text-red-600">
                       {t.type === 'pengeluaran' ? formatRupiah(t.amount) : '-'}
                     </td>
                   </tr>
@@ -300,28 +300,28 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
           )}
 
           {reportType === 'iuran' && (
-            <table className="w-full text-left text-xs border border-slate-300">
-              <thead className="bg-slate-100 font-bold border-b border-slate-300">
+            <table className="w-full text-left text-xs border border-stone-300 tabular-nums">
+              <thead className="bg-stone-100 font-bold border-b border-stone-300">
                 <tr>
-                  <th className="p-2 border-r border-slate-300">No.</th>
-                  <th className="p-2 border-r border-slate-300">Tanggal</th>
-                  <th className="p-2 border-r border-slate-300">Uraian Penerimaan Iuran</th>
-                  <th className="p-2 border-r border-slate-300 text-right">Nominal</th>
-                  <th className="p-2 text-center">Petugas Penerima</th>
+                  <th className="p-2.5 border-r border-stone-300">No.</th>
+                  <th className="p-2.5 border-r border-stone-300">Tanggal</th>
+                  <th className="p-2.5 border-r border-stone-300">Uraian Penerimaan Iuran</th>
+                  <th className="p-2.5 border-r border-stone-300 text-right">Nominal</th>
+                  <th className="p-2.5 text-center">Petugas Penerima</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-stone-200">
                 {transactions
                   .filter((t) => t.category === 'Iuran Anggota')
                   .map((t, idx) => (
                     <tr key={t.id}>
-                      <td className="p-2 border-r border-slate-200 text-center">{idx + 1}</td>
-                      <td className="p-2 border-r border-slate-200">{t.date}</td>
-                      <td className="p-2 border-r border-slate-200 font-medium">{t.description}</td>
-                      <td className="p-2 border-r border-slate-200 text-right font-bold text-teal-700">
+                      <td className="p-2.5 border-r border-stone-200 text-center">{idx + 1}</td>
+                      <td className="p-2.5 border-r border-stone-200">{t.date}</td>
+                      <td className="p-2.5 border-r border-stone-200 font-medium">{t.description}</td>
+                      <td className="p-2.5 border-r border-stone-200 text-right font-bold text-teal-700">
                         {formatRupiah(t.amount)}
                       </td>
-                      <td className="p-2 text-center">{t.recorderName}</td>
+                      <td className="p-2.5 text-center">{t.recorderName}</td>
                     </tr>
                   ))}
               </tbody>
@@ -329,24 +329,24 @@ export const AdminReports: React.FC<AdminReportsProps> = ({
           )}
 
           {reportType === 'kegiatan' && (
-            <table className="w-full text-left text-xs border border-slate-300">
-              <thead className="bg-slate-100 font-bold border-b border-slate-300">
+            <table className="w-full text-left text-xs border border-stone-300 tabular-nums">
+              <thead className="bg-stone-100 font-bold border-b border-stone-300">
                 <tr>
-                  <th className="p-2 border-r border-slate-300">No.</th>
-                  <th className="p-2 border-r border-slate-300">Nama Agenda Kegiatan</th>
-                  <th className="p-2 border-r border-slate-300">Waktu & Tanggal</th>
-                  <th className="p-2 border-r border-slate-300">Lokasi Penyelenggaraan</th>
-                  <th className="p-2 text-center">Status</th>
+                  <th className="p-2.5 border-r border-stone-300">No.</th>
+                  <th className="p-2.5 border-r border-stone-300">Nama Agenda Kegiatan</th>
+                  <th className="p-2.5 border-r border-stone-300">Waktu & Tanggal</th>
+                  <th className="p-2.5 border-r border-stone-300">Lokasi Penyelenggaraan</th>
+                  <th className="p-2.5 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-stone-200">
                 {events.map((e, idx) => (
                   <tr key={e.id}>
-                    <td className="p-2 border-r border-slate-200 text-center">{idx + 1}</td>
-                    <td className="p-2 border-r border-slate-200 font-bold">{e.title}</td>
-                    <td className="p-2 border-r border-slate-200">{e.date} &bull; {e.time}</td>
-                    <td className="p-2 border-r border-slate-200">{e.location}</td>
-                    <td className="p-2 text-center font-bold text-orange-600 capitalize">{e.status}</td>
+                    <td className="p-2.5 border-r border-stone-200 text-center">{idx + 1}</td>
+                    <td className="p-2.5 border-r border-stone-200 font-bold">{e.title}</td>
+                    <td className="p-2.5 border-r border-stone-200">{e.date} &bull; {e.time}</td>
+                    <td className="p-2.5 border-r border-stone-200">{e.location}</td>
+                    <td className="p-2.5 text-center font-bold text-amber-700 capitalize">{e.status}</td>
                   </tr>
                 ))}
               </tbody>

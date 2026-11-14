@@ -7,6 +7,7 @@ import {
   AlertCircle,
   ExternalLink,
 } from 'lucide-react';
+import { InlineShimmer } from '../common/Skeleton';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -106,22 +107,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+      <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-stone-200">
         {/* Modal Header */}
-        <div className="p-6 bg-slate-900 text-white relative">
+        <div className="p-6 bg-[#121918] text-white relative border-b border-stone-800">
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+            className="absolute top-5 right-5 text-stone-400 hover:text-white p-1.5 rounded-lg cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
           <div className="flex flex-col items-center text-center space-y-2">
             <UmkmKuatLogo size="lg" variant="icon" theme="light" />
-            <h3 className="text-xl font-black tracking-tight text-white mt-1">
+            <h3 className="text-xl font-bold tracking-tight text-white mt-1">
               Portal Admin & Pengurus
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-stone-400">
               Forum UMKM KUAT Kecamatan Tangerang
             </p>
           </div>
@@ -130,14 +131,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
         {/* Content */}
         <div className="p-6 space-y-5">
           {profile && profile.role === 'member' && (
-            <div className="p-3 bg-amber-50 text-amber-800 text-xs rounded-xl border border-amber-200 space-y-1.5">
+            <div className="p-3.5 bg-amber-50 text-amber-900 text-xs rounded-xl border border-amber-200 space-y-1.5">
               <div>
                 Saat ini Anda masuk sebagai <strong>{profile.email}</strong> (akses Member). Klik tombol di bawah untuk memilih akun Google pengurus.
               </div>
               <button
                 type="button"
                 onClick={() => logout()}
-                className="text-amber-900 underline font-bold cursor-pointer"
+                className="text-amber-950 underline font-bold cursor-pointer"
               >
                 Keluar dari akun ini dulu
               </button>
@@ -168,7 +169,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm py-3 px-4 rounded-xl border border-slate-300 shadow-xs hover:shadow-md transition-all cursor-pointer disabled:opacity-50"
+              className="btn-micro w-full flex items-center justify-center gap-3 bg-white hover:bg-stone-50 text-stone-800 font-bold text-sm py-3 px-4 rounded-xl border border-stone-300 hover:border-stone-400 cursor-pointer disabled:opacity-70 min-h-[44px]"
             >
               {/* Google SVG Icon */}
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -189,14 +190,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>{loading ? 'Memproses...' : 'Masuk dengan Google'}</span>
+              {loading ? (
+                <InlineShimmer variant="light" label="Memproses masuk dengan Google" widthClass="w-32" />
+              ) : (
+                <span>Masuk dengan Google</span>
+              )}
             </button>
           </div>
         </div>
 
         {/* Footer info */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500 flex items-center justify-center gap-1.5">
-          <ShieldCheck className="w-4 h-4 text-teal-600" />
+        <div className="p-4 bg-stone-50 border-t border-stone-200 text-center text-xs text-stone-500 flex items-center justify-center gap-1.5">
+          <ShieldCheck className="w-4 h-4 text-teal-700" />
           <span>Keamanan Terproteksi Firebase Authentication</span>
         </div>
       </div>

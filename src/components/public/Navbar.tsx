@@ -78,41 +78,38 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-      {/* Top Civic Banner */}
-      <div className="bg-slate-950 text-slate-300 px-4 py-2 text-xs border-b border-slate-800/80 font-normal">
+    <header className="sticky top-0 z-40 bg-white border-b border-stone-200">
+      {/* Top Civic Strip */}
+      <div className="bg-[#121918] text-stone-300 px-4 py-2 text-xs border-b border-stone-800 font-normal">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-400"></span>
-            </span>
-            <span className="text-slate-300 tracking-tight font-medium">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+            <span className="text-stone-200 tracking-tight font-medium">
               Portal Resmi Forum UMKM KUAT &mdash; Kecamatan Tangerang, Kota Tangerang
             </span>
           </div>
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+          <div className="flex items-center gap-4 text-[11px] text-stone-400">
             <a
               href="https://wa.me/6282258570582?text=Halo%20Admin%20Forum%20UMKM%20KUAT%20Kecamatan%20Tangerang"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 hover:text-white transition-colors group"
+              className="group flex items-center gap-1.5 hover:text-white transition-all duration-150 active:scale-[0.98]"
             >
-              <Phone className="w-3 h-3 text-teal-400 group-hover:scale-110 transition-transform" />
-              <span>Hotline WhatsApp: <strong className="text-slate-200 font-semibold">+62 82258570582</strong></span>
+              <Phone className="w-3 h-3 text-teal-400 group-hover:-rotate-12 transition-transform duration-150" />
+              <span>Hotline WhatsApp: <strong className="text-stone-100 font-semibold tabular-nums">+62 82258570582</strong></span>
             </a>
-            <span className="text-slate-700 hidden sm:inline">&bull;</span>
+            <span className="text-stone-700 hidden sm:inline" aria-hidden="true">/</span>
             <span className="text-amber-400 font-semibold hidden sm:inline">8 Kelurahan Binaan</span>
 
             {/* Top Bar Social Media Icons (Desktop) */}
             {(contactInfo.instagram || contactInfo.tiktok || contactInfo.youtube || contactInfo.facebook) && (
-              <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-slate-800">
+              <div className="hidden lg:flex items-center gap-2.5 pl-3 border-l border-stone-800">
                 {contactInfo.instagram && (
                   <a
                     href={formatSocialUrl(contactInfo.instagram, 'instagram')}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-slate-400 hover:text-pink-400 transition-colors"
+                    className="text-stone-400 hover:text-white hover:-translate-y-0.5 active:scale-90 transition-all duration-150"
                     title={`Instagram: ${contactInfo.instagram}`}
                     aria-label="Instagram"
                   >
@@ -124,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     href={formatSocialUrl(contactInfo.tiktok, 'tiktok')}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-slate-400 hover:text-white transition-colors"
+                    className="text-stone-400 hover:text-white hover:-translate-y-0.5 active:scale-90 transition-all duration-150"
                     title={`TikTok: ${contactInfo.tiktok}`}
                     aria-label="TikTok"
                   >
@@ -136,7 +133,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     href={formatSocialUrl(contactInfo.youtube, 'youtube')}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-slate-400 hover:text-red-400 transition-colors"
+                    className="text-stone-400 hover:text-white hover:-translate-y-0.5 active:scale-90 transition-all duration-150"
                     title={`YouTube: ${contactInfo.youtube}`}
                     aria-label="YouTube"
                   >
@@ -148,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     href={formatSocialUrl(contactInfo.facebook, 'facebook')}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-slate-400 hover:text-blue-400 transition-colors"
+                    className="text-stone-400 hover:text-white hover:-translate-y-0.5 active:scale-90 transition-all duration-150"
                     title={`Facebook: ${contactInfo.facebook}`}
                     aria-label="Facebook"
                   >
@@ -163,54 +160,62 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between gap-6 h-18 sm:h-20">
           {/* Logo */}
           <button
             onClick={() => handleNavClick('beranda')}
-            className="flex items-center text-left focus:outline-hidden group transition-opacity hover:opacity-95"
+            className="flex items-center text-left focus:outline-hidden transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:opacity-90 active:scale-[0.98] shrink-0 cursor-pointer"
           >
             <UmkmKuatLogo size="md" variant="full" theme="dark" />
           </button>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-1.5">
+          <nav className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = currentTab === link.id;
               return (
                 <button
                   key={link.id}
                   onClick={() => handleNavClick(link.id)}
-                  className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                  className={`group relative px-3.5 py-2 rounded-lg text-sm whitespace-nowrap shrink-0 btn-micro cursor-pointer ${
                     isActive
-                      ? 'text-teal-900 bg-teal-50 border border-teal-200/70 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+                      ? 'text-teal-800 bg-teal-50 border border-teal-200 font-bold'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/80 border border-transparent font-medium'
                   }`}
                 >
-                  {link.label}
+                  <span>{link.label}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute left-3 right-3 bottom-1 h-0.5 rounded-full bg-teal-700 origin-center transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                      isActive
+                        ? 'scale-x-100'
+                        : 'scale-x-0 group-hover:scale-x-100'
+                    }`}
+                  />
                 </button>
               );
             })}
           </nav>
 
           {/* Action / Admin Button */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
             {isAdmin && profile ? (
               <button
                 onClick={() => setCurrentTab('admin')}
-                className="flex items-center gap-2 bg-slate-950 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 cursor-pointer border border-slate-800 hover:border-slate-700 hover:shadow-md"
+                className="group btn-micro flex items-center gap-2 bg-[#121918] hover:bg-stone-800 text-white px-4 py-2.5 rounded-xl font-semibold text-sm cursor-pointer border border-stone-800 hover:border-stone-700 whitespace-nowrap shrink-0"
               >
-                <LayoutDashboard className="w-4 h-4 text-teal-400" />
+                <LayoutDashboard className="w-4 h-4 text-teal-400 group-hover:scale-110 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]" />
                 <span>Dashboard Admin</span>
-                <span className="text-[10px] bg-teal-500/20 text-teal-300 font-mono px-1.5 py-0.5 rounded border border-teal-500/30 uppercase">
+                <span className="text-[10px] bg-stone-800 text-teal-300 font-mono px-1.5 py-0.5 rounded border border-stone-700 uppercase">
                   {profile.role.replace('_', ' ')}
                 </span>
               </button>
             ) : (
               <button
                 onClick={openLoginModal}
-                className="flex items-center gap-2 bg-gradient-to-r from-teal-700 via-teal-600 to-teal-700 hover:from-teal-800 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-teal-600/30"
+                className="group btn-micro flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2.5 rounded-xl font-semibold text-sm cursor-pointer border border-teal-800 whitespace-nowrap shrink-0"
               >
-                <ShieldCheck className="w-4 h-4 text-amber-300" />
+                <ShieldCheck className="w-4 h-4 text-amber-300 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]" />
                 <span>Masuk Admin</span>
               </button>
             )}
@@ -221,7 +226,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isAdmin && (
               <button
                 onClick={() => handleNavClick('admin')}
-                className="p-2 text-teal-700 bg-teal-50 rounded-lg"
+                className="btn-micro p-2.5 text-teal-800 bg-teal-50 border border-teal-200 hover:bg-teal-100 rounded-lg min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
                 title="Dashboard Admin"
               >
                 <LayoutDashboard className="w-5 h-5" />
@@ -229,10 +234,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-hidden"
+              className="btn-micro p-2 text-stone-700 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 rounded-lg focus:outline-hidden min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
               aria-label="Toggle Menu"
+              aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5 transition-transform duration-200 rotate-90" />
+              ) : (
+                <Menu className="w-5 h-5 transition-transform duration-200" />
+              )}
             </button>
           </div>
         </div>
@@ -240,7 +250,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile & Tablet Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 shadow-xl animate-in fade-in slide-in-from-top duration-200">
+        <div className="lg:hidden border-t border-stone-200 bg-white px-4 pt-3 pb-6">
           <div className="flex flex-col gap-1.5 mb-4">
             {navLinks.map((link) => {
               const isActive = currentTab === link.id;
@@ -248,23 +258,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={link.id}
                   onClick={() => handleNavClick(link.id)}
-                  className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                  className={`btn-micro w-full text-left px-4 py-2.5 rounded-lg text-sm min-h-[44px] flex items-center justify-between cursor-pointer ${
                     isActive
-                      ? 'text-teal-700 bg-teal-50 font-bold'
-                      : 'text-slate-700 hover:bg-slate-100'
+                      ? 'text-teal-800 bg-teal-50 border border-teal-200 font-bold'
+                      : 'text-stone-700 hover:bg-stone-100 border border-transparent font-medium'
                   }`}
                 >
-                  {link.label}
+                  <span>{link.label}</span>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-teal-700" aria-hidden="true" />
+                  )}
                 </button>
               );
             })}
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+          <div className="pt-3 border-t border-stone-200 flex flex-col gap-2">
             {isAdmin ? (
               <button
                 onClick={() => handleNavClick('admin')}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-xl font-semibold text-sm shadow-sm"
+                className="btn-micro w-full flex items-center justify-center gap-2 bg-[#121918] hover:bg-stone-800 text-white py-3 rounded-xl font-semibold text-sm border border-stone-800 min-h-[44px] cursor-pointer"
               >
                 <LayoutDashboard className="w-4 h-4 text-teal-400" />
                 <span>Buka Dashboard Admin</span>
@@ -275,7 +288,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setMobileMenuOpen(false);
                   openLoginModal();
                 }}
-                className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white py-2.5 rounded-xl font-semibold text-sm shadow-sm"
+                className="btn-micro w-full flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-800 text-white py-3 rounded-xl font-semibold text-sm border border-teal-800 min-h-[44px] cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Masuk Portal Admin</span>

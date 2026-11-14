@@ -6,6 +6,7 @@ import { OFFICIAL_LOGO_URL } from '../../components/UmkmKuatLogo';
 import { MemberCardModal } from '../../components/MemberCardModal';
 import { compressImage } from '../../utils/image';
 import { validateMemberInput, validateUploadedFile } from '../../utils/validation';
+import { InlineShimmer } from '../../components/common/Skeleton';
 import {
   downloadExcelTemplate,
   parseExcelMembersFile,
@@ -398,7 +399,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `Halo Pelaku UMKM Kecamatan Tangerang! 🌟\n\nYuk daftarkan usaha Anda di Forum UMKM KUAT Kecamatan Tangerang untuk mendapatkan pembinaan, sertifikasi Halal gratis, kemudahan NIB, dan akses bazar resmi!\n\nKlik link pendaftaran online resmi di sini:\n${registrationLink}\n\nMari bangkit dan KUAT bersama!`
+      `Halo Pelaku UMKM Kecamatan Tangerang!\n\nYuk daftarkan usaha Anda di Forum UMKM KUAT Kecamatan Tangerang untuk mendapatkan pembinaan, sertifikasi Halal gratis, kemudahan NIB, dan akses bazar resmi!\n\nKlik link pendaftaran online resmi di sini:\n${registrationLink}\n\nMari bangkit dan KUAT bersama!`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
@@ -510,10 +511,10 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
             Data Keanggotaan UMKM
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-stone-500 tabular-nums">
             Total {members.length} anggota terdaftar di 8 kelurahan se-Kecamatan Tangerang.
           </p>
         </div>
@@ -522,7 +523,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
           {/* Tombol Share Link Pendaftaran */}
           <button
             onClick={() => setShareModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer min-h-[42px]"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer min-h-[42px]"
           >
             <Share2 className="w-4 h-4" />
             <span>Bagikan Link</span>
@@ -533,9 +534,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadTemplateExcel}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-emerald-50 active:bg-emerald-100 text-emerald-700 px-3.5 py-2.5 rounded-xl border border-emerald-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer min-h-[42px]"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-emerald-50 active:bg-emerald-100 text-emerald-700 px-3.5 py-2.5 rounded-xl border border-emerald-200 text-xs font-bold transition-colors cursor-pointer min-h-[42px]"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
                 <span>Download Template Excel</span>
               </button>
 
@@ -543,7 +544,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 type="button"
                 disabled={isParsingExcel}
                 onClick={() => excelInputRef.current?.click()}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer min-h-[42px] disabled:opacity-60"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer min-h-[42px] disabled:opacity-60"
               >
                 <Upload className="w-4 h-4" />
                 <span>{isParsingExcel ? 'Membaca Excel...' : 'Import Excel'}</span>
@@ -560,24 +561,24 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
           <button
             onClick={handleExportCSV}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer min-h-[42px]"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-700 px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-bold transition-colors cursor-pointer min-h-[42px]"
           >
-            <Download className="w-4 h-4 text-teal-600" />
+            <Download className="w-4 h-4 text-teal-700" />
             <span>Ekspor CSV</span>
           </button>
 
           <button
             onClick={() => setPrintModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer min-h-[42px]"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-700 px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-bold transition-colors cursor-pointer min-h-[42px]"
           >
-            <Printer className="w-4 h-4 text-teal-600" />
+            <Printer className="w-4 h-4 text-teal-700" />
             <span>Cetak PDF</span>
           </button>
 
           {canManageMembers && (
             <button
               onClick={handleOpenAdd}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer min-h-[44px]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Anggota Baru</span>
@@ -587,17 +588,17 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Search */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari nama, NIK, usaha..."
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+              className="w-full pl-9 pr-3 py-2 min-h-[40px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
             />
           </div>
 
@@ -606,7 +607,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
             <select
               value={filterKelurahan}
               onChange={(e) => setFilterKelurahan(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 text-slate-700 font-medium"
+              className="w-full px-3 py-2 min-h-[40px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-700 font-medium"
             >
               <option value="all">Semua Kelurahan</option>
               {KELURAHAN_LIST.map((k) => (
@@ -622,7 +623,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 text-slate-700 font-medium"
+              className="w-full px-3 py-2 min-h-[40px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-700 font-medium"
             >
               <option value="all">Semua Kategori</option>
               <option value="Kuliner">Kuliner</option>
@@ -639,7 +640,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 text-slate-700 font-medium"
+              className="w-full px-3 py-2 min-h-[40px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-700 font-medium"
             >
               <option value="all">Semua Status</option>
               <option value="aktif">Aktif</option>
@@ -650,8 +651,8 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
         </div>
 
         {/* Results summary */}
-        <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-          <span>Menampilkan <strong>{filteredMembers.length}</strong> dari {members.length} data anggota</span>
+        <div className="flex items-center justify-between text-xs text-stone-500 pt-1 tabular-nums">
+          <span>Menampilkan <strong className="text-stone-800">{filteredMembers.length}</strong> dari {members.length} data anggota</span>
           {(search || filterKelurahan !== 'all' || filterCategory !== 'all' || filterStatus !== 'all') && (
             <button
               onClick={() => {
@@ -660,7 +661,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 setFilterCategory('all');
                 setFilterStatus('all');
               }}
-              className="text-orange-600 hover:underline font-semibold cursor-pointer"
+              className="text-amber-700 hover:underline font-semibold cursor-pointer"
             >
               Reset Filter
             </button>
@@ -671,12 +672,12 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       {/* 1. MOBILE CARD VIEW (Khusus Layar HP / Smartphone - Tombol Besar & Responsif) */}
       <div className="block md:hidden space-y-3">
         {filteredMembers.length === 0 ? (
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 text-center text-slate-400 space-y-2.5">
-            <div className="h-12 w-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 text-center text-stone-400 space-y-2.5">
+            <div className="h-12 w-12 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-stone-400">
               <Users className="w-6 h-6" />
             </div>
-            <div className="font-bold text-slate-800 text-sm">Belum Ada Data Anggota</div>
-            <p className="text-xs text-slate-500">
+            <div className="font-bold text-stone-800 text-sm">Belum Ada Data Anggota</div>
+            <p className="text-xs text-stone-500">
               {members.length === 0
                 ? 'Basis data keanggotaan masih kosong. Daftarkan anggota baru di atas.'
                 : 'Tidak ada data anggota yang sesuai kriteria pencarian.'}
@@ -686,7 +687,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 <button
                   type="button"
                   onClick={handleOpenAdd}
-                  className="w-full py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer min-h-[44px]"
+                  className="w-full py-2.5 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Daftarkan Anggota Pertama</span>
@@ -698,28 +699,28 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
           filteredMembers.map((m) => (
             <div
               key={m.id}
-              className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 space-y-3.5 transition-all"
+              className="bg-white rounded-2xl border border-stone-200 p-4 space-y-3.5 transition-colors"
             >
               {/* Header Anggota HP */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center shadow-2xs">
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
                     {m.memberPhoto ? (
                       <img src={m.memberPhoto} alt={m.fullName} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="font-black text-teal-700 text-base">
+                      <span className="font-extrabold text-teal-700 text-base">
                         {m.fullName.charAt(0)}
                       </span>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-bold text-slate-900 text-sm truncate leading-snug">
+                    <h4 className="font-bold text-stone-900 text-sm truncate leading-snug">
                       {m.fullName}
                     </h4>
-                    <div className="text-[11px] font-mono font-bold text-teal-700">
+                    <div className="text-[11px] font-mono font-bold text-teal-700 tabular-nums">
                       {m.memberNumber}
                     </div>
-                    <div className="text-[11px] text-slate-500 font-medium">
+                    <div className="text-[11px] text-stone-500 font-medium">
                       Kel. {m.kelurahan}
                     </div>
                   </div>
@@ -730,12 +731,12 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   type="button"
                   onClick={() => toggleStatus(m)}
                   title="Klik untuk mengubah status"
-                  className={`text-[10px] font-bold px-2.5 py-1 rounded-lg cursor-pointer flex-shrink-0 transition-colors ${
+                  className={`text-[10px] font-bold px-2.5 py-1 rounded-lg cursor-pointer flex-shrink-0 transition-colors border ${
                     m.status === 'aktif'
-                      ? 'bg-green-100 text-green-800 active:bg-green-200'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200 active:bg-emerald-100'
                       : m.status === 'pending'
-                      ? 'bg-amber-100 text-amber-800 active:bg-amber-200'
-                      : 'bg-red-100 text-red-800 active:bg-red-200'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200 active:bg-amber-100'
+                      : 'bg-red-50 text-red-800 border-red-200 active:bg-red-100'
                   }`}
                 >
                   {m.status.toUpperCase()}
@@ -743,21 +744,21 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               </div>
 
               {/* Data Usaha & Kontak */}
-              <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
+              <div className="bg-stone-50 rounded-xl p-3 text-xs space-y-1.5 border border-stone-200/80">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+                  <div className="font-bold text-stone-900 truncate flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-teal-700 flex-shrink-0" />
                     <span className="truncate">{m.businessName}</span>
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 flex-shrink-0">
+                  <span className="text-[10px] font-semibold text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200 flex-shrink-0">
                     {m.category}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-600">
-                  <span className="text-slate-400 font-medium">Produk:</span> {m.topProduct}
+                <div className="text-[11px] text-stone-600">
+                  <span className="text-stone-400 font-medium">Produk:</span> {m.topProduct}
                 </div>
-                <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200/60">
-                  <span className="font-mono">WA: {m.phone}</span>
+                <div className="text-[11px] text-stone-500 flex items-center justify-between pt-1 border-t border-stone-200/80">
+                  <span className="font-mono tabular-nums">WA: {m.phone}</span>
                   {m.phone && (
                     <a
                       href={`https://wa.me/${m.phone.replace(/\D/g, '')}`}
@@ -772,14 +773,14 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               </div>
 
               {/* Action Buttons HP - Ukuran Sentuh Responsif (Touch-Friendly) */}
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-stone-100">
                 {canManageMembers && (
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(m)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 rounded-xl text-xs font-bold border border-blue-200 transition-colors cursor-pointer min-h-[44px]"
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold border border-stone-200 transition-colors cursor-pointer min-h-[44px]"
                   >
-                    <Edit2 className="w-4 h-4 text-blue-600" />
+                    <Edit2 className="w-4 h-4 text-teal-700" />
                     <span>Ubah Data</span>
                   </button>
                 )}
@@ -789,16 +790,16 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   onClick={() => setCardMember(m)}
                   className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-teal-800 rounded-xl text-xs font-bold border border-teal-200 transition-colors cursor-pointer min-h-[44px]"
                 >
-                  <CreditCard className="w-4 h-4 text-teal-600" />
+                  <CreditCard className="w-4 h-4 text-teal-700" />
                   <span>Cetak KTA</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setViewingMember(m)}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer min-h-[42px]"
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer min-h-[42px]"
                 >
-                  <Eye className="w-4 h-4 text-slate-600" />
+                  <Eye className="w-4 h-4 text-stone-600" />
                   <span>Lihat Detail</span>
                 </button>
 
@@ -806,9 +807,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   <button
                     type="button"
                     onClick={() => handleDelete(m)}
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 rounded-xl text-xs font-semibold border border-red-200 transition-colors cursor-pointer min-h-[42px]"
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-700 rounded-xl text-xs font-semibold border border-red-200 transition-colors cursor-pointer min-h-[42px]"
                   >
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="w-4 h-4 text-red-600" />
                     <span>Hapus</span>
                   </button>
                 )}
@@ -819,10 +820,10 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       </div>
 
       {/* 2. DESKTOP TABLE VIEW (Layar Komputer / Tablet) */}
-      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div className="hidden md:block bg-white rounded-2xl border border-stone-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold uppercase tracking-wider">
+            <thead className="bg-stone-50 text-stone-500 border-b border-stone-200 font-bold uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3.5">No. Anggota</th>
                 <th className="px-4 py-3.5">Foto & Nama</th>
@@ -834,16 +835,16 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 <th className="px-4 py-3.5 text-right">Aksi & KTA</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-stone-100">
               {filteredMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
                     <div className="max-w-xs mx-auto space-y-2.5">
-                      <div className="h-12 w-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                      <div className="h-12 w-12 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-stone-400">
                         <Users className="w-6 h-6" />
                       </div>
-                      <div className="font-bold text-slate-800 text-sm">Belum Ada Data Anggota</div>
-                      <p className="text-xs text-slate-500">
+                      <div className="font-bold text-stone-800 text-sm">Belum Ada Data Anggota</div>
+                      <p className="text-xs text-stone-500">
                         {members.length === 0
                           ? 'Basis data keanggotaan masih kosong. Silakan daftarkan anggota baru atau bagikan link pendaftaran.'
                           : 'Tidak ada data anggota yang sesuai kriteria pencarian.'}
@@ -852,7 +853,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         <div className="pt-2">
                           <button
                             onClick={handleOpenAdd}
-                            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+                            className="px-4 py-2 min-h-[40px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                           >
                             <Plus className="w-4 h-4" />
                             <span>Daftarkan Anggota Pertama</span>
@@ -864,13 +865,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 </tr>
               ) : (
                 filteredMembers.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  <tr key={m.id} className="hover:bg-stone-50/80 transition-colors">
+                    <td className="px-4 py-3 font-mono font-bold text-stone-900 whitespace-nowrap tabular-nums">
                       {m.memberNumber}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-full overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
                           {m.memberPhoto ? (
                             <img src={m.memberPhoto} alt={m.fullName} className="w-full h-full object-cover" />
                           ) : (
@@ -880,8 +881,8 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                           )}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900">{m.fullName}</div>
-                          <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                          <div className="font-bold text-stone-900">{m.fullName}</div>
+                          <div className="text-[11px] text-stone-400 flex items-center gap-1 mt-0.5 tabular-nums">
                             <span>WA: {m.phone}</span>
                             <span>&bull;</span>
                             <span className="font-mono">NIK: {m.nik}</span>
@@ -890,26 +891,26 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-800 line-clamp-1">{m.businessName}</div>
-                      <div className="text-[11px] text-teal-600 font-medium">
+                      <div className="font-semibold text-stone-800 line-clamp-1">{m.businessName}</div>
+                      <div className="text-[11px] text-teal-700 font-medium">
                         {m.category} &bull; {m.topProduct}
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-medium text-slate-700">Kel. {m.kelurahan}</span>
+                      <span className="font-medium text-stone-700">Kel. {m.kelurahan}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-block max-w-[150px] truncate text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                      <span className="inline-block max-w-[150px] truncate text-[11px] text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
                         {m.legalities || '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       {m.isPublicDirectory ? (
-                        <span className="text-[10px] bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded">
+                        <span className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 font-bold px-2 py-0.5 rounded">
                           Tampil
                         </span>
                       ) : (
-                        <span className="text-[10px] bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded">
+                        <span className="text-[10px] bg-stone-100 text-stone-500 border border-stone-200 font-medium px-2 py-0.5 rounded">
                           Privat
                         </span>
                       )}
@@ -918,12 +919,12 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                       <button
                         onClick={() => toggleStatus(m)}
                         title="Klik untuk ubah status"
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer ${
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border cursor-pointer ${
                           m.status === 'aktif'
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                             : m.status === 'pending'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-red-50 text-red-800 border-red-200'
                         }`}
                       >
                         {m.status.toUpperCase()}
@@ -934,16 +935,16 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         {/* Tombol Cetak KTA */}
                         <button
                           onClick={() => setCardMember(m)}
-                          className="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg text-xs font-bold flex items-center gap-1 border border-teal-200 cursor-pointer shadow-2xs transition-colors"
+                          className="px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg text-xs font-bold flex items-center gap-1 border border-teal-200 cursor-pointer transition-colors"
                           title="Pratinjau & Cetak Kartu Tanda Anggota (KTA)"
                         >
-                          <CreditCard className="w-3.5 h-3.5 text-teal-600" />
+                          <CreditCard className="w-3.5 h-3.5 text-teal-700" />
                           <span>Cetak KTA</span>
                         </button>
 
                         <button
                           onClick={() => setViewingMember(m)}
-                          className="p-1.5 text-slate-500 hover:text-teal-600 rounded-lg hover:bg-teal-50"
+                          className="p-1.5 text-stone-500 hover:text-teal-700 rounded-lg hover:bg-teal-50 cursor-pointer"
                           title="Lihat Detail"
                         >
                           <Eye className="w-4 h-4" />
@@ -953,14 +954,14 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                           <>
                             <button
                               onClick={() => handleOpenEdit(m)}
-                              className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                              className="p-1.5 text-stone-500 hover:text-teal-700 rounded-lg hover:bg-stone-100 cursor-pointer"
                               title="Ubah Data"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(m)}
-                              className="p-1.5 text-slate-500 hover:text-red-600 rounded-lg hover:bg-red-50"
+                              className="p-1.5 text-stone-500 hover:text-red-700 rounded-lg hover:bg-red-50 cursor-pointer"
                               title="Hapus"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -979,44 +980,44 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
       {/* MODAL SHARE LINK PENDAFTARAN ANGGOTA */}
       {shareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
-            <div className="p-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-stone-200">
+            <div className="p-5 bg-[#121918] text-white flex items-center justify-between border-b border-stone-800">
               <div className="flex items-center gap-2">
-                <Share2 className="w-5 h-5 text-white" />
-                <h3 className="font-black text-base">Bagikan Link Pendaftaran UMKM</h3>
+                <Share2 className="w-5 h-5 text-amber-400" />
+                <h3 className="font-extrabold text-base">Bagikan Link Pendaftaran UMKM</h3>
               </div>
               <button
                 onClick={() => setShareModalOpen(false)}
-                className="text-white/80 hover:text-white p-1"
+                className="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-5 text-center">
-              <div className="h-16 w-16 mx-auto bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+              <div className="h-16 w-16 mx-auto bg-amber-50 border border-amber-200 rounded-full flex items-center justify-center text-amber-700">
                 <Users className="w-8 h-8" />
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 text-base">Formulir Pendaftaran Anggota Baru</h4>
-                <p className="text-xs text-slate-500 mt-1">
+                <h4 className="font-bold text-stone-900 text-base">Formulir Pendaftaran Anggota Baru</h4>
+                <p className="text-xs text-stone-500 mt-1">
                   Bagikan tautan ini ke grup WhatsApp RT/RW, kelurahan, dan media sosial agar pelaku UMKM dapat mendaftar mandiri.
                 </p>
               </div>
 
               {/* Link Input Box */}
-              <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200">
                 <input
                   type="text"
                   readOnly
                   value={registrationLink}
-                  className="bg-transparent text-xs text-slate-700 w-full font-mono outline-hidden"
+                  className="bg-transparent text-xs text-stone-700 w-full font-mono outline-hidden px-1.5"
                 />
                 <button
                   onClick={handleCopyLink}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer flex-shrink-0"
+                  className="px-3 py-2 min-h-[36px] bg-[#121918] hover:bg-stone-800 text-white text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer flex-shrink-0"
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5 text-teal-400" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedLink ? 'Tersalin' : 'Salin'}</span>
@@ -1027,7 +1028,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               <div className="space-y-2 pt-2">
                 <button
                   onClick={handleShareWhatsApp}
-                  className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
+                  className="w-full min-h-[42px] flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-800 text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors"
                 >
                   <Phone className="w-4 h-4" />
                   <span>Kirim Langsung ke WhatsApp</span>
@@ -1035,7 +1036,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-400">
+            <div className="p-4 bg-stone-50 border-t border-stone-200 text-center text-xs text-stone-500">
               Setiap pendaftar akan otomatis memperoleh Nomor Anggota & Kartu KTA.
             </div>
           </div>
@@ -1044,23 +1045,23 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
       {/* FORM MODAL (TAMBAH / UBAH ANGGOTA LENGKAP DENGAN UPLOAD FOTO ANGGOTA & FOTO PRODUK) */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/75 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full sm:max-w-3xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[94vh] sm:max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-950/65">
+          <div className="bg-white w-full sm:max-w-3xl rounded-t-2xl sm:rounded-2xl overflow-hidden border border-stone-200 max-h-[94vh] sm:max-h-[90vh] flex flex-col">
             <form onSubmit={handleSubmit} noValidate className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
               {/* Header Tetap di Atas (Pinned Header) */}
-              <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 flex-shrink-0">
+              <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50 flex-shrink-0">
                 <div>
-                  <h3 className="font-black text-slate-900 text-base sm:text-lg">
+                  <h3 className="font-extrabold text-stone-900 text-base sm:text-lg">
                     {editingMember ? 'Ubah Data Anggota UMKM' : 'Pendaftaran Anggota UMKM Baru'}
                   </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Nomor Anggota: <span className="font-mono font-bold text-teal-700">{formData.memberNumber}</span>
+                  <p className="text-[11px] text-stone-500">
+                    Nomor Anggota: <span className="font-mono font-bold text-teal-700 tabular-nums">{formData.memberNumber}</span>
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                  className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-xl transition-colors cursor-pointer"
                   aria-label="Tutup Formulir"
                 >
                   <X className="w-5 h-5" />
@@ -1077,12 +1078,12 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 )}
 
                 {/* UPLOAD FOTO ANGGOTA (UNTUK KARTU TANDA ANGGOTA KTA) */}
-                <div className="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
-                  <div className="w-20 h-24 rounded-xl overflow-hidden bg-white border-2 border-teal-400 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
+                  <div className="w-20 h-24 rounded-xl overflow-hidden bg-white border-2 border-teal-600 flex items-center justify-center flex-shrink-0">
                     {formData.memberPhoto ? (
                       <img src={formData.memberPhoto} alt="Foto Anggota" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="text-center text-teal-600 p-2">
+                      <div className="text-center text-teal-700 p-2">
                         <Camera className="w-6 h-6 mx-auto mb-1" />
                         <span className="text-[9px] font-bold">Pas Foto</span>
                       </div>
@@ -1093,14 +1094,14 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                     <div className="text-xs font-bold text-teal-900 flex items-center justify-center sm:justify-start gap-1.5">
                       <span>Foto Anggota (Tampil di Kartu KTA Resmi)</span>
                     </div>
-                    <p className="text-[11px] text-slate-600">
+                    <p className="text-[11px] text-stone-600">
                       Upload pas foto anggota atau foto selfie wajah. Format JPG/PNG (Maks. 5MB).
                     </p>
                     <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
                       <button
                         type="button"
                         onClick={() => memberPhotoRef.current?.click()}
-                        className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px] shadow-2xs"
+                        className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px] transition-colors"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>{formData.memberPhoto ? 'Ganti Foto' : 'Upload Pas Foto'}</span>
@@ -1109,7 +1110,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, memberPhoto: '' })}
-                          className="px-3 py-2 text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl text-xs font-semibold cursor-pointer min-h-[40px]"
+                          className="px-3 py-2 text-red-700 hover:bg-red-50 active:bg-red-100 rounded-xl text-xs font-semibold cursor-pointer min-h-[40px]"
                         >
                           Hapus
                         </button>
@@ -1128,13 +1129,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
                 {/* SEKSI 1: DATA PRIBADI ANGGOTA */}
                 <div className="space-y-4">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-teal-800 bg-teal-50 px-3 py-1.5 rounded-lg">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-teal-800 bg-teal-50 border border-teal-200/70 px-3 py-1.5 rounded-lg">
                     1. Data Pribadi Anggota
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Nama Lengkap Sesuai KTP <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -1143,12 +1144,12 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         placeholder="Nama lengkap sesuai KTP"
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         NIK (Nomor Induk Kependudukan) <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -1162,14 +1163,14 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                           setFormData({ ...formData, nik: e.target.value.replace(/\D/g, '') });
                         }}
                         placeholder="16 digit NIK Kota Tangerang"
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-mono"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-mono tabular-nums text-stone-800"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         No. WhatsApp / HP <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -1182,12 +1183,12 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                           setFormData({ ...formData, phone: e.target.value });
                         }}
                         placeholder="081234567890"
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-mono"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-mono tabular-nums text-stone-800"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Email
                       </label>
                       <input
@@ -1195,18 +1196,18 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="email@gmail.com"
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Kelurahan <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={formData.kelurahan}
                         onChange={(e) => setFormData({ ...formData, kelurahan: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-medium"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-medium text-stone-800"
                       >
                         {KELURAHAN_LIST.map((k) => (
                           <option key={k} value={k}>
@@ -1218,7 +1219,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
                       Alamat Domisili KTP <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -1227,20 +1228,20 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       placeholder="Jl. RT/RW Kelurahan..."
-                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                      className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
                     />
                   </div>
                 </div>
 
                 {/* SEKSI 2: DATA USAHA & PRODUK */}
                 <div className="space-y-4 pt-2">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-orange-800 bg-orange-50 px-3 py-1.5 rounded-lg">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200/70 px-3 py-1.5 rounded-lg">
                     2. Data Usaha & Produk
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Nama Usaha / Merk <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -1249,18 +1250,18 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         value={formData.businessName}
                         onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                         placeholder="Contoh: Dapur Kue Mak Rohmah"
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Kategori Usaha <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-medium"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-medium text-stone-800"
                       >
                         <option value="Kuliner">Kuliner</option>
                         <option value="Fashion & Tekstil">Fashion & Tekstil</option>
@@ -1277,7 +1278,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Produk Unggulan <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -1286,12 +1287,12 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         value={formData.topProduct}
                         onChange={(e) => setFormData({ ...formData, topProduct: e.target.value })}
                         placeholder="Contoh: Kue Cucur Pandan & Tumpeng Mini"
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         No. Kontak WhatsApp Usaha
                       </label>
                       <input
@@ -1300,13 +1301,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         value={formData.businessPhone}
                         onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
                         placeholder="0812..."
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500 font-mono"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-mono tabular-nums text-stone-800"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
                       Alamat Usaha / Toko
                     </label>
                     <input
@@ -1314,13 +1315,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                       value={formData.businessAddress}
                       onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
                       placeholder="Alamat tempat produksi / toko offline"
-                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                      className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Legalitas Yang Dimiliki
                       </label>
                       <input
@@ -1328,21 +1329,21 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                         value={formData.legalities}
                         onChange={(e) => setFormData({ ...formData, legalities: e.target.value })}
                         placeholder="NIB, Sertifikat Halal, P-IRT, dsb."
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
                         Upload Foto Produk
                       </label>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => productPhotoRef.current?.click()}
-                          className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+                          className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-700 border border-stone-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[42px] transition-colors"
                         >
-                          <Camera className="w-4 h-4 text-teal-600" />
+                          <Camera className="w-4 h-4 text-teal-700" />
                           <span>{formData.productPhoto ? 'Foto Terpilih' : 'Pilih Foto'}</span>
                         </button>
                         <input
@@ -1356,7 +1357,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                           <img
                             src={formData.productPhoto}
                             alt="Produk"
-                            className="h-9 w-9 object-cover rounded-lg border border-slate-300 shadow-2xs"
+                            className="h-10 w-10 object-cover rounded-lg border border-stone-300"
                           />
                         )}
                       </div>
@@ -1364,33 +1365,33 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   </div>
 
                   {/* SEKSI 3: PENGATURAN PRIVASI & STATUS */}
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between">
+                  <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="font-bold text-xs text-slate-900">
+                        <div className="font-bold text-xs text-stone-900">
                           Tampilkan di Katalog Direktori Publik?
                         </div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="text-[11px] text-stone-500">
                           Hanya data usaha yang disetujui yang akan muncul di website publik (NIK dan data pribadi tetap rahasia).
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                         <input
                           type="checkbox"
                           checked={formData.isPublicDirectory}
                           onChange={(e) => setFormData({ ...formData, isPublicDirectory: e.target.checked })}
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                        <div className="w-11 h-6 bg-stone-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-700"></div>
                       </label>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                      <span className="text-xs font-bold text-slate-800">Status Keanggotaan</span>
+                    <div className="flex items-center justify-between pt-2 border-t border-stone-200">
+                      <span className="text-xs font-bold text-stone-800">Status Keanggotaan</span>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                        className="px-3.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-bold"
+                        className="px-3.5 py-2 min-h-[38px] text-xs rounded-lg border border-stone-200 bg-white font-bold text-stone-800 focus:outline-hidden focus:border-teal-600"
                       >
                         <option value="aktif">Aktif</option>
                         <option value="pending">Pending</option>
@@ -1402,24 +1403,21 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               </div>
 
               {/* Tombol Simpan Perubahan - Selalu Menempel di Bawah (Pinned Footer) */}
-              <div className="p-3.5 sm:p-4 sm:px-6 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 flex-shrink-0 shadow-xs">
+              <div className="p-3.5 sm:p-4 sm:px-6 bg-stone-50 border-t border-stone-200 flex items-center justify-end gap-3 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer min-h-[44px]"
+                  className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-stone-600 hover:bg-stone-200/70 rounded-xl transition-colors cursor-pointer min-h-[44px]"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 disabled:opacity-60 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+                  className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 disabled:opacity-60 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer min-h-[44px]"
                 >
                   {isSubmitting ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Menyimpan...</span>
-                    </>
+                    <InlineShimmer variant="dark" label="Menyimpan data anggota" widthClass="w-24" />
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
@@ -1435,15 +1433,15 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
       {/* DETAIL VIEW MODAL */}
       {viewingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <span className="font-mono font-bold text-teal-700 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-xl rounded-2xl overflow-hidden border border-stone-200">
+            <div className="p-5 border-b border-stone-800 flex items-center justify-between bg-[#121918] text-white">
+              <span className="font-mono font-bold text-teal-400 text-xs tabular-nums">
                 {viewingMember.memberNumber}
               </span>
               <button
                 onClick={() => setViewingMember(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1451,7 +1449,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-teal-50 border border-teal-200 overflow-hidden flex items-center justify-center text-teal-700 font-black text-xl flex-shrink-0">
+                <div className="h-16 w-16 rounded-2xl bg-teal-50 border border-teal-200 overflow-hidden flex items-center justify-center text-teal-700 font-extrabold text-xl flex-shrink-0">
                   {viewingMember.memberPhoto ? (
                     <img src={viewingMember.memberPhoto} alt={viewingMember.fullName} className="w-full h-full object-cover" />
                   ) : (
@@ -1459,43 +1457,43 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   )}
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900">{viewingMember.fullName}</h3>
-                  <div className="text-xs text-slate-500 font-mono">NIK: {viewingMember.nik}</div>
+                  <h3 className="text-xl font-extrabold text-stone-900">{viewingMember.fullName}</h3>
+                  <div className="text-xs text-stone-500 font-mono tabular-nums">NIK: {viewingMember.nik}</div>
                   <div className="text-xs text-teal-700 font-semibold mt-0.5">
                     Kelurahan {viewingMember.kelurahan} &bull; Status: {viewingMember.status.toUpperCase()}
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-2 gap-3 text-xs bg-stone-50 p-4 rounded-xl border border-stone-200">
                 <div>
-                  <span className="text-slate-400 font-semibold">Nama Usaha:</span>
-                  <div className="font-bold text-slate-800">{viewingMember.businessName}</div>
+                  <span className="text-stone-400 font-semibold">Nama Usaha:</span>
+                  <div className="font-bold text-stone-800">{viewingMember.businessName}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold">Kategori:</span>
-                  <div className="font-bold text-slate-800">{viewingMember.category}</div>
+                  <span className="text-stone-400 font-semibold">Kategori:</span>
+                  <div className="font-bold text-stone-800">{viewingMember.category}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold">Produk Unggulan:</span>
-                  <div className="text-slate-800">{viewingMember.topProduct}</div>
+                  <span className="text-stone-400 font-semibold">Produk Unggulan:</span>
+                  <div className="text-stone-800">{viewingMember.topProduct}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-semibold">No. Kontak / WA:</span>
-                  <div className="font-mono text-slate-800">{viewingMember.phone}</div>
+                  <span className="text-stone-400 font-semibold">No. Kontak / WA:</span>
+                  <div className="font-mono text-stone-800 tabular-nums">{viewingMember.phone}</div>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-slate-400 font-semibold">Alamat Usaha:</span>
-                  <div className="text-slate-800">{viewingMember.businessAddress || viewingMember.address}</div>
+                  <span className="text-stone-400 font-semibold">Alamat Usaha:</span>
+                  <div className="text-stone-800">{viewingMember.businessAddress || viewingMember.address}</div>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-slate-400 font-semibold">Legalitas:</span>
+                  <span className="text-stone-400 font-semibold">Legalitas:</span>
                   <div className="text-teal-700 font-semibold">{viewingMember.legalities || '-'}</div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex flex-wrap justify-between items-center gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -1504,7 +1502,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                     setViewingMember(null);
                     setCardMember(m);
                   }}
-                  className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
+                  className="inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
                 >
                   <CreditCard className="w-3.5 h-3.5" />
                   <span>Buka Kartu KTA</span>
@@ -1517,9 +1515,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                       setViewingMember(null);
                       handleOpenEdit(m);
                     }}
-                    className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
+                    className="inline-flex items-center gap-1.5 bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
+                    <Edit2 className="w-3.5 h-3.5 text-teal-700" />
                     <span>Ubah Data</span>
                   </button>
                 )}
@@ -1527,7 +1525,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               <button
                 type="button"
                 onClick={() => setViewingMember(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
+                className="bg-stone-200 hover:bg-stone-300 text-stone-800 px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer min-h-[42px] transition-colors"
               >
                 Tutup
               </button>
@@ -1538,9 +1536,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
       {/* DEDICATED PRINTABLE PDF MODAL FOR REKAPITULASI KEANGGOTAAN */}
       {printModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
-            <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden border border-stone-200 max-h-[92vh] flex flex-col">
+            <div className="p-4 bg-[#121918] text-white flex items-center justify-between border-b border-stone-800">
               <div className="flex items-center gap-2">
                 <Printer className="w-4 h-4 text-teal-400" />
                 <span className="font-bold text-sm">Pratinjau Cetak PDF Daftar Keanggotaan</span>
@@ -1548,14 +1546,14 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => window.print()}
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="bg-teal-700 hover:bg-teal-600 text-white px-4 py-2 min-h-[38px] rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>Cetak / Simpan PDF Sekarang</span>
                 </button>
                 <button
                   onClick={() => setPrintModalOpen(false)}
-                  className="text-slate-400 hover:text-white p-1"
+                  className="text-stone-400 hover:text-white p-1.5 rounded-lg hover:bg-stone-800 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1653,16 +1651,16 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-end gap-2">
               <button
                 onClick={() => setPrintModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
+                className="px-4 py-2 min-h-[40px] text-xs font-semibold text-stone-600 hover:bg-stone-200/70 rounded-xl cursor-pointer transition-colors"
               >
                 Tutup
               </button>
               <button
                 onClick={() => window.print()}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md flex items-center gap-2 cursor-pointer"
+                className="bg-teal-700 hover:bg-teal-800 text-white px-5 py-2 min-h-[40px] rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <Printer className="w-4 h-4" />
                 <span>Cetak Dokumen Sekarang</span>
@@ -1674,20 +1672,20 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
       {/* MODAL PRATINJAU & VALIDASI IMPORT EXCEL */}
       {importModalOpen && importResult && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full sm:max-w-6xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[94vh] sm:max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-950/65">
+          <div className="bg-white w-full sm:max-w-6xl rounded-t-2xl sm:rounded-2xl overflow-hidden border border-stone-200 max-h-[94vh] sm:max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 flex-shrink-0">
+            <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50 flex-shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center flex-shrink-0">
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-black text-slate-900 text-base sm:text-lg truncate">
+                  <h3 className="font-extrabold text-stone-900 text-base sm:text-lg truncate">
                     Pratinjau Import Data Anggota Excel
                   </h3>
-                  <p className="text-[11px] text-slate-500 truncate">
-                    File: <span className="font-semibold text-slate-700">{importFileName}</span>
+                  <p className="text-[11px] text-stone-500 truncate">
+                    File: <span className="font-semibold text-stone-700">{importFileName}</span>
                   </p>
                 </div>
               </div>
@@ -1695,7 +1693,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                 type="button"
                 disabled={isImportingBulk}
                 onClick={() => setImportModalOpen(false)}
-                className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                 aria-label="Tutup Modal Import"
               >
                 <X className="w-5 h-5" />
@@ -1706,28 +1704,28 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               {/* Summary Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between">
                   <div>
-                    <div className="text-[11px] font-semibold text-slate-500">Total Baris Terbaca</div>
-                    <div className="text-xl font-black text-slate-900">{importResult.rows.length}</div>
+                    <div className="text-[11px] font-semibold text-stone-500">Total Baris Terbaca</div>
+                    <div className="text-xl font-extrabold text-stone-900 tabular-nums">{importResult.rows.length}</div>
                   </div>
-                  <Users className="w-6 h-6 text-slate-400" />
+                  <Users className="w-6 h-6 text-stone-400" />
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
                   <div>
                     <div className="text-[11px] font-semibold text-emerald-700">Valid & Siap Disimpan</div>
-                    <div className="text-xl font-black text-emerald-800">{importResult.validCount}</div>
+                    <div className="text-xl font-extrabold text-emerald-800 tabular-nums">{importResult.validCount}</div>
                   </div>
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                  <CheckCircle2 className="w-6 h-6 text-emerald-700" />
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-between">
                   <div>
                     <div className="text-[11px] font-semibold text-red-700">Error / Duplikat (Dilewati)</div>
-                    <div className="text-xl font-black text-red-800">{importResult.invalidCount}</div>
+                    <div className="text-xl font-extrabold text-red-800 tabular-nums">{importResult.invalidCount}</div>
                   </div>
-                  <AlertTriangle className="w-6 h-6 text-red-500" />
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
                 </div>
               </div>
 
@@ -1746,14 +1744,14 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
               {/* Preview Table */}
               {importResult.rows.length === 0 ? (
-                <div className="p-10 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 text-xs">
+                <div className="p-10 text-center bg-stone-50 rounded-2xl border border-stone-200 text-stone-500 text-xs">
                   Tidak ada baris data anggota yang ditemukan di bawah baris header.
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="border border-stone-200 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto max-h-[46vh]">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] sticky top-0 z-10 border-b border-slate-200">
+                      <thead className="bg-stone-100 text-stone-600 font-bold uppercase tracking-wider text-[10px] sticky top-0 z-10 border-b border-stone-200">
                         <tr>
                           <th className="px-3 py-3">Baris</th>
                           <th className="px-3 py-3">Status Validasi</th>
@@ -1766,19 +1764,19 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                           <th className="px-3 py-3">Produk</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
+                      <tbody className="divide-y divide-stone-100 bg-white">
                         {importResult.rows.map((row) => (
                           <tr
                             key={row.rowNumber}
-                            className={row.isValid ? 'hover:bg-slate-50/80' : 'bg-red-50/40 hover:bg-red-50/70'}
+                            className={row.isValid ? 'hover:bg-stone-50/80' : 'bg-red-50/40 hover:bg-red-50/70'}
                           >
-                            <td className="px-3 py-2.5 font-mono text-slate-500 font-semibold whitespace-nowrap">
+                            <td className="px-3 py-2.5 font-mono text-stone-500 font-semibold whitespace-nowrap tabular-nums">
                               #{row.rowNumber}
                             </td>
                             <td className="px-3 py-2.5 min-w-[170px]">
                               {row.isValid ? (
                                 <div className="space-y-1">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold">
                                     <CheckCircle2 className="w-3 h-3" />
                                     Valid
                                   </span>
@@ -1790,7 +1788,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                                 </div>
                               ) : (
                                 <div className="space-y-1">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-800 text-[10px] font-bold">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 border border-red-200 text-red-800 text-[10px] font-bold">
                                     <AlertTriangle className="w-3 h-3" />
                                     Tidak Valid
                                   </span>
@@ -1807,44 +1805,44 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).src = DEFAULT_MEMBER_PHOTO_PLACEHOLDER;
                                 }}
-                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 bg-slate-100"
+                                className="w-10 h-10 rounded-xl object-cover border border-stone-200 bg-stone-100"
                               />
                             </td>
                             <td className="px-3 py-2.5 min-w-[160px]">
-                              <div className="font-bold text-slate-900">
+                              <div className="font-bold text-stone-900">
                                 {row.data.fullName || <span className="text-red-500 italic">(Kosong)</span>}
                               </div>
                               <div className="text-[10px] text-teal-700 font-semibold">
                                 Kel. {row.data.kelurahan}
                               </div>
-                              <div className="text-[10px] text-slate-500 line-clamp-1" title={row.data.address}>
+                              <div className="text-[10px] text-stone-500 line-clamp-1" title={row.data.address}>
                                 {row.data.address}
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-slate-800 whitespace-nowrap">
+                            <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-stone-800 whitespace-nowrap tabular-nums">
                               {row.data.nik || <span className="text-red-500 italic">(Kosong)</span>}
                             </td>
                             <td className="px-3 py-2.5 whitespace-nowrap">
-                              <div className="font-mono text-[11px] font-semibold text-slate-800">
+                              <div className="font-mono text-[11px] font-semibold text-stone-800 tabular-nums">
                                 {row.data.phone || <span className="text-red-500 italic">(Kosong)</span>}
                               </div>
-                              <div className="text-[10px] text-slate-500 truncate max-w-[140px]">
+                              <div className="text-[10px] text-stone-500 truncate max-w-[140px]">
                                 {row.data.email || '-'}
                               </div>
                             </td>
                             <td className="px-3 py-2.5 min-w-[160px]">
-                              <div className="font-bold text-slate-800">
+                              <div className="font-bold text-stone-800">
                                 {row.data.businessName || <span className="text-red-500 italic">(Kosong)</span>}
                               </div>
                               <div className="text-[10px] text-teal-700 font-medium">
                                 {row.data.category} &bull; {row.data.topProduct}
                               </div>
-                              <div className="text-[10px] text-slate-500 font-mono">
+                              <div className="text-[10px] text-stone-500 font-mono tabular-nums">
                                 WA Usaha: {row.data.businessPhone || '-'}
                               </div>
                             </td>
                             <td className="px-3 py-2.5 max-w-[130px]">
-                              <span className="text-[10px] text-slate-600 line-clamp-2">
+                              <span className="text-[10px] text-stone-600 line-clamp-2">
                                 {row.data.legalities || '-'}
                               </span>
                             </td>
@@ -1855,7 +1853,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_PHOTO_PLACEHOLDER;
                                 }}
-                                className="w-12 h-10 rounded-xl object-cover border border-slate-200 bg-slate-100"
+                                className="w-12 h-10 rounded-xl object-cover border border-stone-200 bg-stone-100"
                               />
                             </td>
                           </tr>
@@ -1868,8 +1866,8 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 flex-shrink-0">
-              <div className="text-[11px] text-slate-500 text-center sm:text-left">
+            <div className="p-4 sm:p-5 bg-stone-50 border-t border-stone-200 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 flex-shrink-0">
+              <div className="text-[11px] text-stone-500 text-center sm:text-left tabular-nums">
                 {importResult.invalidCount > 0 ? (
                   <span>
                     Baris berstatus <strong>Tidak Valid</strong> tidak akan ikut disimpan. Hanya{' '}
@@ -1885,7 +1883,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   type="button"
                   disabled={isImportingBulk}
                   onClick={() => setImportModalOpen(false)}
-                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-slate-600 hover:bg-slate-200/70 rounded-xl cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-semibold text-stone-600 hover:bg-stone-200/70 rounded-xl cursor-pointer disabled:opacity-50"
                 >
                   Batal
                 </button>
@@ -1893,7 +1891,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   type="button"
                   disabled={isImportingBulk || importResult.validCount === 0}
                   onClick={handleConfirmBulkImport}
-                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 transition-colors tabular-nums"
                 >
                   {isImportingBulk ? (
                     <>

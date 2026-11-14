@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   User,
 } from 'lucide-react';
+import { InlineShimmer } from './common/Skeleton';
 
 interface MemberCardModalProps {
   member: Member;
@@ -437,19 +438,19 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-      <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 my-4 flex flex-col max-h-[95vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/65 overflow-y-auto">
+      <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden border border-stone-200 my-4 flex flex-col max-h-[95vh]">
         {/* Top Modal Header */}
-        <div className="p-3.5 sm:p-4 bg-slate-950 text-white flex items-center justify-between gap-2 border-b border-slate-800">
+        <div className="p-3.5 sm:p-4 bg-[#121918] text-white flex items-center justify-between gap-2 border-b border-stone-800">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 flex-shrink-0">
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-teal-900/50 border border-teal-700/50 flex items-center justify-center text-teal-400 flex-shrink-0">
               <CreditCard className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-sm sm:text-base text-white truncate">
                 Kartu Tanda Anggota (KTA) UMKM KUAT
               </h3>
-              <p className="text-[11px] text-blue-300 font-mono truncate">
+              <p className="text-[11px] text-teal-300 font-mono truncate tabular-nums">
                 {member.memberNumber} &bull; {member.fullName}
               </p>
             </div>
@@ -460,27 +461,39 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               type="button"
               disabled={isExportingPdf || isPrinting}
               onClick={handleDownloadPDF}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3 sm:px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer transition-all disabled:opacity-60"
+              className="btn-micro bg-teal-700 hover:bg-teal-600 text-white px-3 sm:px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-70"
             >
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">{isExportingPdf ? 'Menyiapkan PDF...' : 'Download PDF'}</span>
-              <span className="sm:hidden">{isExportingPdf ? 'PDF...' : 'PDF'}</span>
+              {isExportingPdf ? (
+                <InlineShimmer variant="dark" label="Menyiapkan PDF KTA" widthClass="w-14 sm:w-24" />
+              ) : (
+                <>
+                  <span className="hidden sm:inline">Download PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </>
+              )}
             </button>
 
             <button
               type="button"
               disabled={isExportingPdf || isPrinting}
               onClick={handlePrintKTA}
-              className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 cursor-pointer transition-all disabled:opacity-60"
+              className="btn-micro bg-stone-900 hover:bg-stone-800 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-stone-700 cursor-pointer disabled:opacity-70"
             >
               <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">{isPrinting ? 'Memproses...' : 'Cetak'}</span>
+              {isPrinting ? (
+                <span className="hidden sm:inline-flex">
+                  <InlineShimmer variant="dark" label="Menyiapkan cetak KTA" widthClass="w-12" />
+                </span>
+              ) : (
+                <span className="hidden sm:inline">Cetak</span>
+              )}
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              className="text-stone-400 hover:text-white p-1.5 rounded-lg hover:bg-stone-800 transition-colors cursor-pointer"
               aria-label="Tutup"
             >
               <X className="w-5 h-5" />
@@ -489,13 +502,13 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         </div>
 
         {/* View Switcher Tabs & Dimensions Badge */}
-        <div className="bg-slate-100 px-4 sm:px-6 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-stone-100 px-4 sm:px-6 py-2.5 border-b border-stone-200 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setActiveSide('both')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
-                activeSide === 'both' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200'
+                activeSide === 'both' ? 'bg-[#121918] text-white' : 'text-stone-600 hover:bg-stone-200'
               }`}
             >
               Depan & Belakang
@@ -504,7 +517,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               type="button"
               onClick={() => setActiveSide('front')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
-                activeSide === 'front' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200'
+                activeSide === 'front' ? 'bg-[#121918] text-white' : 'text-stone-600 hover:bg-stone-200'
               }`}
             >
               Hanya Depan
@@ -513,21 +526,21 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               type="button"
               onClick={() => setActiveSide('back')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
-                activeSide === 'back' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200'
+                activeSide === 'back' ? 'bg-[#121918] text-white' : 'text-stone-600 hover:bg-stone-200'
               }`}
             >
               Hanya Belakang
             </button>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-1 rounded-md text-[11px] font-bold">
-            <CreditCard className="w-3.5 h-3.5 text-blue-700" />
+          <div className="inline-flex items-center gap-1.5 bg-white text-stone-700 border border-stone-300 px-2.5 py-1 rounded-md text-[11px] font-bold tabular-nums">
+            <CreditCard className="w-3.5 h-3.5 text-teal-700" />
             <span>Ukuran Standar ID Card: 53.98 mm &times; 85.60 mm (Portrait CR-80)</span>
           </div>
         </div>
 
         {/* Card Canvas Scroll Area */}
-        <div className="p-5 sm:p-10 bg-slate-200/90 overflow-y-auto flex items-start sm:items-center justify-center flex-1">
+        <div className="p-5 sm:p-10 bg-stone-200/80 overflow-y-auto flex items-start sm:items-center justify-center flex-1">
           <div
             id="kta-cards-container"
             ref={cardsContainerRef}
@@ -794,9 +807,9 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         </div>
 
         {/* Modal Footer Controls */}
-        <div className="p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+        <div className="p-4 bg-white border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-stone-600">
+            <CheckCircle2 className="w-4 h-4 text-teal-700 flex-shrink-0" />
             <span>Format kartu ID Card vertikal standar (PVC Card / Kertas Foto Glossy)</span>
           </div>
 
@@ -804,7 +817,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 min-h-[42px] text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+              className="btn-micro px-4 py-2.5 min-h-[42px] text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl cursor-pointer"
             >
               Tutup
             </button>
@@ -812,19 +825,27 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               type="button"
               disabled={isExportingPdf || isPrinting}
               onClick={handlePrintKTA}
-              className="px-4 py-2.5 min-h-[42px] bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-60"
+              className="btn-micro px-4 py-2.5 min-h-[42px] bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-70"
             >
               <Printer className="w-4 h-4" />
-              <span>{isPrinting ? 'Memproses...' : 'Cetak'}</span>
+              {isPrinting ? (
+                <InlineShimmer variant="light" label="Menyiapkan cetak KTA" widthClass="w-12" />
+              ) : (
+                <span>Cetak</span>
+              )}
             </button>
             <button
               type="button"
               disabled={isExportingPdf || isPrinting}
               onClick={handleDownloadPDF}
-              className="px-5 py-2.5 min-h-[42px] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 cursor-pointer transition-all disabled:opacity-60"
+              className="btn-micro px-5 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-70"
             >
               <Download className="w-4 h-4" />
-              <span>{isExportingPdf ? 'Membuat PDF...' : 'Download PDF KTA'}</span>
+              {isExportingPdf ? (
+                <InlineShimmer variant="dark" label="Membuat PDF KTA" widthClass="w-24" />
+              ) : (
+                <span>Download PDF KTA</span>
+              )}
             </button>
           </div>
         </div>

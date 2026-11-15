@@ -121,7 +121,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return Object.entries(map).map(([bulan, vals]) => ({ bulan, ...vals }));
   }, [transactions]);
 
-  // 5. Member Growth Trend
+  // 5. Member Growth Trend (from real member joinDate/createdAt)
   const growthChartData = useMemo(() => {
     if (members.length === 0) {
       return [
@@ -130,11 +130,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         { bulan: 'Mar 26', total: 0 },
       ];
     }
-    return [
-      { bulan: 'Jan 26', total: Math.max(1, Math.round(members.length * 0.4)) },
-      { bulan: 'Feb 26', total: Math.max(1, Math.round(members.length * 0.7)) },
-      { bulan: 'Mar 26', total: members.length },
-    ];
+    const monthBuckets: Record<string, number> = {};
+    let undated = 0;
+    members.forEach((m) => {
+      const raw = (m.joinDate || m.createdAt || '').trim();
+      const match = raw.match(/^(\d{4})-(\d{2})/);
+      if (match) {
+        const key = `${match[1]}-${match[2]}`;
+        monthBuckets[key] = (monthBuckets[key] || 0) + 1;
+      } else {
+        undated += 1;
+      }
+    });
+
+    const sortedKeys = Object.keys(monthBuckets).sort();
+    if (sortedKeys.length === 0) {
+      return [{ bulan: 'Saat Ini', total: members.length }];
+    }
+
+    let cumulative = undated;
+    const series = sortedKeys.map((key) => {
+      cumulative += monthBuckets[key];
+      const [yr, mo] = key.split('-');
+      const d = new Date(Number(yr), Number(mo) - 1, 1);
+      const label =
+        d.toLocaleString('id-ID', { month: 'short' }) + ' ' + yr.slice(-2);
+      return { bulan: label, total: cumulative };
+    });
+
+    return series.slice(-6);
   }, [members]);
 
   const formatRupiah = (val: number) => {

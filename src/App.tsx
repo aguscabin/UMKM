@@ -364,9 +364,9 @@ function MainApp() {
 
   // Authenticated Admin Dashboard Layout
   return (
-    <div className="min-h-screen flex bg-[#F7F6F2] text-stone-900 font-sans">
+    <div className="min-h-screen flex bg-[#F7F6F2] text-stone-900 font-sans print:block print:bg-white">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block flex-shrink-0">
+      <div className="hidden lg:block flex-shrink-0 print:hidden">
         <AdminSidebar
           activeMenu={adminMenu}
           setActiveMenu={setAdminMenu}
@@ -380,7 +380,7 @@ function MainApp() {
       {mobileSidebarOpen && (
         <div
           onClick={() => setMobileSidebarOpen(false)}
-          className="fixed inset-0 z-50 flex lg:hidden bg-stone-950/65 animate-in fade-in"
+          className="fixed inset-0 z-50 flex lg:hidden bg-stone-950/65 animate-in fade-in print:hidden"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -410,7 +410,7 @@ function MainApp() {
       )}
 
       {/* Main Admin Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 print:block">
         <AdminNavbar
           activeMenu={adminMenu}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
@@ -419,7 +419,7 @@ function MainApp() {
           onToggleSidebar={handleToggleSidebarCollapsed}
         />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto print:overflow-visible print:h-auto">
           {adminMenu === 'dashboard' && (
             <AdminDashboard
               members={members}

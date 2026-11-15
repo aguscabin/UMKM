@@ -1887,9 +1887,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
       {/* DEDICATED PRINTABLE PDF MODAL FOR REKAPITULASI KEANGGOTAAN */}
       {printModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
-          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden border border-stone-200 max-h-[92vh] flex flex-col">
-            <div className="p-4 bg-[#121918] text-white flex items-center justify-between border-b border-stone-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65 print:static print:inset-auto print:block print:bg-white print:p-0">
+          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden border border-stone-200 max-h-[92vh] flex flex-col print:max-w-none print:max-h-none print:border-none print:rounded-none print:overflow-visible print:block">
+            <div className="p-4 bg-[#121918] text-white flex items-center justify-between border-b border-stone-800 print:hidden">
               <div className="flex items-center gap-2">
                 <Printer className="w-4 h-4 text-teal-400" />
                 <span className="font-bold text-sm">Pratinjau Cetak PDF Daftar Keanggotaan</span>
@@ -1912,7 +1912,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
             </div>
 
             {/* Printable Content with Kop Surat */}
-            <div className="p-8 sm:p-12 overflow-y-auto space-y-6 print:p-0">
+            <div className="p-8 sm:p-12 overflow-y-auto space-y-6 print:p-0 print:overflow-visible">
               {/* Kop Surat Resmi */}
               <div className="border-b-4 border-double border-slate-900 pb-4 text-center relative flex items-center justify-center gap-4">
                 <img
@@ -2002,7 +2002,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               </div>
             </div>
 
-            <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-end gap-2">
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-end gap-2 print:hidden">
               <button
                 onClick={() => setPrintModalOpen(false)}
                 className="px-4 py-2 min-h-[40px] text-xs font-semibold text-stone-600 hover:bg-stone-200/70 rounded-xl cursor-pointer transition-colors"

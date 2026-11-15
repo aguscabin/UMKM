@@ -124,9 +124,40 @@
 
 /* Printing styles for PDF & KTA export */
 @media print {
-  body {
+  html,
+  body,
+  main {
     background: white !important;
     color: black !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   /* When printing KTA card specifically */

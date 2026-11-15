@@ -101,7 +101,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside
       className={`${
         isCollapsed ? 'w-[76px]' : 'w-64'
-      } bg-[#121918] text-stone-300 flex flex-col justify-between border-r border-stone-800 select-none h-screen sticky top-0 z-30 transition-[width] duration-200 ease-out`}
+      } bg-[#121918] text-stone-300 flex flex-col justify-between border-r border-stone-800 select-none h-screen sticky top-0 z-30 transition-[width] duration-200 ease-out print:hidden`}
     >
       {/* Brand & Logo Header */}
       <div>

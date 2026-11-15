@@ -43,7 +43,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
   });
 
   return (
-    <header className="bg-white border-b border-stone-200 px-4 sm:px-6 py-3.5 sticky top-0 z-30 flex items-center justify-between">
+    <header className="bg-white border-b border-stone-200 px-4 sm:px-6 py-3.5 sticky top-0 z-30 flex items-center justify-between print:hidden">
       {/* Left: Mobile trigger, desktop collapse toggle & breadcrumb */}
       <div className="flex items-center gap-3">
         <button

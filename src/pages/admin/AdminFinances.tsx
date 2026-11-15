@@ -34,6 +34,7 @@ import {
   FileText,
   Calendar,
   Users,
+  Edit2,
 } from 'lucide-react';
 
 interface AdminFinancesProps {
@@ -54,6 +55,8 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [modalOpen, setModalOpen] = useState(openAddModalInitially);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [printModalOpen, setPrintModalOpen] = useState(false);
 
@@ -110,6 +113,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
   };
 
   const handleOpenAdd = (type: TransactionType = 'pemasukan', presetCategory?: string) => {
+    setEditingTx(null);
     setMemberPickerSearch('');
     setFormData({
       ...initialForm,
@@ -133,6 +137,7 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
         : todayStr;
     const periodLabel = `${getMonthLabel(targetMonth)} ${targetYear}`;
 
+    setEditingTx(null);
     setMemberPickerSearch('');
     setFormData({
       ...initialForm,
@@ -144,6 +149,32 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
       memberName: member.fullName,
       memberNumber: member.memberNumber,
       description: `Iuran Anggota (${periodLabel}) - ${member.fullName} (${member.businessName})`,
+    });
+    setModalOpen(true);
+  };
+
+  const handleOpenEdit = (tx: Transaction) => {
+    setEditingTx(tx);
+    setMemberPickerSearch('');
+    setFormData({
+      transactionNumber: tx.transactionNumber || generateTrxNumber(),
+      type: tx.type,
+      category: tx.category || (tx.type === 'pemasukan' ? 'Iuran Anggota' : 'Operasional Sekretariat'),
+      date: tx.date || new Date().toISOString().split('T')[0],
+      amount: Number(tx.amount || 0),
+      description: tx.description || '',
+      recorderName: tx.recorderName || profile?.displayName || 'Bendahara Forum',
+      recorderId: tx.recorderId || profile?.uid || 'usr-bendahara',
+      approvalStatus: tx.approvalStatus || 'disetujui',
+      approvedBy: tx.approvedBy || profile?.displayName || 'Ketua Forum UMKM KUAT',
+      memberId: tx.memberId || '',
+      memberName: tx.memberName || '',
+      memberNumber: tx.memberNumber || '',
+      proofUrl: tx.proofUrl || '',
+      notes: tx.notes || '',
+      history: tx.history,
+      createdAt: tx.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
     setModalOpen(true);
   };
@@ -205,46 +236,83 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validation = validateTransactionInput(formData);
+    if (isSubmitting) return;
+
+    const payloadToValidate: Partial<Transaction> = editingTx
+      ? {
+          ...formData,
+          id: editingTx.id,
+          createdAt: editingTx.createdAt || formData.createdAt,
+        }
+      : formData;
+
+    const validation = validateTransactionInput(payloadToValidate);
     if (!validation.valid) {
       alert(validation.errors[0] || 'Data transaksi tidak valid.');
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      const id = 'trx-' + Date.now();
-      const newTx: Transaction = {
-        ...validation.sanitized,
-        id,
-        transactionNumber: formData.transactionNumber || validation.sanitized.transactionNumber,
-        history: [
-          {
-            timestamp: new Date().toISOString(),
-            action: 'Pencatatan Awal Transaksi',
-            userName: profile?.displayName || 'Bendahara',
-          },
-        ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const nowIso = new Date().toISOString();
+      const actorName = profile?.displayName || 'Bendahara';
 
-      await dbService.saveTransaction(newTx);
+      const savedTx: Transaction = editingTx
+        ? {
+            ...validation.sanitized,
+            id: editingTx.id,
+            transactionNumber:
+              formData.transactionNumber ||
+              editingTx.transactionNumber ||
+              validation.sanitized.transactionNumber,
+            recorderName: editingTx.recorderName || validation.sanitized.recorderName,
+            recorderId: editingTx.recorderId || validation.sanitized.recorderId,
+            history: [
+              ...(Array.isArray(editingTx.history) ? editingTx.history : []),
+              {
+                timestamp: nowIso,
+                action: 'Perubahan Data Transaksi',
+                userName: actorName,
+              },
+            ].slice(-20),
+            createdAt: editingTx.createdAt || validation.sanitized.createdAt,
+            updatedAt: nowIso,
+          }
+        : {
+            ...validation.sanitized,
+            id: 'trx-' + Date.now(),
+            transactionNumber: formData.transactionNumber || validation.sanitized.transactionNumber,
+            history: [
+              {
+                timestamp: nowIso,
+                action: 'Pencatatan Awal Transaksi',
+                userName: actorName,
+              },
+            ],
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          };
+
+      await dbService.saveTransaction(savedTx);
       try {
         await dbService.addLog({
           userId: profile?.uid || 'usr-bendahara',
-          userName: profile?.displayName || 'Bendahara',
-          action: 'Catat Transaksi Keuangan',
-          target: newTx.transactionNumber,
-          details: `${newTx.type.toUpperCase()}: ${newTx.category} - Rp ${newTx.amount.toLocaleString('id-ID')} (${newTx.description})`,
+          userName: actorName,
+          action: editingTx ? 'Edit Transaksi Keuangan' : 'Catat Transaksi Keuangan',
+          target: savedTx.transactionNumber,
+          details: `${savedTx.type.toUpperCase()}: ${savedTx.category} - Rp ${savedTx.amount.toLocaleString('id-ID')} (${savedTx.description})`,
         });
       } catch (logErr) {
         console.warn('Logging non-fatal error:', logErr);
       }
 
       setModalOpen(false);
+      setEditingTx(null);
       onRefresh();
     } catch (err: any) {
       alert('Gagal menyimpan transaksi: ' + (err?.message || 'Terjadi kesalahan sistem'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -936,13 +1004,26 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                               )}
                             </td>
                             <td className="px-4 py-3 text-right whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedTx(tx)}
-                                className="text-xs text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
-                              >
-                                Lihat Rincian
-                              </button>
+                              <div className="inline-flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTx(tx)}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs text-teal-700 hover:text-teal-900 hover:bg-teal-50 font-bold cursor-pointer transition-colors"
+                                >
+                                  Lihat Rincian
+                                </button>
+                                {canManageFinances && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEdit(tx)}
+                                    title="Edit Transaksi"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-stone-700 hover:text-teal-800 bg-stone-50 hover:bg-teal-50 border border-stone-200 hover:border-teal-300 cursor-pointer transition-colors"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-teal-700" />
+                                    <span>Edit</span>
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1046,6 +1127,16 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                                 >
                                   Rincian
                                 </button>
+                                {canManageFinances && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEdit(row.transactions[0])}
+                                    className="inline-flex items-center gap-1 text-xs text-stone-700 hover:text-teal-800 font-bold hover:underline cursor-pointer"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                    <span>Edit</span>
+                                  </button>
+                                )}
                                 {canManageFinances && (
                                   <button
                                     type="button"
@@ -1196,12 +1287,26 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                           )}
                         </td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => setSelectedTx(tx)}
-                            className="text-xs text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
-                          >
-                            Lihat Rincian
-                          </button>
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTx(tx)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs text-teal-700 hover:text-teal-900 hover:bg-teal-50 font-bold cursor-pointer transition-colors"
+                            >
+                              Lihat Rincian
+                            </button>
+                            {canManageFinances && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(tx)}
+                                title="Edit Transaksi Kas"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-stone-700 hover:text-teal-800 bg-stone-50 hover:bg-teal-50 border border-stone-200 hover:border-teal-300 cursor-pointer transition-colors"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-teal-700" />
+                                <span>Edit</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1220,13 +1325,20 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
             <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
               <div>
                 <h3 className="font-extrabold text-stone-900 text-lg">
-                  Catat Transaksi Kas Baru
+                  {editingTx ? 'Edit Transaksi Kas' : 'Catat Transaksi Kas Baru'}
                 </h3>
                 <span className="text-xs font-mono font-bold text-teal-700 tabular-nums">
                   {formData.transactionNumber}
                 </span>
               </div>
-              <button onClick={() => setModalOpen(false)} className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-200/70 transition-colors cursor-pointer">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalOpen(false);
+                  setEditingTx(null);
+                }}
+                className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-200/70 transition-colors cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1288,6 +1400,16 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                         <option value="Sponsor & Donasi">Sponsor &amp; Donasi</option>
                         <option value="Pendapatan Bazar / Acara">Pendapatan Bazar / Acara</option>
                         <option value="Lainnya">Lainnya</option>
+                        {formData.category &&
+                          ![
+                            'Iuran Anggota',
+                            'Bantuan & Hibah',
+                            'Sponsor & Donasi',
+                            'Pendapatan Bazar / Acara',
+                            'Lainnya',
+                          ].includes(formData.category) && (
+                            <option value={formData.category}>{formData.category}</option>
+                          )}
                       </>
                     ) : (
                       <>
@@ -1297,6 +1419,17 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                         <option value="Konsumsi & Rapat">Konsumsi &amp; Rapat</option>
                         <option value="Pengadaan & Sarana">Pengadaan &amp; Sarana</option>
                         <option value="Lainnya">Lainnya</option>
+                        {formData.category &&
+                          ![
+                            'Operasional Sekretariat',
+                            'Kegiatan & Bazar',
+                            'Pelatihan & Pembinaan',
+                            'Konsumsi & Rapat',
+                            'Pengadaan & Sarana',
+                            'Lainnya',
+                          ].includes(formData.category) && (
+                            <option value={formData.category}>{formData.category}</option>
+                          )}
                       </>
                     )}
                   </select>
@@ -1406,6 +1539,43 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
                 />
               </div>
 
+              {editingTx && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Status Persetujuan
+                    </label>
+                    <select
+                      value={formData.approvalStatus}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          approvalStatus: e.target.value as Transaction['approvalStatus'],
+                        })
+                      }
+                      className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-bold text-stone-900"
+                    >
+                      <option value="disetujui">Disetujui (Masuk Hitungan Saldo)</option>
+                      <option value="menunggu">Menunggu Verifikasi</option>
+                      <option value="ditolak">Ditolak</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Catatan Tambahan (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.notes || ''}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Catatan revisi atau keterangan..."
+                      className="w-full px-3 py-2 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-900"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* UPLOAD BUKTI TRANSFER / NOTA LANGSUNG (GAMBAR / FOTO / SCREENSHOT) */}
               <div className="space-y-2.5 pt-3 border-t border-stone-200">
                 <label className="block text-xs font-bold text-stone-800">
@@ -1481,16 +1651,24 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
               <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-stone-200">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={() => {
+                    setModalOpen(false);
+                    setEditingTx(null);
+                  }}
                   className="px-4 py-2.5 min-h-[42px] text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl cursor-pointer transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 min-h-[42px] bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
                 >
-                  Simpan Transaksi Kas
+                  {isSubmitting
+                    ? 'Menyimpan...'
+                    : editingTx
+                      ? 'Simpan Perubahan'
+                      : 'Simpan Transaksi Kas'}
                 </button>
               </div>
             </form>
@@ -1585,8 +1763,23 @@ export const AdminFinances: React.FC<AdminFinancesProps> = ({
               )}
             </div>
 
-            <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-end">
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end gap-2">
+              {canManageFinances && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const txToEdit = selectedTx;
+                    setSelectedTx(null);
+                    handleOpenEdit(txToEdit);
+                  }}
+                  className="inline-flex items-center gap-1.5 bg-white hover:bg-teal-50 text-teal-800 border border-teal-300 px-4 py-2.5 min-h-[42px] rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit Transaksi</span>
+                </button>
+              )}
               <button
+                type="button"
                 onClick={() => setSelectedTx(null)}
                 className="bg-[#121918] hover:bg-stone-800 text-white px-5 py-2.5 min-h-[42px] rounded-xl text-xs font-bold cursor-pointer transition-colors"
               >

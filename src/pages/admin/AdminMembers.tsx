@@ -1,9 +1,19 @@
 import React, { useState, useMemo, useRef } from 'react';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
 import { Member, KELURAHAN_LIST, BusinessCategory } from '../../types';
 import { dbService } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
 import { OFFICIAL_LOGO_URL } from '../../components/UmkmKuatLogo';
 import { MemberCardModal } from '../../components/MemberCardModal';
+import {
+  OFFICIAL_KTA_QR_URL,
+  computeValidThru,
+  waitForImagesAndFonts,
+  toCorsSafeDataUrl,
+  KtaFrontCard,
+  KtaBackCard,
+} from '../../components/KtaCardParts';
 import { compressImage } from '../../utils/image';
 import { validateMemberInput, validateUploadedFile } from '../../utils/validation';
 import { InlineShimmer } from '../../components/common/Skeleton';
@@ -68,6 +78,23 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
   // Automatic KTA Card Modal state
   const [cardMember, setCardMember] = useState<Member | null>(null);
+
+  // Bulk All KTA PDF Export states
+  const [isExportingAllKta, setIsExportingAllKta] = useState(false);
+  const [ktaExportProgress, setKtaExportProgress] = useState<{
+    current: number;
+    total: number;
+    memberName: string;
+    memberNumber: string;
+  } | null>(null);
+  const [bulkSafeLogo, setBulkSafeLogo] = useState<string>(OFFICIAL_LOGO_URL);
+  const [bulkSafeQr, setBulkSafeQr] = useState<string>(OFFICIAL_KTA_QR_URL);
+  const [bulkCardTarget, setBulkCardTarget] = useState<{
+    member: Member;
+    photoUrl: string;
+  } | null>(null);
+  const bulkRenderRef = useRef<HTMLDivElement>(null);
+  const cancelBulkExportRef = useRef<boolean>(false);
 
   // Share Link Modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -506,6 +533,201 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     }
   };
 
+  /**
+   * Mengunduh seluruh Kartu Tanda Anggota (KTA Depan & Belakang) dalam satu file PDF A4.
+   * Setiap halaman memuat 2 anggota (4 sisi kartu) berukuran standar ISO 7810 ID-1 (53.98 x 85.60 mm).
+   */
+  const handleDownloadAllKtaPDF = async () => {
+    const targetMembers = filteredMembers;
+    if (targetMembers.length === 0 || isExportingAllKta) {
+      return;
+    }
+
+    cancelBulkExportRef.current = false;
+    setIsExportingAllKta(true);
+
+    try {
+      const [logoDataUrl, qrDataUrl] = await Promise.all([
+        toCorsSafeDataUrl(OFFICIAL_LOGO_URL),
+        toCorsSafeDataUrl(OFFICIAL_KTA_QR_URL),
+      ]);
+
+      setBulkSafeLogo(logoDataUrl || OFFICIAL_LOGO_URL);
+      setBulkSafeQr(qrDataUrl || OFFICIAL_KTA_QR_URL);
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth(); // 210 mm
+      const cardW = 53.98;
+      const cardH = 85.60;
+      const gap = 14;
+      const startX = (pageWidth - (cardW * 2 + gap)) / 2;
+      const totalPages = Math.ceil(targetMembers.length / 2);
+      const printDateStr = new Date().toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      });
+
+      const drawPageChrome = (pageNum: number) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(12);
+        pdf.setTextColor(13, 80, 181);
+        pdf.text('DAFTAR KARTU TANDA ANGGOTA (KTA) FORUM UMKM KUAT', pageWidth / 2, 13, {
+          align: 'center',
+        });
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(
+          `Kecamatan Tangerang • Halaman ${pageNum} dari ${totalPages} • Ukuran Standar ISO 7810 ID-1 (53.98 × 85.60 mm)`,
+          pageWidth / 2,
+          18.5,
+          { align: 'center' }
+        );
+
+        pdf.setDrawColor(203, 213, 225);
+        pdf.setLineWidth(0.3);
+        pdf.line(16, 22, pageWidth - 16, 22);
+
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(148, 163, 184);
+        pdf.text(
+          `Dicetak pada ${printDateStr} • Total ${targetMembers.length} Kartu Anggota`,
+          pageWidth / 2,
+          287,
+          { align: 'center' }
+        );
+      };
+
+      for (let i = 0; i < targetMembers.length; i++) {
+        if (cancelBulkExportRef.current) {
+          break;
+        }
+
+        const m = targetMembers[i];
+        setKtaExportProgress({
+          current: i + 1,
+          total: targetMembers.length,
+          memberName: m.fullName,
+          memberNumber: m.memberNumber,
+        });
+
+        let safePhoto = '';
+        if (m.memberPhoto && m.memberPhoto.trim() !== '') {
+          const converted = await toCorsSafeDataUrl(m.memberPhoto);
+          safePhoto = converted || DEFAULT_MEMBER_PHOTO_PLACEHOLDER;
+        }
+
+        setBulkCardTarget({ member: m, photoUrl: safePhoto });
+
+        // Tunggu React me-render kartu anggota di kontainer off-screen
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 40)))
+        );
+
+        if (cancelBulkExportRef.current) {
+          break;
+        }
+
+        const container = bulkRenderRef.current;
+        if (!container) {
+          throw new Error('Kontainer render KTA tidak tersedia.');
+        }
+
+        await waitForImagesAndFonts(container);
+
+        const cardNodes = Array.from(container.querySelectorAll<HTMLElement>('.kta-card'));
+        if (cardNodes.length < 2) {
+          throw new Error(`Kartu KTA untuk ${m.fullName} gagal dirender.`);
+        }
+
+        const [frontCanvas, backCanvas] = await Promise.all([
+          html2canvas(cardNodes[0], {
+            useCORS: true,
+            scale: 2,
+            backgroundColor: '#ffffff',
+            allowTaint: false,
+            logging: false,
+          }),
+          html2canvas(cardNodes[1], {
+            useCORS: true,
+            scale: 2,
+            backgroundColor: '#ffffff',
+            allowTaint: false,
+            logging: false,
+          }),
+        ]);
+
+        const frontImg = frontCanvas.toDataURL('image/png', 1.0);
+        const backImg = backCanvas.toDataURL('image/png', 1.0);
+
+        const slotOnPage = i % 2;
+        const pageNum = Math.floor(i / 2) + 1;
+
+        if (i > 0 && slotOnPage === 0) {
+          pdf.addPage();
+        }
+        if (slotOnPage === 0) {
+          drawPageChrome(pageNum);
+        }
+
+        const rowBaseY = slotOnPage === 0 ? 29 : 153;
+        const cardY = rowBaseY + 4;
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.setTextColor(30, 41, 59);
+        const captionText = `${i + 1}. ${m.fullName} (${m.memberNumber}) — ${m.businessName}`;
+        pdf.text(captionText.slice(0, 85), pageWidth / 2, rowBaseY, { align: 'center' });
+
+        pdf.addImage(frontImg, 'PNG', startX, cardY, cardW, cardH, undefined, 'FAST');
+        pdf.addImage(backImg, 'PNG', startX + cardW + gap, cardY, cardW, cardH, undefined, 'FAST');
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text('Tampak Depan', startX + cardW / 2, cardY + cardH + 4.5, { align: 'center' });
+        pdf.text('Tampak Belakang', startX + cardW + gap + cardW / 2, cardY + cardH + 4.5, {
+          align: 'center',
+        });
+
+        if (slotOnPage === 0 && i + 1 < targetMembers.length) {
+          pdf.setDrawColor(226, 232, 240);
+          pdf.setLineWidth(0.25);
+          pdf.line(20, 141.5, pageWidth - 20, 141.5);
+        }
+      }
+
+      if (!cancelBulkExportRef.current) {
+        pdf.save(`Seluruh_KTA_UMKM_KUAT_${new Date().toISOString().split('T')[0]}.pdf`);
+        try {
+          await dbService.addLog({
+            userId: profile?.uid || 'admin',
+            userName: profile?.displayName || 'Pengurus',
+            action: 'Download Seluruh KTA (PDF)',
+            target: `${targetMembers.length} Kartu Anggota`,
+            details: `Mengunduh gabungan PDF KTA untuk ${targetMembers.length} anggota UMKM`,
+          });
+        } catch (logErr) {
+          console.warn('Logging non-fatal error:', logErr);
+        }
+      }
+    } catch (err: any) {
+      console.error('Gagal mengunduh seluruh PDF KTA:', err);
+      alert('Gagal membuat PDF seluruh KTA: ' + (err?.message || 'Silakan coba lagi'));
+    } finally {
+      setBulkCardTarget(null);
+      setKtaExportProgress(null);
+      setIsExportingAllKta(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Top Header & Actions */}
@@ -558,6 +780,25 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               />
             </>
           )}
+
+          <button
+            type="button"
+            disabled={filteredMembers.length === 0 || isExportingAllKta}
+            onClick={handleDownloadAllKtaPDF}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-teal-800 px-3.5 py-2.5 rounded-xl border border-teal-200 text-xs font-bold transition-colors cursor-pointer min-h-[42px] disabled:opacity-50"
+            title="Download seluruh kartu anggota (KTA) dalam 1 file PDF"
+          >
+            <CreditCard className="w-4 h-4 text-teal-700" />
+            {isExportingAllKta && ktaExportProgress ? (
+              <InlineShimmer
+                variant="light"
+                label={`Menyiapkan KTA ${ktaExportProgress.current}/${ktaExportProgress.total}`}
+                widthClass="w-24"
+              />
+            ) : (
+              <span className="tabular-nums">Download Semua KTA ({filteredMembers.length})</span>
+            )}
+          </button>
 
           <button
             onClick={handleExportCSV}
@@ -1919,6 +2160,87 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
           member={cardMember}
           onClose={() => setCardMember(null)}
         />
+      )}
+
+      {/* OFF-SCREEN SEQUENTIAL CAPTURE CONTAINER FOR BULK KTA PDF */}
+      <div
+        ref={bulkRenderRef}
+        aria-hidden="true"
+        className="fixed -left-[9999px] top-0 pointer-events-none opacity-100 flex flex-row gap-6 bg-white p-4"
+      >
+        {bulkCardTarget && (
+          <>
+            <KtaFrontCard
+              member={bulkCardTarget.member}
+              safeLogoUrl={bulkSafeLogo}
+              safeMemberPhoto={bulkCardTarget.photoUrl}
+              validThru={computeValidThru(bulkCardTarget.member.joinDate)}
+              widthClass="w-[320px]"
+            />
+            <KtaBackCard
+              safeLogoUrl={bulkSafeLogo}
+              safeQrUrl={bulkSafeQr}
+              widthClass="w-[320px]"
+            />
+          </>
+        )}
+      </div>
+
+      {/* BULK KTA EXPORT PROGRESS MODAL */}
+      {isExportingAllKta && ktaExportProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/65">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-stone-200 p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 flex-shrink-0">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-stone-900">
+                  Menyiapkan PDF Seluruh KTA Anggota
+                </h3>
+                <p className="text-xs text-stone-500 tabular-nums">
+                  Memproses kartu {ktaExportProgress.current} dari {ktaExportProgress.total} anggota...
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden border border-stone-200">
+                <div
+                  className="h-full bg-teal-700 transition-all duration-200"
+                  style={{
+                    width: `${Math.round(
+                      (ktaExportProgress.current / Math.max(ktaExportProgress.total, 1)) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-stone-600 tabular-nums">
+                <span className="truncate font-semibold max-w-[75%]">
+                  {ktaExportProgress.memberName} ({ktaExportProgress.memberNumber})
+                </span>
+                <span className="font-mono font-bold text-teal-700">
+                  {Math.round(
+                    (ktaExportProgress.current / Math.max(ktaExportProgress.total, 1)) * 100
+                  )}
+                  %
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  cancelBulkExportRef.current = true;
+                }}
+                className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 rounded-xl cursor-pointer transition-colors"
+              >
+                Batalkan
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

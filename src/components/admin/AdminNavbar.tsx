@@ -2,23 +2,27 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
   Menu,
-  Bell,
   ShieldCheck,
   Globe,
-  User,
   Calendar as CalendarIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 interface AdminNavbarProps {
   activeMenu: string;
   onOpenMobileSidebar: () => void;
   onExitToPublic: () => void;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const AdminNavbar: React.FC<AdminNavbarProps> = ({
   activeMenu,
   onOpenMobileSidebar,
   onExitToPublic,
+  isSidebarCollapsed = false,
+  onToggleSidebar,
 }) => {
   const { profile } = useAuth();
 
@@ -40,7 +44,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
   return (
     <header className="bg-white border-b border-stone-200 px-4 sm:px-6 py-3.5 sticky top-0 z-30 flex items-center justify-between">
-      {/* Left: Mobile trigger & breadcrumb */}
+      {/* Left: Mobile trigger, desktop collapse toggle & breadcrumb */}
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileSidebar}
@@ -49,6 +53,22 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            title={isSidebarCollapsed ? 'Perluas Sidebar' : 'Perkecil Sidebar'}
+            aria-label={isSidebarCollapsed ? 'Perluas Sidebar' : 'Perkecil Sidebar'}
+            className="hidden lg:flex btn-micro min-h-[40px] min-w-[40px] items-center justify-center text-stone-600 hover:text-stone-900 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 cursor-pointer transition-colors"
+          >
+            {isSidebarCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4 text-teal-700" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
+        )}
 
         <div>
           <div className="flex items-center gap-2 text-xs text-stone-400">

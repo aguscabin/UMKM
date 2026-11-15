@@ -31,6 +31,28 @@ function MainApp() {
   const [adminMenu, setAdminMenu] = useState<string>('dashboard');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem('umkm_admin_sidebar_collapsed') === '1';
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  const handleToggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('umkm_admin_sidebar_collapsed', next ? '1' : '0');
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  };
 
   // Selected item modals in public view
   const [selectedEvent, setSelectedEvent] = useState<ForumEvent | null>(null);
@@ -344,11 +366,13 @@ function MainApp() {
   return (
     <div className="min-h-screen flex bg-[#F7F6F2] text-stone-900 font-sans">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block flex-shrink-0">
         <AdminSidebar
           activeMenu={adminMenu}
           setActiveMenu={setAdminMenu}
           onExitToPublic={() => setCurrentTab('beranda')}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={handleToggleSidebarCollapsed}
         />
       </div>
 
@@ -391,6 +415,8 @@ function MainApp() {
           activeMenu={adminMenu}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           onExitToPublic={() => setCurrentTab('beranda')}
+          isSidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={handleToggleSidebarCollapsed}
         />
 
         <main className="flex-1 overflow-y-auto">

@@ -193,8 +193,8 @@ export const KtaFrontCard: React.FC<KtaFrontCardProps> = ({
         {/* Circular Member Photo Avatar */}
         <div className="flex justify-center -mt-2">
           <div className="relative">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-white shadow-xl">
-              <div className="w-full h-full rounded-full border-[4px] border-[#00A3FF] overflow-hidden bg-slate-100 flex items-center justify-center">
+            <div className="w-28 sm:w-32 aspect-square rounded-full p-1 bg-white shadow-xl">
+              <div className="w-full h-full aspect-square rounded-full border-[4px] border-[#00A3FF] overflow-hidden bg-slate-100 flex items-center justify-center">
                 {photoSrc ? (
                   <img
                     src={photoSrc}
@@ -203,7 +203,7 @@ export const KtaFrontCard: React.FC<KtaFrontCardProps> = ({
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = DEFAULT_MEMBER_PHOTO_PLACEHOLDER;
                     }}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-[center_20%] block"
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-slate-400">

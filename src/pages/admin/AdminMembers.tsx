@@ -51,7 +51,11 @@ import {
   Upload,
   CreditCard,
   QrCode,
+  Instagram,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
+import { TikTokIcon, formatSocialUrl } from '../../components/common/SocialIcons';
 
 interface AdminMembersProps {
   members: Member[];
@@ -135,6 +139,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     memberPhoto: '',
     productPhoto: '',
     legalities: 'NIB, Sertifikat Halal',
+    instagram: '',
+    tiktok: '',
+    website: '',
     isPublicDirectory: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -181,6 +188,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       memberPhoto: m.memberPhoto || '',
       productPhoto: m.productPhoto || '',
       legalities: m.legalities || '',
+      instagram: m.instagram || '',
+      tiktok: m.tiktok || '',
+      website: m.website || '',
       isPublicDirectory: m.isPublicDirectory ?? true,
       createdAt: m.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -945,9 +955,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
               {/* Header Anggota HP */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 aspect-square rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
                     {m.memberPhoto ? (
-                      <img src={m.memberPhoto} alt={m.fullName} className="w-full h-full object-cover" />
+                      <img
+                        src={m.memberPhoto}
+                        alt={m.fullName}
+                        className="w-full h-full object-cover object-[center_20%] block"
+                      />
                     ) : (
                       <span className="font-extrabold text-teal-700 text-base">
                         {m.fullName.charAt(0)}
@@ -1112,9 +1126,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-10 h-10 aspect-square rounded-full overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
                           {m.memberPhoto ? (
-                            <img src={m.memberPhoto} alt={m.fullName} className="w-full h-full object-cover" />
+                            <img
+                              src={m.memberPhoto}
+                              alt={m.fullName}
+                              className="w-full h-full object-cover object-[center_20%] block"
+                            />
                           ) : (
                             <span className="font-bold text-teal-700 text-xs">
                               {m.fullName.charAt(0)}
@@ -1320,9 +1338,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
                 {/* UPLOAD FOTO ANGGOTA (UNTUK KARTU TANDA ANGGOTA KTA) */}
                 <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
-                  <div className="w-20 h-24 rounded-xl overflow-hidden bg-white border-2 border-teal-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-24 aspect-square rounded-xl overflow-hidden bg-white border-2 border-teal-600 flex items-center justify-center flex-shrink-0">
                     {formData.memberPhoto ? (
-                      <img src={formData.memberPhoto} alt="Foto Anggota" className="w-full h-full object-cover" />
+                      <img
+                        src={formData.memberPhoto}
+                        alt="Foto Anggota"
+                        className="w-full h-full object-cover object-[center_20%] block"
+                      />
                     ) : (
                       <div className="text-center text-teal-700 p-2">
                         <Camera className="w-6 h-6 mx-auto mb-1" />
@@ -1605,6 +1627,50 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-stone-700 mb-1">
+                        <Instagram className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Akun Instagram</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.instagram || ''}
+                        onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                        placeholder="@namausaha atau link IG"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-stone-700 mb-1">
+                        <TikTokIcon className="w-3.5 h-3.5 text-stone-800" />
+                        <span>Akun TikTok</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.tiktok || ''}
+                        onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
+                        placeholder="@namausaha atau link TikTok"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-stone-700 mb-1">
+                        <Globe className="w-3.5 h-3.5 text-teal-700" />
+                        <span>Website Usaha</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.website || ''}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                        placeholder="https://usahaanda.com"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 text-stone-800"
+                      />
+                    </div>
+                  </div>
+
                   {/* SEKSI 3: PENGATURAN PRIVASI & STATUS */}
                   <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-3">
                     <div className="flex items-center justify-between gap-4">
@@ -1690,9 +1756,13 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-teal-50 border border-teal-200 overflow-hidden flex items-center justify-center text-teal-700 font-extrabold text-xl flex-shrink-0">
+                <div className="w-16 sm:w-20 aspect-square rounded-2xl bg-teal-50 border border-teal-200 overflow-hidden flex items-center justify-center text-teal-700 font-extrabold text-xl flex-shrink-0">
                   {viewingMember.memberPhoto ? (
-                    <img src={viewingMember.memberPhoto} alt={viewingMember.fullName} className="w-full h-full object-cover" />
+                    <img
+                      src={viewingMember.memberPhoto}
+                      alt={viewingMember.fullName}
+                      className="w-full h-full object-cover object-[center_20%] block"
+                    />
                   ) : (
                     viewingMember.fullName.charAt(0)
                   )}
@@ -1731,6 +1801,46 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   <span className="text-stone-400 font-semibold">Legalitas:</span>
                   <div className="text-teal-700 font-semibold">{viewingMember.legalities || '-'}</div>
                 </div>
+                {(viewingMember.instagram || viewingMember.tiktok || viewingMember.website) && (
+                  <div className="col-span-2 pt-2 border-t border-stone-200 flex flex-wrap gap-2">
+                    {viewingMember.instagram && (
+                      <a
+                        href={formatSocialUrl(viewingMember.instagram, 'instagram')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:border-rose-300 hover:text-rose-700 font-semibold"
+                      >
+                        <Instagram className="w-3.5 h-3.5 text-rose-600" />
+                        <span>{viewingMember.instagram}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    {viewingMember.tiktok && (
+                      <a
+                        href={formatSocialUrl(viewingMember.tiktok, 'tiktok')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:border-stone-400 font-semibold"
+                      >
+                        <TikTokIcon className="w-3.5 h-3.5 text-stone-900" />
+                        <span>{viewingMember.tiktok}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    {viewingMember.website && (
+                      <a
+                        href={formatSocialUrl(viewingMember.website, 'website')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:border-teal-300 hover:text-teal-800 font-semibold"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-teal-700" />
+                        <span>{viewingMember.website.replace(/^https?:\/\//i, '')}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2046,7 +2156,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).src = DEFAULT_MEMBER_PHOTO_PLACEHOLDER;
                                 }}
-                                className="w-10 h-10 rounded-xl object-cover border border-stone-200 bg-stone-100"
+                                className="w-10 h-10 aspect-square rounded-xl object-cover object-[center_20%] border border-stone-200 bg-stone-100 block"
                               />
                             </td>
                             <td className="px-3 py-2.5 min-w-[160px]">

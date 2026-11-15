@@ -63,6 +63,9 @@ export interface Member {
   memberPhoto?: string; // Pas foto anggota
   productPhoto?: string;
   legalities: string; // NIB, Halal, P-IRT, dsb.
+  instagram?: string;
+  tiktok?: string;
+  website?: string;
   
   // Pengaturan Privasi
   isPublicDirectory: boolean; // apakah boleh tampil di website publik

@@ -245,6 +245,13 @@ const HEADER_TO_FIELD_MAP: Record<
   'legalitas yg dimiliki': { field: 'legalities', mode: 'text' },
   'legalitas yang dimiliki': { field: 'legalities', mode: 'text' },
   'foto produk': { field: 'productPhoto', mode: 'text' },
+  'instagram': { field: 'instagram', mode: 'text' },
+  'akun instagram': { field: 'instagram', mode: 'text' },
+  'ig': { field: 'instagram', mode: 'text' },
+  'tiktok': { field: 'tiktok', mode: 'text' },
+  'akun tiktok': { field: 'tiktok', mode: 'text' },
+  'website': { field: 'website', mode: 'text' },
+  'website usaha': { field: 'website', mode: 'text' },
 };
 
 /**
@@ -468,6 +475,9 @@ export async function parseExcelMembersFile(
         businessPhone,
         businessAddress: businessAddress || '-',
         legalities,
+        instagram: sanitizeText(rawValues.instagram, 200),
+        tiktok: sanitizeText(rawValues.tiktok, 200),
+        website: sanitizeText(rawValues.website, 300),
         memberPhoto,
         productPhoto,
         isPublicDirectory: true,

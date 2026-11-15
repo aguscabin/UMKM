@@ -10,7 +10,10 @@ import {
   Phone,
   X,
   ArrowUpRight,
+  Instagram,
+  Globe,
 } from 'lucide-react';
+import { TikTokIcon, formatSocialUrl } from '../../components/common/SocialIcons';
 import {
   CatalogCardSkeleton,
   InlineShimmer,
@@ -342,14 +345,102 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({
                 </div>
               </div>
 
-              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-950 space-y-1">
-                <div className="font-bold flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-700" />
-                  <span>Jaminan Produk Binaan Resmi</span>
+              {/* Media Sosial & Website Usaha */}
+              <div className="space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
+                  Media Sosial &amp; Website Usaha
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {selectedMember.instagram ? (
+                    <a
+                      href={formatSocialUrl(selectedMember.instagram, 'instagram')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group/soc flex items-center gap-2.5 p-3 rounded-xl bg-white hover:bg-rose-50/60 border border-stone-200 hover:border-rose-300 transition-colors min-w-0"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center flex-shrink-0">
+                        <Instagram className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold uppercase text-stone-400">Instagram</div>
+                        <div className="text-xs font-bold text-stone-800 group-hover/soc:text-rose-700 truncate">
+                          {selectedMember.instagram}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover/soc:text-rose-600 flex-shrink-0" />
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-200/80 opacity-65 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-stone-100 border border-stone-200 text-stone-400 flex items-center justify-center flex-shrink-0">
+                        <Instagram className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold uppercase text-stone-400">Instagram</div>
+                        <div className="text-xs text-stone-400 truncate">Belum dicantumkan</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedMember.tiktok ? (
+                    <a
+                      href={formatSocialUrl(selectedMember.tiktok, 'tiktok')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group/soc flex items-center gap-2.5 p-3 rounded-xl bg-white hover:bg-stone-100/80 border border-stone-200 hover:border-stone-400 transition-colors min-w-0"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-stone-900 border border-stone-800 text-white flex items-center justify-center flex-shrink-0">
+                        <TikTokIcon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold uppercase text-stone-400">TikTok</div>
+                        <div className="text-xs font-bold text-stone-800 truncate">
+                          {selectedMember.tiktok}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover/soc:text-stone-700 flex-shrink-0" />
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-200/80 opacity-65 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-stone-100 border border-stone-200 text-stone-400 flex items-center justify-center flex-shrink-0">
+                        <TikTokIcon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold uppercase text-stone-400">TikTok</div>
+                        <div className="text-xs text-stone-400 truncate">Belum dicantumkan</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedMember.website ? (
+                    <a
+                      href={formatSocialUrl(selectedMember.website, 'website')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group/soc flex items-center gap-2.5 p-3 rounded-xl bg-white hover:bg-teal-50/70 border border-stone-200 hover:border-teal-300 transition-colors min-w-0"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center flex-shrink-0">
+                        <Globe className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold uppercase text-stone-400">Website</div>
+                        <div className="text-xs font-bold text-stone-800 group-hover/soc:text-teal-800 truncate">
+                          {selectedMember.website.replace(/^https?:\/\//i, '')}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover/soc:text-teal-700 flex-shrink-0" />
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-200/80 opacity-65 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-stone-100 border border-stone-200 text-stone-400 flex items-center justify-center flex-shrink-0">
+                        <Globe className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold uppercase text-stone-400">Website</div>
+                        <div className="text-xs text-stone-400 truncate">Belum dicantumkan</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <p>
-                  Usaha ini telah terdaftar dan dibina langsung oleh Forum UMKM KUAT Kecamatan Tangerang. Mendukung gerakan belanja produk lokal.
-                </p>
               </div>
             </div>
 

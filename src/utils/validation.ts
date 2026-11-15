@@ -304,6 +304,24 @@ export function validateMemberInput(
   }
 
   const legalities = sanitizeText(input.legalities || '', 300);
+  const instagram = sanitizeText(input.instagram || '', 200);
+  const tiktok = sanitizeText(input.tiktok || '', 200);
+
+  let website = '';
+  const rawWebsite = sanitizeText(input.website || '', 300);
+  if (rawWebsite) {
+    const normalizedWebsite =
+      /^(https?:\/\/|\/)/i.test(rawWebsite) || /^(javascript|vbscript|data|file):/i.test(rawWebsite)
+        ? rawWebsite
+        : `https://${rawWebsite}`;
+    const websiteRes = sanitizeUrl(normalizedWebsite, { allowDataImage: false, maxLength: 300 });
+    if (!websiteRes.valid) {
+      errors.push(`Website usaha: ${websiteRes.error}`);
+    } else {
+      website = websiteRes.value;
+    }
+  }
+
   const status: Member['status'] =
     input.status === 'nonaktif' || input.status === 'pending' ? input.status : 'aktif';
   const memberNumber = sanitizeText(input.memberNumber || '', 50);
@@ -329,6 +347,9 @@ export function validateMemberInput(
     memberPhoto: memberPhotoRes.value,
     productPhoto: productPhotoRes.value,
     legalities,
+    instagram,
+    tiktok,
+    website,
     isPublicDirectory: input.isPublicDirectory !== false,
     createdAt: sanitizeText(input.createdAt || nowIso, 50) || nowIso,
     updatedAt: nowIso,

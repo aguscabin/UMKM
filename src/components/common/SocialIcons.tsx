@@ -8,9 +8,13 @@ export const TikTokIcon: React.FC<{ className?: string }> = ({ className = 'w-4 
 );
 
 // Helper to format social media handles or direct URLs
-export function formatSocialUrl(value: string | undefined, platform: 'instagram' | 'tiktok' | 'youtube' | 'facebook'): string {
+export function formatSocialUrl(
+  value: string | undefined,
+  platform: 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'website'
+): string {
   if (!value) return '#';
   const trimmed = value.trim();
+  if (!trimmed) return '#';
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
   }
@@ -26,6 +30,8 @@ export function formatSocialUrl(value: string | undefined, platform: 'instagram'
       return `https://youtube.com/@${cleanHandle}`;
     case 'facebook':
       return `https://facebook.com/${cleanHandle}`;
+    case 'website':
+      return `https://${trimmed}`;
     default:
       return '#';
   }

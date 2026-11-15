@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   CreditCard,
   Building2,
+  Instagram,
+  Globe,
 } from 'lucide-react';
+import { TikTokIcon } from '../../components/common/SocialIcons';
 import { InlineShimmer } from '../../components/common/Skeleton';
 
 interface RegisterPageProps {
@@ -57,6 +60,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     memberPhoto: '',
     productPhoto: '',
     legalities: 'NIB, Sertifikat Halal',
+    instagram: '',
+    tiktok: '',
+    website: '',
     isPublicDirectory: true,
   });
 
@@ -194,9 +200,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* UPLOAD PAS FOTO ANGGOTA */}
           <div className="p-4 sm:p-5 bg-stone-50 border border-stone-200 rounded-xl flex flex-col sm:flex-row items-center gap-4">
-            <div className="w-24 h-28 rounded-xl overflow-hidden bg-white border border-stone-300 flex items-center justify-center flex-shrink-0">
+            <div className="w-24 sm:w-28 aspect-square rounded-xl overflow-hidden bg-white border border-stone-300 flex items-center justify-center flex-shrink-0">
               {formData.memberPhoto ? (
-                <img src={formData.memberPhoto} alt="Pas Foto" className="w-full h-full object-cover" />
+                <img
+                  src={formData.memberPhoto}
+                  alt="Pas Foto"
+                  className="w-full h-full object-cover object-[center_20%] block"
+                />
               ) : (
                 <div className="text-center text-teal-700 p-2">
                   <Camera className="w-6 h-6 mx-auto mb-1" />
@@ -442,6 +452,50 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 {formData.productPhoto && (
                   <img src={formData.productPhoto} alt="Produk" className="h-10 w-10 object-cover rounded-xl border border-stone-300" />
                 )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-stone-700 mb-1.5">
+                  <Instagram className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Akun Instagram</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.instagram}
+                  onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                  placeholder="@namausaha atau link IG"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:bg-white focus:outline-none focus:border-teal-600 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-stone-700 mb-1.5">
+                  <TikTokIcon className="w-3.5 h-3.5 text-stone-800" />
+                  <span>Akun TikTok</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.tiktok}
+                  onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
+                  placeholder="@namausaha atau link TikTok"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:bg-white focus:outline-none focus:border-teal-600 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-stone-700 mb-1.5">
+                  <Globe className="w-3.5 h-3.5 text-teal-700" />
+                  <span>Website Usaha</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  placeholder="https://usahaanda.com"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:bg-white focus:outline-none focus:border-teal-600 transition-colors"
+                />
               </div>
             </div>
           </div>

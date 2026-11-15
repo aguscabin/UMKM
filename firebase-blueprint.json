@@ -57,6 +57,9 @@
         "memberPhoto": { "type": "string", "maxLength": 900000 },
         "productPhoto": { "type": "string", "maxLength": 900000 },
         "legalities": { "type": "string", "maxLength": 300 },
+        "instagram": { "type": "string", "maxLength": 200 },
+        "tiktok": { "type": "string", "maxLength": 200 },
+        "website": { "type": "string", "maxLength": 300 },
         "isPublicDirectory": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }

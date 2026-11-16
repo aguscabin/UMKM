@@ -65,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navLinks = [
     { id: 'beranda', label: 'Beranda' },
     { id: 'profil', label: 'Profil Organisasi' },
-    { id: 'direktori', label: 'Direktori UMKM' },
+    { id: 'direktori', label: 'Katalog Produk' },
     { id: 'event', label: 'Event & Kegiatan' },
     { id: 'berita', label: 'Kabar Berita' },
     { id: 'kontak', label: 'Kontak' },

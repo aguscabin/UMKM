@@ -59,3 +59,53 @@ export const compressImage = (
     reader.readAsDataURL(file);
   });
 };
+
+/**
+ * Kompresi khusus unggahan multi-foto produk (hingga 5 foto per UMKM).
+ * Menjaga ukuran tiap foto tetap ringan (~40KB - 95KB) agar gabungan 5 foto + pas foto
+ * tetap jauh di bawah batas 1MB dokumen Firestore dan cepat dimuat.
+ */
+export const compressProductImage = async (file: File): Promise<string> => {
+  const maxChars = 130_000; // ~95 KB base64
+  const attempts: Array<{ size: number; quality: number }> = [
+    { size: 540, quality: 0.78 },
+    { size: 480, quality: 0.68 },
+    { size: 420, quality: 0.56 },
+  ];
+
+  let result = '';
+  for (const attempt of attempts) {
+    result = await compressImage(file, attempt.size, attempt.size, attempt.quality);
+    if (result.length <= maxChars) {
+      return result;
+    }
+  }
+  return result;
+};
+
+/**
+ * Mengambil daftar foto produk anggota secara kompatibel dengan data lama (single productPhoto)
+ * maupun data baru (array productPhotos maksimal 5 foto).
+ */
+export const getMemberProductPhotos = (member: {
+  productPhotos?: string[];
+  productPhoto?: string;
+}): string[] => {
+  const list: string[] = [];
+  if (Array.isArray(member.productPhotos)) {
+    for (const item of member.productPhotos) {
+      if (typeof item === 'string') {
+        const trimmed = item.trim();
+        if (trimmed && !list.includes(trimmed)) {
+          list.push(trimmed);
+        }
+      }
+      if (list.length >= 5) break;
+    }
+  }
+  if (list.length === 0 && typeof member.productPhoto === 'string' && member.productPhoto.trim()) {
+    list.push(member.productPhoto.trim());
+  }
+  return list.slice(0, 5);
+};
+

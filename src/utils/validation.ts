@@ -303,6 +303,32 @@ export function validateMemberInput(
     errors.push(`Foto produk: ${productPhotoRes.error}`);
   }
 
+  const sanitizedProductPhotos: string[] = [];
+  if (Array.isArray(input.productPhotos)) {
+    for (let i = 0; i < input.productPhotos.length && sanitizedProductPhotos.length < 5; i += 1) {
+      const candidate = input.productPhotos[i];
+      if (typeof candidate !== 'string' || !candidate.trim()) continue;
+      const res = sanitizeUrl(candidate, { allowDataImage: true, maxLength: 900000 });
+      if (!res.valid) {
+        errors.push(`Foto produk ke-${i + 1}: ${res.error}`);
+      } else if (res.value && !sanitizedProductPhotos.includes(res.value)) {
+        sanitizedProductPhotos.push(res.value);
+      }
+    }
+  }
+  if (sanitizedProductPhotos.length === 0 && productPhotoRes.value) {
+    sanitizedProductPhotos.push(productPhotoRes.value);
+  }
+  const primaryProductPhoto = sanitizedProductPhotos[0] || productPhotoRes.value || '';
+
+  const rawSoldCount = input.soldCount === undefined || input.soldCount === null || input.soldCount === ('' as unknown)
+    ? 0
+    : Number(input.soldCount);
+  const soldCount =
+    Number.isFinite(rawSoldCount) && rawSoldCount >= 0
+      ? Math.min(10_000_000, Math.floor(rawSoldCount))
+      : 0;
+
   const legalities = sanitizeText(input.legalities || '', 300);
   const instagram = sanitizeText(input.instagram || '', 200);
   const tiktok = sanitizeText(input.tiktok || '', 200);
@@ -345,7 +371,9 @@ export function validateMemberInput(
     businessAddress,
     businessPhone: bizPhoneCheck.cleaned || phoneCheck.cleaned,
     memberPhoto: memberPhotoRes.value,
-    productPhoto: productPhotoRes.value,
+    productPhoto: primaryProductPhoto,
+    productPhotos: sanitizedProductPhotos,
+    soldCount,
     legalities,
     instagram,
     tiktok,

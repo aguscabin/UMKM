@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Member, ForumEvent, Article, KELURAHAN_LIST } from '../../types';
 import { DEFAULT_PRODUCT_PHOTO_PLACEHOLDER } from '../../utils/excelImport';
 import {
@@ -11,7 +11,6 @@ import {
   Calendar,
   Award,
   ChevronRight,
-  ExternalLink,
   ShieldCheck,
   Building2,
 } from 'lucide-react';
@@ -20,6 +19,8 @@ import {
   EventNewsCardSkeleton,
   ShimmerImage,
 } from '../../components/common/Skeleton';
+import { ProductCatalogCarousel } from '../../components/common/ProductCatalogCarousel';
+import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 
 interface HomePageProps {
   members: Member[];
@@ -40,6 +41,8 @@ export const HomePage: React.FC<HomePageProps> = ({
   setSelectedEvent,
   setSelectedArticle,
 }) => {
+  const [selectedCatalogMember, setSelectedCatalogMember] = useState<Member | null>(null);
+
   // Compute live statistics from saved data without artificial mock fallbacks
   const publicMembers = useMemo(() => {
     return members.filter((m) => m.isPublicDirectory !== false && m.status !== 'nonaktif');
@@ -95,7 +98,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   className="group btn-micro inline-flex items-center justify-center gap-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base cursor-pointer min-h-[48px]"
                 >
                   <Store className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Jelajahi Direktori UMKM</span>
+                  <span>Jelajahi Katalog Produk</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
                 </button>
 
@@ -301,7 +304,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               }}
               className="btn-micro inline-flex items-center gap-1.5 text-teal-700 hover:text-teal-800 font-bold text-sm cursor-pointer self-start md:self-auto px-3 py-1.5 rounded-lg hover:bg-white/80 group"
             >
-              <span>Lihat Semua Direktori UMKM</span>
+              <span>Lihat Semua Katalog Produk</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
             </button>
           </div>
@@ -340,86 +343,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                   }}
                   className="group btn-micro inline-flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 px-5 py-2.5 rounded-xl text-xs font-bold border border-stone-200 cursor-pointer min-h-[42px]"
                 >
-                  <span>Buka Direktori Lengkap</span>
+                  <span>Buka Katalog Lengkap</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
                 </button>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-6 w-full">
-              {featuredMembers.map((item) => {
-                const waNumber = item.businessPhone ? item.businessPhone.replace(/\D/g, '').replace(/^0/, '62') : '';
-                return (
-                  <div
-                    key={item.id}
-                    className="card-hover-interactive bg-white rounded-xl overflow-hidden border border-stone-200 group flex flex-col justify-between h-full min-w-0"
-                  >
-                    <div className="flex-1 flex flex-col">
-                      <div className="relative aspect-square w-full bg-stone-100 overflow-hidden flex-shrink-0">
-                        <ShimmerImage
-                          src={item.productPhoto || DEFAULT_PRODUCT_PHOTO_PLACEHOLDER}
-                          fallbackSrc={DEFAULT_PRODUCT_PHOTO_PLACEHOLDER}
-                          alt={item.businessName}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                        />
-                        <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 max-w-[68%] truncate bg-[#121918]/90 text-white text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md border border-stone-700/60">
-                          {item.category}
-                        </div>
-                        <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 bg-teal-700 text-white text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-amber-300 flex-shrink-0" />
-                          <span className="hidden sm:inline">Terverifikasi</span>
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 sm:p-3 lg:p-4 flex-1 flex flex-col justify-between gap-2">
-                        <div className="space-y-1">
-                          <div className="text-[11px] font-medium text-teal-700 flex items-center gap-1 min-w-0">
-                            <MapPin className="w-3 h-3 flex-shrink-0 text-teal-700" />
-                            <span className="truncate">Kelurahan {item.kelurahan}</span>
-                          </div>
-                          <h3
-                            className="font-bold text-sm sm:text-base text-stone-900 line-clamp-1 group-hover:text-teal-700 transition-colors duration-200 leading-snug"
-                            title={item.businessName}
-                          >
-                            {item.businessName}
-                          </h3>
-                          <p className="text-xs text-stone-600 line-clamp-2 sm:line-clamp-3 leading-relaxed">
-                            <strong className="text-stone-800 font-semibold">Produk:</strong> {item.topProduct}
-                          </p>
-                        </div>
-
-                        {item.legalities && (
-                          <div className="pt-1.5 mt-auto border-t border-stone-100">
-                            <span
-                              className="inline-block max-w-full truncate text-[10px] sm:text-[11px] bg-stone-100 text-stone-800 border border-stone-200 px-2 py-0.5 rounded-md font-medium"
-                              title={`Legalitas: ${item.legalities}`}
-                            >
-                              <strong className="font-semibold text-teal-700">Legalitas:</strong> {item.legalities}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="px-2.5 pb-2.5 pt-2 sm:px-3 sm:pb-3 lg:px-4 lg:pb-4 border-t border-stone-100 flex items-center justify-between gap-2 bg-stone-50/70">
-                      <span className="hidden sm:inline text-[10px] lg:text-[11px] font-mono text-stone-400 truncate tabular-nums">
-                        {item.memberNumber}
-                      </span>
-                      <a
-                        href={waNumber ? `https://wa.me/${waNumber}?text=Halo%20${encodeURIComponent(item.businessName)},%20saya%20melihat%20produk%20Anda%20di%20Portal%20UMKM%20KUAT%20Kecamatan%20Tangerang` : '#'}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group/btn btn-micro w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white text-[11px] sm:text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 cursor-pointer"
-                      >
-                        <span>Hubungi WA</span>
-                        <ExternalLink className="w-3 h-3 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform duration-150" />
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <ProductCatalogCarousel
+              members={featuredMembers}
+              onSelectMember={setSelectedCatalogMember}
+            />
           )}
         </div>
       </section>
@@ -611,6 +544,11 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
       </section>
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        member={selectedCatalogMember}
+        onClose={() => setSelectedCatalogMember(null)}
+      />
     </div>
   );
 };

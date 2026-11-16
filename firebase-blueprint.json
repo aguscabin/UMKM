@@ -56,6 +56,8 @@
         "businessPhone": { "type": "string", "maxLength": 30 },
         "memberPhoto": { "type": "string", "maxLength": 900000 },
         "productPhoto": { "type": "string", "maxLength": 900000 },
+        "productPhotos": { "type": "array", "description": "Up to 5 compressed product photo URLs or Data URIs" },
+        "soldCount": { "type": "number", "description": "Number of products sold" },
         "legalities": { "type": "string", "maxLength": 300 },
         "instagram": { "type": "string", "maxLength": 200 },
         "tiktok": { "type": "string", "maxLength": 200 },

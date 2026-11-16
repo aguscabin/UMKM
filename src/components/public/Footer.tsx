@@ -168,7 +168,7 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab, openLoginModal })
                   }}
                   className="text-slate-400 hover:text-white transition-colors cursor-pointer"
                 >
-                  Katalog Direktori UMKM
+                  Katalog Produk UMKM
                 </button>
               </li>
               <li>

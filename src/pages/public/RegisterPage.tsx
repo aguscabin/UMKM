@@ -7,18 +7,16 @@ import { compressImage } from '../../utils/image';
 import { validateMemberInput, validateUploadedFile } from '../../utils/validation';
 import {
   Camera,
-  Upload,
-  CheckCircle2,
   AlertTriangle,
   ArrowRight,
   ShieldCheck,
   CreditCard,
-  Building2,
   Instagram,
   Globe,
 } from 'lucide-react';
 import { TikTokIcon } from '../../components/common/SocialIcons';
 import { InlineShimmer } from '../../components/common/Skeleton';
+import { MultiProductPhotoUploader } from '../../components/common/MultiProductPhotoUploader';
 
 interface RegisterPageProps {
   members: Member[];
@@ -36,7 +34,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const memberPhotoRef = useRef<HTMLInputElement>(null);
-  const productPhotoRef = useRef<HTMLInputElement>(null);
 
   // Generate unique number
   const generateMemberNumber = () => {
@@ -59,6 +56,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     businessPhone: '',
     memberPhoto: '',
     productPhoto: '',
+    productPhotos: [] as string[],
+    soldCount: 0,
     legalities: 'NIB, Sertifikat Halal',
     instagram: '',
     tiktok: '',
@@ -84,29 +83,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       }));
     } catch (err: any) {
       setDuplicationWarning('Gagal memproses pas foto: ' + (err?.message || 'Format tidak didukung'));
-    } finally {
-      if (e.target) e.target.value = '';
-    }
-  };
-
-  const handleProductPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fileCheck = validateUploadedFile(file, 'image');
-    if (!fileCheck.valid) {
-      setDuplicationWarning(fileCheck.error || 'File foto produk tidak valid.');
-      if (e.target) e.target.value = '';
-      return;
-    }
-    try {
-      const compressed = await compressImage(file, 600, 600, 0.82);
-      setDuplicationWarning(null);
-      setFormData((prev) => ({
-        ...prev,
-        productPhoto: compressed,
-      }));
-    } catch (err: any) {
-      setDuplicationWarning('Gagal memproses foto produk: ' + (err?.message || 'Format tidak didukung'));
     } finally {
       if (e.target) e.target.value = '';
     }
@@ -429,30 +405,46 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                Foto Produk Unggulan
-              </label>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => productPhotoRef.current?.click()}
-                  className="px-4 py-2.5 min-h-[42px] bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors"
-                >
-                  <Upload className="w-4 h-4 text-teal-700" />
-                  <span>{formData.productPhoto ? 'Foto Terpilih' : 'Upload Foto Produk'}</span>
-                </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1.5">
+                  Jumlah Produk Terjual (Opsional)
+                </label>
                 <input
-                  ref={productPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProductPhotoUpload}
-                  className="hidden"
+                  type="number"
+                  min={0}
+                  max={10000000}
+                  value={formData.soldCount || 0}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      soldCount: Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                    })
+                  }
+                  placeholder="0"
+                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:bg-white focus:outline-none focus:border-teal-600 tabular-nums transition-colors"
                 />
-                {formData.productPhoto && (
-                  <img src={formData.productPhoto} alt="Produk" className="h-10 w-10 object-cover rounded-xl border border-stone-300" />
-                )}
               </div>
+              <div className="flex items-end">
+                <p className="text-[11px] text-stone-500 pb-2">
+                  Estimasi jumlah produk yang sudah terjual untuk ditampilkan pada Katalog Produk publik.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-stone-50/80 border border-stone-200 rounded-xl">
+              <MultiProductPhotoUploader
+                photos={formData.productPhotos}
+                onChange={(nextPhotos) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    productPhotos: nextPhotos,
+                    productPhoto: nextPhotos[0] || '',
+                  }))
+                }
+                onError={(msg) => setDuplicationWarning(msg)}
+                maxPhotos={5}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

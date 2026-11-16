@@ -14,9 +14,10 @@ import {
   KtaFrontCard,
   KtaBackCard,
 } from '../../components/KtaCardParts';
-import { compressImage } from '../../utils/image';
+import { compressImage, getMemberProductPhotos } from '../../utils/image';
 import { validateMemberInput, validateUploadedFile } from '../../utils/validation';
 import { InlineShimmer } from '../../components/common/Skeleton';
+import { MultiProductPhotoUploader } from '../../components/common/MultiProductPhotoUploader';
 import {
   downloadExcelTemplate,
   parseExcelMembersFile,
@@ -118,7 +119,6 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
   // File upload refs
   const memberPhotoRef = useRef<HTMLInputElement>(null);
-  const productPhotoRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const initialFormState: Omit<Member, 'id'> = {
@@ -138,6 +138,8 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     businessPhone: '',
     memberPhoto: '',
     productPhoto: '',
+    productPhotos: [],
+    soldCount: 0,
     legalities: 'NIB, Sertifikat Halal',
     instagram: '',
     tiktok: '',
@@ -186,7 +188,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       businessAddress: m.businessAddress || '',
       businessPhone: m.businessPhone || '',
       memberPhoto: m.memberPhoto || '',
-      productPhoto: m.productPhoto || '',
+      productPhoto: getMemberProductPhotos(m)[0] || '',
+      productPhotos: getMemberProductPhotos(m),
+      soldCount: m.soldCount ?? 0,
       legalities: m.legalities || '',
       instagram: m.instagram || '',
       tiktok: m.tiktok || '',
@@ -198,7 +202,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     setModalOpen(true);
   };
 
-  // Upload Photo handlers with file size/MIME check & compression
+  // Upload Photo handler with file size/MIME check & compression
   const handleMemberPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -216,28 +220,6 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       }));
     } catch (err: any) {
       alert('Gagal memproses foto anggota: ' + (err?.message || 'Format tidak didukung'));
-    } finally {
-      if (e.target) e.target.value = '';
-    }
-  };
-
-  const handleProductPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fileCheck = validateUploadedFile(file, 'image');
-    if (!fileCheck.valid) {
-      alert(fileCheck.error || 'File foto produk tidak valid.');
-      if (e.target) e.target.value = '';
-      return;
-    }
-    try {
-      const compressed = await compressImage(file, 600, 600, 0.82);
-      setFormData((prev) => ({
-        ...prev,
-        productPhoto: compressed,
-      }));
-    } catch (err: any) {
-      alert('Gagal memproses foto produk: ' + (err?.message || 'Format tidak didukung'));
     } finally {
       if (e.target) e.target.value = '';
     }
@@ -1598,33 +1580,38 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
                     <div>
                       <label className="block text-xs font-bold text-stone-700 mb-1">
-                        Upload Foto Produk
+                        Jumlah Produk Terjual
                       </label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => productPhotoRef.current?.click()}
-                          className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-700 border border-stone-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[42px] transition-colors"
-                        >
-                          <Camera className="w-4 h-4 text-teal-700" />
-                          <span>{formData.productPhoto ? 'Foto Terpilih' : 'Pilih Foto'}</span>
-                        </button>
-                        <input
-                          ref={productPhotoRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleProductPhotoUpload}
-                          className="hidden"
-                        />
-                        {formData.productPhoto && (
-                          <img
-                            src={formData.productPhoto}
-                            alt="Produk"
-                            className="h-10 w-10 object-cover rounded-lg border border-stone-300"
-                          />
-                        )}
-                      </div>
+                      <input
+                        type="number"
+                        min={0}
+                        max={10000000}
+                        value={formData.soldCount ?? 0}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            soldCount: Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                          })
+                        }
+                        placeholder="0"
+                        className="w-full px-3.5 py-2.5 min-h-[42px] text-xs sm:text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-hidden focus:border-teal-600 font-mono tabular-nums text-stone-800"
+                      />
                     </div>
+                  </div>
+
+                  <div className="p-4 bg-stone-50/90 border border-stone-200 rounded-xl">
+                    <MultiProductPhotoUploader
+                      photos={formData.productPhotos || []}
+                      onChange={(nextPhotos) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          productPhotos: nextPhotos,
+                          productPhoto: nextPhotos[0] || '',
+                        }))
+                      }
+                      maxPhotos={5}
+                      label="Upload Foto Produk"
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1797,10 +1784,37 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   <span className="text-stone-400 font-semibold">Alamat Usaha:</span>
                   <div className="text-stone-800">{viewingMember.businessAddress || viewingMember.address}</div>
                 </div>
-                <div className="col-span-2">
+                <div>
                   <span className="text-stone-400 font-semibold">Legalitas:</span>
                   <div className="text-teal-700 font-semibold">{viewingMember.legalities || '-'}</div>
                 </div>
+                <div>
+                  <span className="text-stone-400 font-semibold">Jumlah Terjual:</span>
+                  <div className="font-bold text-stone-800 tabular-nums">
+                    {(viewingMember.soldCount ?? 0).toLocaleString('id-ID')} produk
+                  </div>
+                </div>
+                {getMemberProductPhotos(viewingMember).length > 0 && (
+                  <div className="col-span-2 pt-2 border-t border-stone-200 space-y-1.5">
+                    <span className="text-stone-400 font-semibold block">
+                      Galeri Foto Produk ({getMemberProductPhotos(viewingMember).length}/5):
+                    </span>
+                    <div className="grid grid-cols-5 gap-2">
+                      {getMemberProductPhotos(viewingMember).map((src, idx) => (
+                        <div
+                          key={idx}
+                          className="aspect-square rounded-lg overflow-hidden border border-stone-200 bg-white"
+                        >
+                          <img
+                            src={src}
+                            alt={`Produk ${idx + 1}`}
+                            className="w-full h-full object-cover block"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {(viewingMember.instagram || viewingMember.tiktok || viewingMember.website) && (
                   <div className="col-span-2 pt-2 border-t border-stone-200 flex flex-wrap gap-2">
                     {viewingMember.instagram && (

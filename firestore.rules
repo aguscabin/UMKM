@@ -160,8 +160,8 @@ service cloud.firestore {
           'id', 'memberNumber', 'fullName', 'nik', 'phone', 'email', 'address',
           'kelurahan', 'status', 'joinDate', 'businessName', 'category', 'topProduct',
           'businessAddress', 'businessPhone', 'memberPhoto', 'productPhoto',
-          'legalities', 'instagram', 'tiktok', 'website', 'isPublicDirectory',
-          'createdAt', 'updatedAt'
+          'productPhotos', 'soldCount', 'legalities', 'instagram', 'tiktok', 'website',
+          'isPublicDirectory', 'createdAt', 'updatedAt'
         ]) &&
         (!('id' in data) || isValidId(data.id)) &&
         data.memberNumber is string && data.memberNumber.size() <= 50 &&
@@ -180,6 +180,12 @@ service cloud.firestore {
         (!('businessPhone' in data) || (data.businessPhone is string && data.businessPhone.size() <= 30)) &&
         (!('memberPhoto' in data) || (data.memberPhoto is string && data.memberPhoto.size() <= 900000)) &&
         (!('productPhoto' in data) || (data.productPhoto is string && data.productPhoto.size() <= 900000)) &&
+        (!('productPhotos' in data) || (
+          data.productPhotos is list &&
+          data.productPhotos.size() <= 5 &&
+          (data.productPhotos.size() == 0 || (data.productPhotos[0] is string && data.productPhotos[0].size() <= 900000))
+        )) &&
+        (!('soldCount' in data) || (data.soldCount is number && data.soldCount >= 0 && data.soldCount <= 10000000)) &&
         (!('legalities' in data) || (data.legalities is string && data.legalities.size() <= 300)) &&
         (!('instagram' in data) || (data.instagram is string && data.instagram.size() <= 200)) &&
         (!('tiktok' in data) || (data.tiktok is string && data.tiktok.size() <= 200)) &&

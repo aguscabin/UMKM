@@ -10,6 +10,8 @@ import {
   where,
   onSnapshot,
   writeBatch,
+  updateDoc,
+  increment,
 } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Member, Transaction, ForumEvent, Article, ActivityLog, UserProfile, OrgStructureMember, OrgVisionMission, OrgContactInfo } from '../types';
@@ -628,6 +630,31 @@ export const dbService = {
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('umkm_members_updated', { detail: updated }));
+    }
+  },
+
+  async incrementMemberView(memberId: string): Promise<void> {
+    if (!memberId) return;
+
+    const current = getLocalData<Member[]>('members', []);
+    if (current.some((m) => m.id === memberId)) {
+      const updatedList = current.map((m) =>
+        m.id === memberId
+          ? { ...m, viewCount: Math.max(0, Number(m.viewCount ?? 0)) + 1 }
+          : m
+      );
+      setLocalData('members', updatedList);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('umkm_members_updated', { detail: updatedList }));
+      }
+    }
+
+    try {
+      await updateDoc(doc(db, 'members', memberId), {
+        viewCount: increment(1),
+      });
+    } catch {
+      // Non-fatal fallback when offline or only cached locally
     }
   },
 

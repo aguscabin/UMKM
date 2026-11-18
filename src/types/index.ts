@@ -63,7 +63,7 @@ export interface Member {
   memberPhoto?: string; // Pas foto anggota
   productPhoto?: string;
   productPhotos?: string[]; // Maksimal 5 foto produk
-  soldCount?: number; // Jumlah produk terjual
+  viewCount?: number; // Jumlah produk dilihat
   legalities: string; // NIB, Halal, P-IRT, dsb.
   instagram?: string;
   tiktok?: string;

@@ -21,6 +21,7 @@ import {
 } from '../../components/common/Skeleton';
 import { ProductCatalogCarousel } from '../../components/common/ProductCatalogCarousel';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
+import { dbService } from '../../services/db';
 
 interface HomePageProps {
   members: Member[];
@@ -41,7 +42,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   setSelectedEvent,
   setSelectedArticle,
 }) => {
-  const [selectedCatalogMember, setSelectedCatalogMember] = useState<Member | null>(null);
+  const [selectedCatalogMemberId, setSelectedCatalogMemberId] = useState<string | null>(null);
 
   // Compute live statistics from saved data without artificial mock fallbacks
   const publicMembers = useMemo(() => {
@@ -65,6 +66,16 @@ export const HomePage: React.FC<HomePageProps> = ({
   const featuredMembers = useMemo(() => {
     return members.filter((m) => m.status !== 'nonaktif' && m.isPublicDirectory !== false);
   }, [members]);
+
+  const selectedCatalogMember = useMemo(() => {
+    if (!selectedCatalogMemberId) return null;
+    return featuredMembers.find((m) => m.id === selectedCatalogMemberId) || null;
+  }, [featuredMembers, selectedCatalogMemberId]);
+
+  const handleSelectCatalogMember = (member: Member) => {
+    setSelectedCatalogMemberId(member.id);
+    dbService.incrementMemberView(member.id);
+  };
 
   return (
     <div className="space-y-20 sm:space-y-24 pb-24">
@@ -351,7 +362,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           ) : (
             <ProductCatalogCarousel
               members={featuredMembers}
-              onSelectMember={setSelectedCatalogMember}
+              onSelectMember={handleSelectCatalogMember}
             />
           )}
         </div>
@@ -547,7 +558,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Product Detail Modal */}
       <ProductDetailModal
         member={selectedCatalogMember}
-        onClose={() => setSelectedCatalogMember(null)}
+        onClose={() => setSelectedCatalogMemberId(null)}
       />
     </div>
   );

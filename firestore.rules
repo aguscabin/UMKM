@@ -160,7 +160,7 @@ service cloud.firestore {
           'id', 'memberNumber', 'fullName', 'nik', 'phone', 'email', 'address',
           'kelurahan', 'status', 'joinDate', 'businessName', 'category', 'topProduct',
           'businessAddress', 'businessPhone', 'memberPhoto', 'productPhoto',
-          'productPhotos', 'soldCount', 'legalities', 'instagram', 'tiktok', 'website',
+          'productPhotos', 'viewCount', 'legalities', 'instagram', 'tiktok', 'website',
           'isPublicDirectory', 'createdAt', 'updatedAt'
         ]) &&
         (!('id' in data) || isValidId(data.id)) &&
@@ -185,7 +185,7 @@ service cloud.firestore {
           data.productPhotos.size() <= 5 &&
           (data.productPhotos.size() == 0 || (data.productPhotos[0] is string && data.productPhotos[0].size() <= 900000))
         )) &&
-        (!('soldCount' in data) || (data.soldCount is number && data.soldCount >= 0 && data.soldCount <= 10000000)) &&
+        (!('viewCount' in data) || (data.viewCount is number && data.viewCount >= 0 && data.viewCount <= 10000000)) &&
         (!('legalities' in data) || (data.legalities is string && data.legalities.size() <= 300)) &&
         (!('instagram' in data) || (data.instagram is string && data.instagram.size() <= 200)) &&
         (!('tiktok' in data) || (data.tiktok is string && data.tiktok.size() <= 200)) &&
@@ -372,7 +372,15 @@ service cloud.firestore {
         isMemberAdmin() ||
         incoming().status in ['aktif', 'pending']
       );
-      allow update: if isMemberAdmin() && isValidId(memberId) && isValidMember(incoming());
+      allow update: if (isMemberAdmin() && isValidId(memberId) && isValidMember(incoming())) ||
+        (isValidId(memberId) &&
+         existing().isPublicDirectory == true &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['viewCount']) &&
+         incoming().viewCount is number &&
+         incoming().viewCount <= 10000000 && (
+           (!('viewCount' in existing()) && incoming().viewCount == 1) ||
+           (('viewCount' in existing()) && existing().viewCount is number && incoming().viewCount == existing().viewCount + 1)
+         ));
       allow delete: if isMemberAdmin() && isValidId(memberId);
     }
 

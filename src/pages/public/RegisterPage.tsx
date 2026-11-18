@@ -57,7 +57,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     memberPhoto: '',
     productPhoto: '',
     productPhotos: [] as string[],
-    soldCount: 0,
+    viewCount: 0,
     legalities: 'NIB, Sertifikat Halal',
     instagram: '',
     tiktok: '',
@@ -402,33 +402,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   placeholder="NIB, Halal, P-IRT (atau tulis 'Belum Ada')"
                   className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:bg-white focus:outline-none focus:border-teal-600 transition-colors"
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  Jumlah Produk Terjual (Opsional)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={10000000}
-                  value={formData.soldCount || 0}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      soldCount: Math.max(0, Math.floor(Number(e.target.value) || 0)),
-                    })
-                  }
-                  placeholder="0"
-                  className="w-full px-3.5 py-2.5 min-h-[42px] text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:bg-white focus:outline-none focus:border-teal-600 tabular-nums transition-colors"
-                />
-              </div>
-              <div className="flex items-end">
-                <p className="text-[11px] text-stone-500 pb-2">
-                  Estimasi jumlah produk yang sudah terjual untuk ditampilkan pada Katalog Produk publik.
-                </p>
               </div>
             </div>
 

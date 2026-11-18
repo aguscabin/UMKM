@@ -321,12 +321,12 @@ export function validateMemberInput(
   }
   const primaryProductPhoto = sanitizedProductPhotos[0] || productPhotoRes.value || '';
 
-  const rawSoldCount = input.soldCount === undefined || input.soldCount === null || input.soldCount === ('' as unknown)
+  const rawViewCount = input.viewCount === undefined || input.viewCount === null || input.viewCount === ('' as unknown)
     ? 0
-    : Number(input.soldCount);
-  const soldCount =
-    Number.isFinite(rawSoldCount) && rawSoldCount >= 0
-      ? Math.min(10_000_000, Math.floor(rawSoldCount))
+    : Number(input.viewCount);
+  const viewCount =
+    Number.isFinite(rawViewCount) && rawViewCount >= 0
+      ? Math.min(10_000_000, Math.floor(rawViewCount))
       : 0;
 
   const legalities = sanitizeText(input.legalities || '', 300);
@@ -373,7 +373,7 @@ export function validateMemberInput(
     memberPhoto: memberPhotoRes.value,
     productPhoto: primaryProductPhoto,
     productPhotos: sanitizedProductPhotos,
-    soldCount,
+    viewCount,
     legalities,
     instagram,
     tiktok,

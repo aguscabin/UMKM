@@ -10,7 +10,7 @@ import {
   ExternalLink,
   Instagram,
   Globe,
-  ShoppingBag,
+  Eye,
 } from 'lucide-react';
 import { TikTokIcon, formatSocialUrl } from './SocialIcons';
 
@@ -34,7 +34,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const photos = getMemberProductPhotos(member);
   const slides = photos.length > 0 ? photos : [DEFAULT_PRODUCT_PHOTO_PLACEHOLDER];
   const currentSrc = slides[activePhotoIndex] || slides[0];
-  const soldCount = Math.max(0, Number(member.soldCount ?? 0));
+  const viewCount = Math.max(0, Number(member.viewCount ?? 0));
   const waNum = (member.businessPhone || member.phone || '').replace(/\D/g, '').replace(/^0/, '62');
 
   return (
@@ -120,9 +120,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-900 px-3 py-1.5 rounded-xl text-xs font-bold tabular-nums">
-              <ShoppingBag className="w-3.5 h-3.5 text-amber-600" />
-              <span>Terjual {soldCount.toLocaleString('id-ID')} produk</span>
+            <div className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-200 text-teal-900 px-3 py-1.5 rounded-xl text-xs font-bold tabular-nums">
+              <Eye className="w-3.5 h-3.5 text-teal-700" />
+              <span>Dilihat {viewCount.toLocaleString('id-ID')} kali</span>
             </div>
           </div>
 
@@ -250,9 +250,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Modal Footer */}
         <div className="p-5 border-t border-stone-200 bg-stone-50 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-stone-600 font-medium tabular-nums">
-            <ShoppingBag className="w-4 h-4 text-amber-600" />
+            <Eye className="w-4 h-4 text-teal-700" />
             <span>
-              Total Terjual: <strong className="text-stone-900">{soldCount.toLocaleString('id-ID')} produk</strong>
+              Produk Dilihat: <strong className="text-stone-900">{viewCount.toLocaleString('id-ID')} kali</strong>
             </span>
           </div>
           <button

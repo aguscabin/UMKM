@@ -252,8 +252,9 @@ const HEADER_TO_FIELD_MAP: Record<
   'akun tiktok': { field: 'tiktok', mode: 'text' },
   'website': { field: 'website', mode: 'text' },
   'website usaha': { field: 'website', mode: 'text' },
-  'jumlah terjual': { field: 'soldCount', mode: 'text' },
-  'terjual': { field: 'soldCount', mode: 'text' },
+  'jumlah dilihat': { field: 'viewCount', mode: 'text' },
+  'produk dilihat': { field: 'viewCount', mode: 'text' },
+  'dilihat': { field: 'viewCount', mode: 'text' },
 };
 
 /**
@@ -483,7 +484,7 @@ export async function parseExcelMembersFile(
         memberPhoto,
         productPhoto,
         productPhotos: productPhoto && productPhoto !== DEFAULT_PRODUCT_PHOTO_PLACEHOLDER ? [productPhoto] : [],
-        soldCount: Math.max(0, Math.floor(Number(String(rawValues.soldCount || '0').replace(/\D/g, '')) || 0)),
+        viewCount: Math.max(0, Math.floor(Number(String(rawValues.viewCount || '0').replace(/\D/g, '')) || 0)),
         isPublicDirectory: true,
       },
       rawMemberPhoto,

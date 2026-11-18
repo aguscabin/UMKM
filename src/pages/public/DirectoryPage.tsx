@@ -11,6 +11,7 @@ import {
 } from '../../components/common/Skeleton';
 import { ProductCatalogCarousel } from '../../components/common/ProductCatalogCarousel';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
+import { dbService } from '../../services/db';
 
 interface DirectoryPageProps {
   members: Member[];
@@ -31,12 +32,22 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   // STRICT COMPLIANCE: Only show members with isPublicDirectory === true
   const publicMembers = useMemo(() => {
     return members.filter((m) => Boolean(m.isPublicDirectory) && m.status !== 'nonaktif');
   }, [members]);
+
+  const selectedMember = useMemo(() => {
+    if (!selectedMemberId) return null;
+    return publicMembers.find((m) => m.id === selectedMemberId) || null;
+  }, [publicMembers, selectedMemberId]);
+
+  const handleSelectMember = (member: Member) => {
+    setSelectedMemberId(member.id);
+    dbService.incrementMemberView(member.id);
+  };
 
   // Gabungkan kategori inti + kategori unik lain dari database agar filter kategori selalu lengkap
   const categories = useMemo(() => {
@@ -210,7 +221,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({
         ) : (
           <ProductCatalogCarousel
             members={filteredList}
-            onSelectMember={setSelectedMember}
+            onSelectMember={handleSelectMember}
           />
         )}
       </div>
@@ -218,7 +229,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({
       {/* Product Detail Modal */}
       <ProductDetailModal
         member={selectedMember}
-        onClose={() => setSelectedMember(null)}
+        onClose={() => setSelectedMemberId(null)}
       />
     </div>
   );

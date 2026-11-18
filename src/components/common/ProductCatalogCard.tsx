@@ -3,7 +3,7 @@ import { Member } from '../../types';
 import { getMemberProductPhotos } from '../../utils/image';
 import { DEFAULT_PRODUCT_PHOTO_PLACEHOLDER } from '../../utils/excelImport';
 import { ShimmerImage } from './Skeleton';
-import { MapPin, Phone, ShoppingBag, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Phone, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ProductCatalogCardProps {
   member: Member;
@@ -17,7 +17,7 @@ export const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
   const photos = getMemberProductPhotos(member);
   const slides = photos.length > 0 ? photos : [DEFAULT_PRODUCT_PHOTO_PLACEHOLDER];
   const hasMultiplePhotos = slides.length > 1;
-  const soldCount = Math.max(0, Number(member.soldCount ?? 0));
+  const viewCount = Math.max(0, Number(member.viewCount ?? 0));
 
   const [activeIndex, setActiveIndex] = useState(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -199,16 +199,16 @@ export const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
         </div>
       </div>
 
-      {/* Footer: Sold Count directly above WhatsApp & Detail Action */}
+      {/* Footer: View Count directly above WhatsApp & Detail Action */}
       <div className="px-3.5 pb-3.5 pt-2.5 sm:px-4 sm:pb-4 border-t border-stone-100 bg-stone-50/70 space-y-2.5">
-        {/* Keterangan Jumlah Terjual di atas tombol WhatsApp */}
+        {/* Keterangan Produk Dilihat di atas tombol WhatsApp */}
         <div className="flex items-center justify-between text-xs tabular-nums">
           <span className="inline-flex items-center gap-1.5 text-stone-500 font-medium">
-            <ShoppingBag className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-            <span>Terjual</span>
+            <Eye className="w-3.5 h-3.5 text-teal-700 flex-shrink-0" />
+            <span>Dilihat</span>
           </span>
           <span className="font-bold text-stone-900">
-            {soldCount.toLocaleString('id-ID')} produk
+            {viewCount.toLocaleString('id-ID')} kali
           </span>
         </div>
 

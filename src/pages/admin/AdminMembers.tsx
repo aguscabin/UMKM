@@ -139,7 +139,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
     memberPhoto: '',
     productPhoto: '',
     productPhotos: [],
-    soldCount: 0,
+    viewCount: 0,
     legalities: 'NIB, Sertifikat Halal',
     instagram: '',
     tiktok: '',
@@ -190,7 +190,7 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
       memberPhoto: m.memberPhoto || '',
       productPhoto: getMemberProductPhotos(m)[0] || '',
       productPhotos: getMemberProductPhotos(m),
-      soldCount: m.soldCount ?? 0,
+      viewCount: m.viewCount ?? 0,
       legalities: m.legalities || '',
       instagram: m.instagram || '',
       tiktok: m.tiktok || '',
@@ -1580,17 +1580,17 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
 
                     <div>
                       <label className="block text-xs font-bold text-stone-700 mb-1">
-                        Jumlah Produk Terjual
+                        Jumlah Produk Dilihat
                       </label>
                       <input
                         type="number"
                         min={0}
                         max={10000000}
-                        value={formData.soldCount ?? 0}
+                        value={formData.viewCount ?? 0}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            soldCount: Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                            viewCount: Math.max(0, Math.floor(Number(e.target.value) || 0)),
                           })
                         }
                         placeholder="0"
@@ -1789,9 +1789,9 @@ export const AdminMembers: React.FC<AdminMembersProps> = ({
                   <div className="text-teal-700 font-semibold">{viewingMember.legalities || '-'}</div>
                 </div>
                 <div>
-                  <span className="text-stone-400 font-semibold">Jumlah Terjual:</span>
+                  <span className="text-stone-400 font-semibold">Produk Dilihat:</span>
                   <div className="font-bold text-stone-800 tabular-nums">
-                    {(viewingMember.soldCount ?? 0).toLocaleString('id-ID')} produk
+                    {(viewingMember.viewCount ?? 0).toLocaleString('id-ID')} kali
                   </div>
                 </div>
                 {getMemberProductPhotos(viewingMember).length > 0 && (
